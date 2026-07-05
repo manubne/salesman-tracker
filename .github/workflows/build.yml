@@ -1,0 +1,32 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack app from base64 zip
+        run: |
+          base64 -d app_b64.txt > app.zip
+          rm -rf app
+          unzip -o app.zip
+          ls -R app | head -50
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Create platform folders
+        working-directory: app
+        run: flutter create --platforms=android .
+      - name: Get packages
+        working-directory: app
+        run: flutter pub get
+      - name: Build release APK
+        working-directory: app
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: salesman-tracker-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
