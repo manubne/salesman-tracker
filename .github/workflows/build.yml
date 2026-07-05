@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  pages: write
+  id-token: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,20 +22,33 @@ jobs:
           channel: stable
       - name: Create platform folders
         working-directory: app
-        run: flutter create --platforms=android .
+        run: flutter create --platforms=android,web .
       - name: Get packages
         working-directory: app
         run: flutter pub get
       - name: Build release APK
         working-directory: app
         run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
-        with:
-          name: salesman-tracker-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
-      - name: Publish to Release
+      - name: Publish APK to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Latest APK
           files: app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Build web
+        working-directory: app
+        run: flutter build web --release --base-href /salesman-tracker/
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
