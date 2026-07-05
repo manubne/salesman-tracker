@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +15,6 @@ jobs:
           base64 -d app_b64.txt > app.zip
           rm -rf app
           unzip -o app.zip
-          ls -R app | head -50
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -30,3 +31,9 @@ jobs:
         with:
           name: salesman-tracker-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Publish to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest APK
+          files: app/build/app/outputs/flutter-apk/app-release.apk
