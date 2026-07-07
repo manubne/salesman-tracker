@@ -84,6 +84,7 @@
       <button data-v="visits" onclick="show('visits')">Visits</button>
       <button data-v="mapv" onclick="show('mapv')">Map</button>
       <button data-v="customers" onclick="show('customers')">Customers</button>
+      <button data-v="orders" onclick="show('orders')">Orders</button>
       <button data-v="reqs" onclick="show('reqs')">Requirements</button>
       <button data-v="attendance" onclick="show('attendance')">Attendance</button>
       <button data-v="team" onclick="show('team')">Team</button>
@@ -130,6 +131,25 @@
       </div>
     </div>
 
+    <div id="orders" class="view">
+      <div class="cards" id="orderStats"></div>
+      <div class="panel"><h2>Order types (visible to all sales users)</h2>
+        <div class="toolbar">
+          <input id="newCat" placeholder="New order type (e.g. VRF)">
+          <button class="btn" onclick="addCategory()">Add type</button>
+        </div>
+        <div id="catList"></div>
+      </div>
+      <div class="panel"><h2>Orders pipeline</h2>
+        <div class="toolbar">
+          <select id="oStage" onchange="renderOrders()"><option value="">All stages</option><option>draft</option><option>need_quote</option><option>quoted</option><option>won</option><option>lost</option></select>
+          <button class="btn sec" onclick="loadOrders()">Refresh</button>
+          <button class="btn sec" onclick="exportCsv('orders')">Export CSV</button>
+        </div>
+        <div id="ordersTbl"></div>
+      </div>
+    </div>
+
     <div id="reqs" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -157,12 +177,13 @@
     </div>
   </main>
 </div>
+
 <script>
 const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [] };
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [] };
 let map, markers = [];
 
 // ---------- auth ----------
@@ -213,7 +234,7 @@ async function init() {
   const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
   for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
-  await Promise.all([loadUsers(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance()]);
+  await Promise.all([loadUsers(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories()]);
 }
 
 function show(v) {
@@ -221,6 +242,7 @@ function show(v) {
   document.getElementById(v).classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
   if (v === 'mapv') setTimeout(() => { if (!map) initMap(); map.invalidateSize(); loadMap(); }, 50);
+  if (v === 'orders') { loadOrders(); loadCategories(); }
 }
 
 const uname = id => (cache.users.find(u => u.id === id)?.name) || (cache.users.find(u => u.id === id)?.mobile) || '—';
@@ -337,6 +359,45 @@ async function loadAttendance() {
     }));
 }
 
+// ---------- orders ----------
+let _cats = [];
+async function loadCategories() {
+  const { data } = await db.from('order_categories').select('*').order('name');
+  _cats = data || [];
+  document.getElementById('catList').innerHTML = _cats.length ? _cats.map(c =>
+    `<span class="chip ${c.active?'verified':'missed'}" style="margin:4px 6px 4px 0">${esc(c.name)}${c.active?'':' (off)'}</span>`).join('') :
+    '<p class="muted">No order types yet. Add one above.</p>';
+}
+async function addCategory() {
+  const el = document.getElementById('newCat');
+  const name = el.value.trim();
+  if (!name) return;
+  const { error } = await db.from('order_categories').insert({ name });
+  if (error) { alert(error.message); return; }
+  el.value = '';
+  loadCategories();
+}
+async function loadOrders() {
+  const { data } = await db.from('orders')
+    .select('*, customers(name,company), order_categories(name)')
+    .order('created_at', { ascending: false }).limit(500);
+  cache.orders = data || [];
+  const stg = (s) => cache.orders.filter(o => o.stage === s).length;
+  const card = (n,l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+  document.getElementById('orderStats').innerHTML =
+    card(cache.orders.length,'Total orders') + card(stg('draft'),'Draft') + card(stg('need_quote'),'Need quote') +
+    card(stg('quoted'),'Quoted') + card(stg('won'),'Won') + card(stg('lost'),'Lost');
+  renderOrders();
+}
+function renderOrders() {
+  const st = document.getElementById('oStage').value;
+  const rows = (cache.orders||[]).filter(o => !st || o.stage === st);
+  document.getElementById('ordersTbl').innerHTML = tbl(
+    ['Created','Customer','Type','Sq ft','Visit','Stage','Sales person'],
+    rows.map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
+      o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by))]));
+}
+
 // ---------- map ----------
 function initMap() {
   map = L.map('map').setView([22.97, 78.65], 5);
@@ -380,6 +441,8 @@ function exportCsv(kind) {
     requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity,
       expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
     attendance: a => ({ date: a.date, sales_person: uname(a.user_id), day_start: a.day_start_at, day_end: a.day_end_at }),
+    orders: o => ({ created: o.created_at, customer: o.customers?.name, company: o.customers?.company, type: o.order_categories?.name,
+      sqft: o.sqft, visit_status: o.visit_status, stage: o.stage, sales_person: uname(o.created_by) }),
   }[kind];
   const rows = cache[kind].map(flat);
   if (!rows.length) return alert('No data to export');
