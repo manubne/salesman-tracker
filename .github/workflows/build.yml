@@ -40,7 +40,7 @@ jobs:
           files: app/build/app/outputs/flutter-apk/app-release.apk
       - name: Build web
         working-directory: app
-        run: flutter build web --release --base-href /salesman-tracker/
+        run: flutter build web --release --base-href /salesman-tracker/ && cp ../admin.html build/web/admin.html
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
