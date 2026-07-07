@@ -12,23 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack app from base64 chunks
+      - name: Unpack app from base64
         run: |
-          cat chunk_*.b64 > appcode.b64
           base64 -d appcode.b64 > app.zip
           rm -rf app
           unzip -o app.zip
-          cp patch_login_screen.dart app/lib/screens/login_screen.dart
-          cp patch_customer_form_screen.dart app/lib/screens/customer_form_screen.dart
-          cp patch_api.dart app/lib/services/api.dart
-          cp patch_orders_screen.dart app/lib/screens/orders_screen.dart
-          cp patch_home_screen.dart app/lib/screens/home_screen.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
       - name: Create platform folders
         working-directory: app
-        run: flutter create --platforms=android,web . && sed -i '/<manifest/a <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml && sed -i '/<manifest/a <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' android/app/src/main/AndroidManifest.xml && sed -i '/<manifest/a <uses-permission android:name="android.permission.CAMERA"/>' android/app/src/main/AndroidManifest.xml
+        run: flutter create --platforms=android,web .
+      - name: Add Android permissions
+        working-directory: app
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
+          echo "--- manifest ---"; head -12 $M
       - name: Get packages
         working-directory: app
         run: flutter pub get
@@ -41,9 +44,11 @@ jobs:
           tag_name: latest
           name: Latest APK
           files: app/build/app/outputs/flutter-apk/app-release.apk
-      - name: Build web
+      - name: Build web (app + admin dashboard)
         working-directory: app
-        run: flutter build web --release --base-href /salesman-tracker/ && cp ../admin.html build/web/admin.html
+        run: |
+          flutter build web --release --base-href /salesman-tracker/
+          cp ../admin.html build/web/admin.html
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -58,4 +63,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
