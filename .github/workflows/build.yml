@@ -18,6 +18,7 @@ jobs:
           base64 -d appcode.b64 > app.zip
           rm -rf app
           unzip -o app.zip
+          cp patch_login_screen.dart app/lib/screens/login_screen.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
