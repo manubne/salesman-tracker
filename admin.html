@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salesman Tracker — Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root { --blue:#1F4E79; --bg:#f4f6f9; --card:#fff; --border:#e3e8ee; --text:#1a2433; --muted:#6b7a8d;
+          --green:#1a7f37; --orange:#b35900; --red:#c0392b; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:-apple-system,'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); }
+  header { background:var(--blue); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:16px; }
+  header h1 { font-size:17px; font-weight:600; flex:1; }
+  nav button { background:transparent; border:none; color:#cdd9e5; padding:8px 12px; cursor:pointer; font-size:14px; border-radius:6px; }
+  nav button.active, nav button:hover { background:rgba(255,255,255,.15); color:#fff; }
+  #logoutBtn { background:rgba(255,255,255,.15); border:none; color:#fff; padding:7px 14px; border-radius:6px; cursor:pointer; }
+  main { padding:20px; max-width:1300px; margin:0 auto; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .card .num { font-size:28px; font-weight:700; }
+  .card .lbl { font-size:12px; color:var(--muted); margin-top:4px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px; }
+  .panel h2 { font-size:15px; margin-bottom:12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:var(--muted); font-weight:600; padding:8px; border-bottom:2px solid var(--border); }
+  td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:hover td { background:#f8fafc; }
+  .chip { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+  .chip.planned { background:#fff3e0; color:var(--orange); }
+  .chip.verified { background:#e3f2fd; color:#1565c0; }
+  .chip.completed { background:#e8f5e9; color:var(--green); }
+  .chip.missed, .chip.unverified { background:#fdecea; color:var(--red); }
+  .flag { display:inline-block; background:#fdecea; color:var(--red); border-radius:4px; padding:1px 6px; font-size:11px; margin-right:4px; }
+  .toolbar { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  .toolbar input, .toolbar select { padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; }
+  .btn { background:var(--blue); color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; }
+  .btn.sec { background:#eef2f6; color:var(--text); }
+  #map { height:480px; border-radius:10px; }
+  .view { display:none; }
+  .view.active { display:block; }
+  /* login */
+  #loginView { display:flex; min-height:100vh; align-items:center; justify-content:center; }
+  #loginBox { background:#fff; border:1px solid var(--border); border-radius:12px; padding:36px; width:360px; }
+  #loginBox h1 { color:var(--blue); font-size:20px; margin-bottom:6px; }
+  #loginBox p { color:var(--muted); font-size:13px; margin-bottom:20px; }
+  #loginBox input { width:100%; padding:10px; margin-bottom:12px; border:1px solid var(--border); border-radius:6px; font-size:14px; }
+  #loginBox button { width:100%; padding:11px; }
+  .err { color:var(--red); font-size:13px; margin-top:8px; }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div id="loginBox">
+    <h1>Salesman Tracker</h1>
+    <p>Admin dashboard — sign in</p>
+    <div id="emailLogin">
+      <input id="email" type="email" placeholder="Email" autocomplete="username">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+      <button class="btn" onclick="login()">Sign in</button>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('wa');return false" style="color:var(--blue);font-size:13px">Sign in with WhatsApp instead</a></p>
+    </div>
+    <div id="waLogin" style="display:none">
+      <input id="waMobile" type="tel" placeholder="Mobile number (10 digits)" maxlength="10">
+      <div id="waCodeWrap" style="display:none">
+        <input id="waCode" type="text" placeholder="Enter OTP" inputmode="numeric">
+      </div>
+      <button class="btn" id="waBtn" onclick="waAuth()">Send OTP</button>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('email');return false" style="color:var(--blue);font-size:13px">Sign in with email instead</a></p>
+    </div>
+    <div id="loginErr" class="err"></div>
+  </div>
+</div>
+
+<div id="appView" style="display:none">
+  <header>
+    <h1>Salesman Tracker — Admin</h1>
+    <nav>
+      <button data-v="overview" class="active" onclick="show('overview')">Overview</button>
+      <button data-v="visits" onclick="show('visits')">Visits</button>
+      <button data-v="mapv" onclick="show('mapv')">Map</button>
+      <button data-v="customers" onclick="show('customers')">Customers</button>
+      <button data-v="reqs" onclick="show('reqs')">Requirements</button>
+      <button data-v="attendance" onclick="show('attendance')">Attendance</button>
+      <button data-v="team" onclick="show('team')">Team</button>
+    </nav>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+  </header>
+  <main>
+    <div id="overview" class="view active">
+      <div class="cards" id="statCards"></div>
+      <div class="panel"><h2>Flagged visits (last 7 days)</h2><div id="flagged"></div></div>
+      <div class="panel"><h2>Today by sales person</h2><div id="todayByUser"></div></div>
+    </div>
+
+    <div id="visits" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <input type="date" id="vFrom"> <input type="date" id="vTo">
+          <select id="vStatus"><option value="">All statuses</option><option>planned</option><option>verified</option><option>completed</option><option>missed</option><option>unverified</option></select>
+          <button class="btn" onclick="loadVisits()">Filter</button>
+          <button class="btn sec" onclick="exportCsv('visits')">Export CSV</button>
+        </div>
+        <div id="visitsTbl"></div>
+      </div>
+    </div>
+
+    <div id="mapv" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <input type="date" id="mFrom"> <input type="date" id="mTo">
+          <button class="btn" onclick="loadMap()">Show</button>
+          <span class="muted">Blue = verified visit · Red = flagged</span>
+        </div>
+        <div id="map"></div>
+      </div>
+    </div>
+
+    <div id="customers" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <input id="cSearch" placeholder="Search…" oninput="renderCustomers()">
+          <button class="btn sec" onclick="exportCsv('customers')">Export CSV</button>
+        </div>
+        <div id="custTbl"></div>
+      </div>
+    </div>
+
+    <div id="reqs" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <select id="rStatus" onchange="renderReqs()"><option value="">All</option><option>new</option><option>quoted</option><option>won</option><option>lost</option></select>
+          <button class="btn sec" onclick="exportCsv('requirements')">Export CSV</button>
+        </div>
+        <div id="reqTbl"></div>
+      </div>
+    </div>
+
+    <div id="attendance" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <input type="date" id="aFrom"> <input type="date" id="aTo">
+          <button class="btn" onclick="loadAttendance()">Filter</button>
+          <button class="btn sec" onclick="exportCsv('attendance')">Export CSV</button>
+        </div>
+        <div id="attTbl"></div>
+      </div>
+    </div>
+
+    <div id="team" class="view">
+      <div class="panel"><h2>Sales team</h2><div id="teamTbl"></div>
+      <p class="muted" style="margin-top:10px">Add users: they log in once via the mobile app, then appear here. Set name/territory/role in Supabase → Table Editor → users.</p></div>
+    </div>
+  </main>
+</div>
+<script>
+const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [] };
+let map, markers = [];
+
+// ---------- auth ----------
+async function login() {
+  const { error } = await db.auth.signInWithPassword({
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+  });
+  if (error) { document.getElementById('loginErr').textContent = error.message; return; }
+  init();
+}
+async function logout() { await db.auth.signOut(); location.reload(); }
+
+function toggleLogin(mode) {
+  document.getElementById('emailLogin').style.display = mode === 'email' ? 'block' : 'none';
+  document.getElementById('waLogin').style.display = mode === 'wa' ? 'block' : 'none';
+  document.getElementById('loginErr').textContent = '';
+}
+
+let _waSent = false;
+async function waAuth() {
+  const err = document.getElementById('loginErr'); err.textContent = '';
+  const phone = '+91' + document.getElementById('waMobile').value.trim();
+  const btn = document.getElementById('waBtn');
+  if (!_waSent) {
+    btn.disabled = true; btn.textContent = 'Sending…';
+    const { error } = await db.auth.signInWithOtp({ phone });
+    btn.disabled = false;
+    if (error) { err.textContent = error.message; btn.textContent = 'Send OTP'; return; }
+    _waSent = true;
+    document.getElementById('waCodeWrap').style.display = 'block';
+    btn.textContent = 'Verify & sign in';
+  } else {
+    btn.disabled = true; btn.textContent = 'Verifying…';
+    const { error } = await db.auth.verifyOtp({ phone, token: document.getElementById('waCode').value.trim(), type: 'sms' });
+    btn.disabled = false; btn.textContent = 'Verify & sign in';
+    if (error) { err.textContent = 'Incorrect or expired code'; return; }
+    init();
+  }
+}
+
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) return;
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  const today = new Date().toISOString().slice(0,10);
+  const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
+  for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
+  await Promise.all([loadUsers(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance()]);
+}
+
+function show(v) {
+  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+  document.getElementById(v).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  if (v === 'mapv') setTimeout(() => { if (!map) initMap(); map.invalidateSize(); loadMap(); }, 50);
+}
+
+const uname = id => (cache.users.find(u => u.id === id)?.name) || (cache.users.find(u => u.id === id)?.mobile) || '—';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDT = s => s ? new Date(s).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+
+// ---------- data ----------
+async function loadUsers() {
+  const { data } = await db.from('users').select('*').order('name');
+  cache.users = data || [];
+  document.getElementById('teamTbl').innerHTML = tbl(
+    ['Name','Mobile','Role','Territory','Active'],
+    cache.users.map(u => [esc(u.name)||'<span class="muted">(no name)</span>', esc(u.mobile), u.role, esc(u.territory)||'—', u.active?'✔':'✖']));
+}
+
+async function loadOverview() {
+  const start = new Date(); start.setHours(0,0,0,0);
+  const { data: tv } = await db.from('visits').select('id,status,user_id')
+    .gte('scheduled_at', start.toISOString());
+  const { data: att } = await db.from('attendance').select('user_id,day_start_at')
+    .eq('date', new Date().toISOString().slice(0,10)).not('day_start_at','is',null);
+  const { data: reqs } = await db.from('requirements').select('id').gte('created_at', start.toISOString());
+  const v = tv || [];
+  const stat = (n,l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+  document.getElementById('statCards').innerHTML =
+    stat((att||[]).length, 'On duty today') +
+    stat(v.length, 'Visits planned') +
+    stat(v.filter(x=>x.status==='verified'||x.status==='completed').length, 'Verified') +
+    stat(v.filter(x=>x.status==='completed').length, 'Completed') +
+    stat(v.filter(x=>x.status==='missed').length, 'Missed') +
+    stat((reqs||[]).length, 'New requirements');
+
+  const { data: fl } = await db.from('visits')
+    .select('*, customers(name,company)')
+    .neq('flags','{}').gte('scheduled_at', new Date(Date.now()-7*864e5).toISOString())
+    .order('scheduled_at',{ascending:false}).limit(20);
+  document.getElementById('flagged').innerHTML = (fl||[]).length ? tbl(
+    ['When','Sales person','Customer','Status','Flags','Distance'],
+    fl.map(x => [fmtDT(x.verified_at||x.scheduled_at), esc(uname(x.user_id)), esc(x.customers?.name),
+      chip(x.status), (x.flags||[]).map(f=>`<span class="flag">${f}</span>`).join(''),
+      x.distance_from_pin_m ? Math.round(x.distance_from_pin_m)+' m' : '—'])) :
+    '<p class="muted">No flagged visits. Good sign.</p>';
+
+  const byUser = {};
+  v.forEach(x => { byUser[x.user_id] = byUser[x.user_id] || {p:0,ver:0,c:0};
+    byUser[x.user_id].p++;
+    if (x.status==='verified'||x.status==='completed') byUser[x.user_id].ver++;
+    if (x.status==='completed') byUser[x.user_id].c++; });
+  document.getElementById('todayByUser').innerHTML = Object.keys(byUser).length ? tbl(
+    ['Sales person','Planned','Verified','Completed'],
+    Object.entries(byUser).map(([id,s]) => [esc(uname(id)), s.p, s.ver, s.c])) :
+    '<p class="muted">No visits planned today.</p>';
+}
+
+async function loadVisits() {
+  let q = db.from('visits').select('*, customers(name,company,mobile)')
+    .gte('scheduled_at', document.getElementById('vFrom').value + 'T00:00:00')
+    .lte('scheduled_at', document.getElementById('vTo').value + 'T23:59:59')
+    .order('scheduled_at', {ascending:false}).limit(500);
+  const st = document.getElementById('vStatus').value;
+  if (st) q = q.eq('status', st);
+  const { data } = await q;
+  cache.visits = data || [];
+  document.getElementById('visitsTbl').innerHTML = tbl(
+    ['Scheduled','Sales person','Customer','Purpose','Status','Verified at','Dist.','Flags','Notes'],
+    cache.visits.map(x => [fmtDT(x.scheduled_at), esc(uname(x.user_id)),
+      esc(x.customers?.name) + (x.customers?.company ? ' <span class="muted">('+esc(x.customers.company)+')</span>' : ''),
+      x.purpose, chip(x.status), fmtDT(x.verified_at),
+      x.distance_from_pin_m!=null ? Math.round(x.distance_from_pin_m)+' m' : '—',
+      (x.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || '—', esc(x.notes)||'—']));
+}
+
+async function loadCustomers() {
+  const { data } = await db.from('customers').select('*').order('name').limit(1000);
+  cache.customers = data || [];
+  renderCustomers();
+}
+function renderCustomers() {
+  const s = (document.getElementById('cSearch').value || '').toLowerCase();
+  const rows = cache.customers.filter(c => !s || (c.name+' '+(c.company||'')+' '+c.mobile).toLowerCase().includes(s));
+  document.getElementById('custTbl').innerHTML = tbl(
+    ['Name','Company','Type','Mobile','Verified','Territory','Owner','Location pin'],
+    rows.map(c => [esc(c.name), esc(c.company)||'—', c.type, esc(c.mobile),
+      c.mobile_verified_at ? '✔' : '<span class="flag">no</span>', esc(c.territory)||'—', esc(uname(c.owner_user_id)),
+      c.lat ? `<a href="https://www.openstreetmap.org/?mlat=${c.lat}&mlon=${c.lng}#map=17/${c.lat}/${c.lng}" target="_blank">view</a>` : '—']));
+}
+
+async function loadReqs() {
+  const { data } = await db.from('requirements').select('*, customers(name,company)').order('created_at',{ascending:false}).limit(500);
+  cache.requirements = data || [];
+  renderReqs();
+}
+function renderReqs() {
+  const st = document.getElementById('rStatus').value;
+  const rows = cache.requirements.filter(r => !st || r.status === st);
+  document.getElementById('reqTbl').innerHTML = tbl(
+    ['Created','Customer','Product','Qty','Expected ₹','Status','Follow-up','By'],
+    rows.map(r => [fmtDT(r.created_at), esc(r.customers?.name), esc(r.product), esc(r.quantity)||'—',
+      r.expected_value ? Number(r.expected_value).toLocaleString('en-IN') : '—',
+      chip(r.status), r.follow_up_date||'—', esc(uname(r.created_by))]));
+}
+
+async function loadAttendance() {
+  const { data } = await db.from('attendance').select('*')
+    .gte('date', document.getElementById('aFrom').value)
+    .lte('date', document.getElementById('aTo').value)
+    .order('date',{ascending:false}).limit(500);
+  cache.attendance = data || [];
+  document.getElementById('attTbl').innerHTML = tbl(
+    ['Date','Sales person','Day start','Day end','Hours'],
+    cache.attendance.map(a => {
+      const h = a.day_start_at && a.day_end_at ? ((new Date(a.day_end_at)-new Date(a.day_start_at))/36e5).toFixed(1) : '—';
+      return [a.date, esc(uname(a.user_id)), fmtDT(a.day_start_at), fmtDT(a.day_end_at), h];
+    }));
+}
+
+// ---------- map ----------
+function initMap() {
+  map = L.map('map').setView([22.97, 78.65], 5);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+}
+async function loadMap() {
+  const { data } = await db.from('visits').select('*, customers(name,company)')
+    .in('status',['verified','completed'])
+    .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00')
+    .lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
+    .not('verified_lat','is',null).limit(1000);
+  markers.forEach(m => map.removeLayer(m)); markers = [];
+  const pts = [];
+  (data||[]).forEach(v => {
+    const flagged = (v.flags||[]).length > 0;
+    const m = L.circleMarker([v.verified_lat, v.verified_lng], {
+      radius: 8, color: flagged ? '#c0392b' : '#1565c0', fillOpacity: .7 })
+      .bindPopup(`<b>${esc(v.customers?.name)}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.verified_at)}<br>` +
+        ((v.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || 'clean'))
+      .addTo(map);
+    markers.push(m); pts.push([v.verified_lat, v.verified_lng]);
+  });
+  if (pts.length) map.fitBounds(pts, { padding: [30,30] });
+}
+
+// ---------- helpers ----------
+function chip(s) { return `<span class="chip ${s}">${s}</span>`; }
+function tbl(headers, rows) {
+  if (!rows.length) return '<p class="muted">No data.</p>';
+  return '<div style="overflow-x:auto"><table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') +
+    '</tr></thead><tbody>' + rows.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('') +
+    '</tbody></table></div>';
+}
+function exportCsv(kind) {
+  const flat = {
+    visits: v => ({ scheduled: v.scheduled_at, sales_person: uname(v.user_id), customer: v.customers?.name,
+      company: v.customers?.company, purpose: v.purpose, status: v.status, verified_at: v.verified_at,
+      lat: v.verified_lat, lng: v.verified_lng, distance_m: v.distance_from_pin_m, flags: (v.flags||[]).join('|'), notes: v.notes }),
+    customers: c => ({ name: c.name, company: c.company, type: c.type, mobile: c.mobile,
+      verified: !!c.mobile_verified_at, territory: c.territory, owner: uname(c.owner_user_id), lat: c.lat, lng: c.lng }),
+    requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity,
+      expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
+    attendance: a => ({ date: a.date, sales_person: uname(a.user_id), day_start: a.day_start_at, day_end: a.day_end_at }),
+  }[kind];
+  const rows = cache[kind].map(flat);
+  if (!rows.length) return alert('No data to export');
+  const keys = Object.keys(rows[0]);
+  const csv = [keys.join(','), ...rows.map(r => keys.map(k => `"${String(r[k] ?? '').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `${kind}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+init(); // auto-login if session exists
+</script>
+</body>
+</html>
