@@ -20,6 +20,9 @@ jobs:
           unzip -o app.zip
           cp patch_login_screen.dart app/lib/screens/login_screen.dart
           cp patch_customer_form_screen.dart app/lib/screens/customer_form_screen.dart
+          cp patch_api.dart app/lib/services/api.dart
+          cp patch_orders_screen.dart app/lib/screens/orders_screen.dart
+          cp patch_home_screen.dart app/lib/screens/home_screen.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
