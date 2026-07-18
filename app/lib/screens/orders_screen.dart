@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -31,12 +30,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Color _stageColor(String s) => switch (s) {
-        'need_quote' => Colors.orange,
-        'quoted' => Colors.blue,
-        'won' => Colors.green,
-        'lost' => Colors.red,
-        _ => Colors.grey,
-      };
+    'need_quote' => Colors.orange,
+    'quoted' => Colors.blue,
+    'won' => Colors.green,
+    'lost' => Colors.red,
+    _ => Colors.grey,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -47,38 +46,50 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _orders.isEmpty
-                ? ListView(children: const [
-                    Padding(
-                        padding: EdgeInsets.all(48),
-                        child: Center(child: Text('No orders yet.\nTap + to create one.')))
-                  ])
-                : ListView(
-                    padding: const EdgeInsets.all(12),
-                    children: _orders.map((o) {
-                      final c = o['customers'] ?? {};
-                      final cat = o['order_categories']?['name'] ?? '—';
-                      final stage = o['stage'] as String;
-                      return Card(
-                        child: ListTile(
-                          title: Text(
-                              '${c['name'] ?? ''} ${c['company'] != null ? '— ${c['company']}' : ''}'),
-                          subtitle: Text(
-                              '$cat · ${o['sqft'] != null ? '${o['sqft']} sq ft · ' : ''}visit: ${o['visit_status']}'),
-                          trailing: Chip(
-                            label: Text(stage.replaceAll('_', ' ')),
-                            backgroundColor: _stageColor(stage).withOpacity(.15),
-                            labelStyle: TextStyle(color: _stageColor(stage), fontSize: 12),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+            ? ListView(
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.all(48),
+                    child: Center(
+                      child: Text('No orders yet.\nTap + to create one.'),
+                    ),
                   ),
+                ],
+              )
+            : ListView(
+                padding: const EdgeInsets.all(12),
+                children: _orders.map((o) {
+                  final c = o['customers'] ?? {};
+                  final cat = o['order_categories']?['name'] ?? '—';
+                  final stage = o['stage'] as String;
+                  return Card(
+                    child: ListTile(
+                      title: Text(
+                        '${c['name'] ?? ''} ${c['company'] != null ? '— ${c['company']}' : ''}',
+                      ),
+                      subtitle: Text(
+                        '$cat · ${o['sqft'] != null ? '${o['sqft']} sq ft · ' : ''}visit: ${o['visit_status']}',
+                      ),
+                      trailing: Chip(
+                        label: Text(stage.replaceAll('_', ' ')),
+                        backgroundColor: _stageColor(stage).withOpacity(.15),
+                        labelStyle: TextStyle(
+                          color: _stageColor(stage),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () async {
-          await Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const OrderFormScreen()));
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const OrderFormScreen()),
+          );
           _load();
         },
       ),
@@ -128,7 +139,9 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
       final row = await Api.createOrder(
         customerId: _customerId!,
         categoryId: _categoryId,
-        sqft: _sqft.text.trim().isEmpty ? null : double.tryParse(_sqft.text.trim()),
+        sqft: _sqft.text.trim().isEmpty
+            ? null
+            : double.tryParse(_sqft.text.trim()),
         notes: _notes.text.trim(),
       );
       setState(() => _orderId = row['id']);
@@ -142,12 +155,13 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
 
   Future<void> _upload(String kind) async {
     final img = await ImagePicker().pickImage(
-        source: kind == 'floor_plan' ? ImageSource.gallery : ImageSource.camera,
-        imageQuality: 70);
+      source: kind == 'floor_plan' ? ImageSource.gallery : ImageSource.camera,
+      imageQuality: 70,
+    );
     if (img == null) return;
     setState(() => _busy = true);
     try {
-      await Api.uploadOrderFile(_orderId!, await File(img.path).readAsBytes(), kind);
+      await Api.uploadOrderFile(_orderId!, await img.readAsBytes(), kind);
       setState(() {
         if (kind == 'floor_plan') {
           _hasFloorPlan = true;
@@ -196,39 +210,68 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
           children: [
             DropdownButtonFormField<String>(
               value: _categoryId,
-              decoration: const InputDecoration(labelText: 'Order type', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Order type',
+                border: OutlineInputBorder(),
+              ),
               items: _cats
-                  .map((c) => DropdownMenuItem(value: c['id'] as String, child: Text(c['name'])))
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c['id'] as String,
+                      child: Text(c['name']),
+                    ),
+                  )
                   .toList(),
-              onChanged: created ? null : (v) => setState(() => _categoryId = v),
+              onChanged: created
+                  ? null
+                  : (v) => setState(() => _categoryId = v),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _customerId,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Customer *', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Customer *',
+                border: OutlineInputBorder(),
+              ),
               items: _customers
-                  .map((c) => DropdownMenuItem(
-                        value: c['id'] as String,
-                        child: Text('${c['name']} ${c['company'] != null ? '(${c['company']})' : ''}'),
-                      ))
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c['id'] as String,
+                      child: Text(
+                        '${c['name']} ${c['company'] != null ? '(${c['company']})' : ''}',
+                      ),
+                    ),
+                  )
                   .toList(),
-              onChanged: created ? null : (v) => setState(() => _customerId = v),
+              onChanged: created
+                  ? null
+                  : (v) => setState(() => _customerId = v),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _sqft,
               enabled: !created,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
-              decoration: const InputDecoration(labelText: 'Premises area (sq ft)', border: OutlineInputBorder()),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Premises area (sq ft)',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
               enabled: !created,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Notes', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Notes',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
             if (!created)
@@ -238,38 +281,67 @@ class _OrderFormScreenState extends State<OrderFormScreen> {
               ),
             if (created) ...[
               const Divider(height: 32),
-              Text('Attachments', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Attachments',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Row(children: [
-                Expanded(
+              Row(
+                children: [
+                  Expanded(
                     child: OutlinedButton.icon(
-                  onPressed: _busy ? null : () => _upload('floor_plan'),
-                  icon: const Icon(Icons.description),
-                  label: Text(_hasFloorPlan ? 'Floor plan ✔' : 'Floor plan'),
-                )),
-                const SizedBox(width: 12),
-                Expanded(
+                      onPressed: _busy ? null : () => _upload('floor_plan'),
+                      icon: const Icon(Icons.description),
+                      label: Text(
+                        _hasFloorPlan ? 'Floor plan ✔' : 'Floor plan',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: OutlinedButton.icon(
-                  onPressed: _busy ? null : () => _upload('photo'),
-                  icon: const Icon(Icons.photo_camera),
-                  label: Text(_photoCount > 0 ? 'Photos ($_photoCount)' : 'Add photo'),
-                )),
-              ]),
+                      onPressed: _busy ? null : () => _upload('photo'),
+                      icon: const Icon(Icons.photo_camera),
+                      label: Text(
+                        _photoCount > 0 ? 'Photos ($_photoCount)' : 'Add photo',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const Divider(height: 32),
-              Text('Site visit', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Site visit',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(value: 'done', label: Text('Visit done'), icon: Icon(Icons.check)),
-                  ButtonSegment(value: 'not_required', label: Text('Not required')),
+                  ButtonSegment(
+                    value: 'done',
+                    label: Text('Visit done'),
+                    icon: Icon(Icons.check),
+                  ),
+                  ButtonSegment(
+                    value: 'not_required',
+                    label: Text('Not required'),
+                  ),
                 ],
-                selected: _visitStatus == 'pending' ? <String>{} : {_visitStatus},
+                selected: _visitStatus == 'pending'
+                    ? <String>{}
+                    : {_visitStatus},
                 emptySelectionAllowed: true,
-                onSelectionChanged: _busy ? null : (s) { if (s.isNotEmpty) _setVisit(s.first); },
+                onSelectionChanged: _busy
+                    ? null
+                    : (s) {
+                        if (s.isNotEmpty) _setVisit(s.first);
+                      },
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: (_busy || _visitStatus == 'pending') ? null : _needQuote,
+                onPressed: (_busy || _visitStatus == 'pending')
+                    ? null
+                    : _needQuote,
                 icon: const Icon(Icons.request_quote),
                 label: const Text('Push to Need Quote'),
               ),

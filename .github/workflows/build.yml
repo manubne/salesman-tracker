@@ -1,29 +1,46 @@
-name: Build APK
+name: Build and deploy
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
+
 jobs:
-  build:
+  backend-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack app from base64
-        run: |
-          base64 -d appcode.b64 > app.zip
-          rm -rf app
-          unzip -o app.zip
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Supabase Edge Functions
+        run: deno check supabase/functions/*/index.ts
+      - name: Check admin dashboard JavaScript
+        run: sed -n '/^<script>$/,/^<\/script>$/p' admin/index.html | sed '1d;$d' | node --check -
+
+  build:
+    needs: backend-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
       - name: Create platform folders
         working-directory: app
-        run: flutter create --platforms=android,web .
-      - name: Add Android permissions
+        run: |
+          flutter create --platforms=android,ios,web .
+          rm -rf test
+      - name: Configure mobile permissions
         working-directory: app
         run: |
           M=android/app/src/main/AndroidManifest.xml
@@ -31,31 +48,131 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
-          echo "--- manifest ---"; head -12 $M
+          P=ios/Runner/Info.plist
+          sed -i '/<\/dict>/i\	<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>Location is captured for attendance and visit verification.</string>\n\t<key>NSCameraUsageDescription</key>\n\t<string>Photos are taken at customer sites as visit proof.</string>\n\t<key>NSPhotoLibraryUsageDescription</key>\n\t<string>Floor plans can be selected for an order.</string>' $P
       - name: Get packages
         working-directory: app
         run: flutter pub get
+      - name: Analyze source
+        working-directory: app
+        run: flutter analyze --no-fatal-infos
       - name: Build release APK
         working-directory: app
         run: flutter build apk --release
+      - name: Build web (app + admin dashboard)
+        working-directory: app
+        run: |
+          flutter build web --release --base-href /salesman-tracker/
+          cp ../admin/index.html build/web/admin.html
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web
+      - name: Upload APK artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  supabase-deploy:
+    if: github.event_name != 'pull_request'
+    needs: backend-check
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate deployment target and credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID; do
+            if [ -z "${!name:-}" ]; then
+              echo "Required GitHub secret $name is missing"
+              exit 1
+            fi
+          done
+          if [ "$SUPABASE_PROJECT_ID" != "hyrqqjeplichtfpcfxnb" ]; then
+            echo "Refusing to deploy to an unexpected Supabase project"
+            exit 1
+          fi
+      - name: Validate required Edge Function secrets
+        run: |
+          supabase secrets list --project-ref "$SUPABASE_PROJECT_ID" --output json > /tmp/secrets.json
+          node <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('/tmp/secrets.json', 'utf8'));
+          const names = new Set();
+          function collect(value) {
+            if (Array.isArray(value)) return value.forEach(collect);
+            if (!value || typeof value !== 'object') return;
+            if (typeof value.name === 'string') names.add(value.name);
+            for (const [key, child] of Object.entries(value)) {
+              if (/^[A-Z][A-Z0-9_]+$/.test(key)) names.add(key);
+              collect(child);
+            }
+          }
+          collect(data);
+          const required = [
+            'MSG91_AUTHKEY',
+            'MSG91_WA_NUMBER',
+            'MSG91_WA_TEMPLATE',
+            'SEND_SMS_HOOK_SECRET',
+          ];
+          const missing = required.filter((name) => !names.has(name));
+          if (missing.length) {
+            console.error(`Missing Supabase Edge Function secrets: ${missing.join(', ')}`);
+            process.exit(1);
+          }
+          NODE
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Reconcile existing migration history
+        run: supabase migration repair --status applied 202607050001 202607050002
+      - name: Preview database migration
+        run: supabase db push --dry-run
+      - name: Apply database migration
+        run: supabase db push
+      - name: Deploy Edge Functions
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Verify remote deployment inventory
+        run: |
+          supabase migration list
+          supabase functions list --project-ref "$SUPABASE_PROJECT_ID"
+
+  release-apk:
+    if: github.event_name != 'pull_request'
+    needs: [build, supabase-deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: release
       - name: Publish APK to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Latest APK
-          files: app/build/app/outputs/flutter-apk/app-release.apk
-      - name: Build web (app + admin dashboard)
-        working-directory: app
-        run: |
-          flutter build web --release --base-href /salesman-tracker/
-          cp ../admin.html build/web/admin.html
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: app/build/web
+          files: release/app-release.apk
+
   deploy:
-    needs: build
+    if: github.event_name != 'pull_request'
+    needs: [build, supabase-deploy]
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

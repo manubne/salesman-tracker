@@ -1,0 +1,25 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+
+# Generated platform files are created by Flutter in CI for this repository.
+app/android/
+app/ios/
+app/web/
+app/linux/
+app/macos/
+app/windows/
+
+# Local tooling
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
