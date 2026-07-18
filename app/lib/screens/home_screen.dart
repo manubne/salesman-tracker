@@ -24,20 +24,37 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [TodayScreen(), OrdersScreen(), CustomersScreen(), ProfileScreen()],
+        children: const [
+          TodayScreen(),
+          OrdersScreen(),
+          CustomersScreen(),
+          ProfileScreen(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
-              icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: 'Today'),
+            icon: Icon(Icons.today_outlined),
+            selectedIcon: Icon(Icons.today),
+            label: 'Today',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Customers'),
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: 'Customers',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -67,7 +84,10 @@ class _TodayScreenState extends State<TodayScreen> {
     try {
       final visits = await Api.todayVisits();
       final att = await Api.todayAttendance();
-      setState(() { _visits = visits; _attendance = att; });
+      setState(() {
+        _visits = visits;
+        _attendance = att;
+      });
     } finally {
       setState(() => _loading = false);
     }
@@ -77,7 +97,9 @@ class _TodayScreenState extends State<TodayScreen> {
     final started = _attendance?['day_start_at'] != null;
     final ended = _attendance?['day_end_at'] != null;
     if (started && ended) return;
-    _snack(started ? 'Ending day — getting GPS…' : 'Starting day — getting GPS…');
+    _snack(
+      started ? 'Ending day — getting GPS…' : 'Starting day — getting GPS…',
+    );
     try {
       final fix = await LocationService.getFix();
       if (started) {
@@ -95,11 +117,11 @@ class _TodayScreenState extends State<TodayScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   Color _statusColor(String s) => switch (s) {
-        'verified' => Colors.blue,
-        'completed' => Colors.green,
-        'missed' => Colors.red,
-        _ => Colors.orange,
-      };
+    'verified' => Colors.blue,
+    'completed' => Colors.green,
+    'missed' => Colors.red,
+    _ => Colors.orange,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -117,12 +139,18 @@ class _TodayScreenState extends State<TodayScreen> {
                   Card(
                     child: ListTile(
                       leading: Icon(
-                        ended ? Icons.check_circle : (started ? Icons.timer : Icons.play_circle),
-                        color: ended ? Colors.green : (started ? Colors.blue : Colors.grey),
+                        ended
+                            ? Icons.check_circle
+                            : (started ? Icons.timer : Icons.play_circle),
+                        color: ended
+                            ? Colors.green
+                            : (started ? Colors.blue : Colors.grey),
                       ),
-                      title: Text(ended
-                          ? 'Day completed'
-                          : (started ? 'On duty' : 'Day not started')),
+                      title: Text(
+                        ended
+                            ? 'Day completed'
+                            : (started ? 'On duty' : 'Day not started'),
+                      ),
                       trailing: (started && ended)
                           ? null
                           : FilledButton(
@@ -135,42 +163,64 @@ class _TodayScreenState extends State<TodayScreen> {
                   if (_visits.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(48),
-                      child: Center(child: Text('No visits planned for today.\nTap “Plan visit” to create one.')),
+                      child: Center(
+                        child: Text(
+                          'No visits planned for today.\nTap “Plan visit” to create one.',
+                        ),
+                      ),
                     ),
                   ..._visits.map((v) {
                     final c = v['customers'] ?? {};
-                    final time = DateFormat('h:mm a')
-                        .format(DateTime.parse(v['scheduled_at']).toLocal());
+                    final time = DateFormat(
+                      'h:mm a',
+                    ).format(DateTime.parse(v['scheduled_at']).toLocal());
                     final status = v['status'] as String;
                     return Card(
                       child: ListTile(
-                        title: Text('${c['name'] ?? ''} ${c['company'] != null ? '— ${c['company']}' : ''}'),
+                        title: Text(
+                          '${c['name'] ?? ''} ${c['company'] != null ? '— ${c['company']}' : ''}',
+                        ),
                         subtitle: Text('$time · ${v['purpose']}'),
                         leading: CircleAvatar(
-                          backgroundColor: _statusColor(status).withOpacity(.15),
-                          child: Icon(Icons.location_on, color: _statusColor(status)),
+                          backgroundColor: _statusColor(
+                            status,
+                          ).withOpacity(.15),
+                          child: Icon(
+                            Icons.location_on,
+                            color: _statusColor(status),
+                          ),
                         ),
                         trailing: switch (status) {
                           'planned' => FilledButton(
-                              child: const Text('Verify'),
-                              onPressed: () async {
-                                await Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => VisitVerifyScreen(visit: v)));
-                                _refresh();
-                              },
-                            ),
+                            child: const Text('Verify'),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => VisitVerifyScreen(visit: v),
+                                ),
+                              );
+                              _refresh();
+                            },
+                          ),
                           'verified' => OutlinedButton(
-                              child: const Text('Report'),
-                              onPressed: () async {
-                                await Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => VisitReportScreen(visit: v)));
-                                _refresh();
-                              },
-                            ),
+                            child: const Text('Report'),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => VisitReportScreen(visit: v),
+                                ),
+                              );
+                              _refresh();
+                            },
+                          ),
                           _ => Chip(
-                              label: Text(status),
-                              backgroundColor: _statusColor(status).withOpacity(.15),
-                            ),
+                            label: Text(status),
+                            backgroundColor: _statusColor(
+                              status,
+                            ).withOpacity(.15),
+                          ),
                         },
                       ),
                     );
@@ -182,8 +232,10 @@ class _TodayScreenState extends State<TodayScreen> {
         icon: const Icon(Icons.add_location_alt),
         label: const Text('Plan visit'),
         onPressed: () async {
-          await Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const VisitFormScreen()));
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const VisitFormScreen()),
+          );
           _refresh();
         },
       ),
@@ -210,8 +262,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _load() async {
     try {
       final id = Supabase.instance.client.auth.currentUser!.id;
-      final rows = await Supabase.instance.client.from('users').select().eq('id', id);
-      if (mounted && rows.isNotEmpty) setState(() => _me = Map<String, dynamic>.from(rows.first));
+      final rows = await Supabase.instance.client
+          .from('users')
+          .select()
+          .eq('id', id);
+      if (mounted && rows.isNotEmpty)
+        setState(() => _me = Map<String, dynamic>.from(rows.first));
     } catch (_) {}
   }
 
@@ -222,8 +278,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Log out?'),
         content: const Text('You will need your mobile OTP to sign back in.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Log out')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Log out'),
+          ),
         ],
       ),
     );
@@ -236,7 +298,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = (_me?['name'] as String?)?.trim();
     final role = (_me?['role'] as String?) ?? 'sales';
     final territory = _me?['territory'] as String?;
-    final initial = (name != null && name.isNotEmpty) ? name[0].toUpperCase() : '?';
+    final initial = (name != null && name.isNotEmpty)
+        ? name[0].toUpperCase()
+        : '?';
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
@@ -246,14 +310,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: CircleAvatar(
               radius: 42,
               backgroundColor: const Color(0xFF1F4E79),
-              child: Text(initial, style: const TextStyle(fontSize: 34, color: Colors.white)),
+              child: Text(
+                initial,
+                style: const TextStyle(fontSize: 34, color: Colors.white),
+              ),
             ),
           ),
           const SizedBox(height: 12),
           Center(
-              child: Text(name?.isNotEmpty == true ? name! : 'Sales person',
-                  style: Theme.of(context).textTheme.titleLarge)),
-          Center(child: Text('+$phone', style: Theme.of(context).textTheme.bodyMedium)),
+            child: Text(
+              name?.isNotEmpty == true ? name! : 'Sales person',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          Center(
+            child: Text(
+              '+$phone',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
           const SizedBox(height: 8),
           Center(child: Chip(label: Text(role.toUpperCase()))),
           const Divider(height: 32),

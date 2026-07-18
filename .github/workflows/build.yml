@@ -2,28 +2,44 @@ name: Build APK
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: salesman-tracker-production
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pages: write
   id-token: write
+
 jobs:
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Supabase Edge Functions
+        run: deno check supabase/functions/*/index.ts
+      - name: Check admin dashboard JavaScript
+        run: sed -n '/^<script>$/,/^<\/script>$/p' admin/index.html | sed '1d;$d' | node --check -
+
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack app from base64
-        run: |
-          base64 -d appcode.b64 > app.zip
-          rm -rf app
-          unzip -o app.zip
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
       - name: Create platform folders
         working-directory: app
-        run: flutter create --platforms=android,web .
-      - name: Add Android permissions
+        run: flutter create --platforms=android,ios,web .
+      - name: Configure mobile permissions
         working-directory: app
         run: |
           M=android/app/src/main/AndroidManifest.xml
@@ -31,14 +47,19 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
-          echo "--- manifest ---"; head -12 $M
+          P=ios/Runner/Info.plist
+          sed -i '/<\/dict>/i\	<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>Location is captured for attendance and visit verification.</string>\n\t<key>NSCameraUsageDescription</key>\n\t<string>Photos are taken at customer sites as visit proof.</string>\n\t<key>NSPhotoLibraryUsageDescription</key>\n\t<string>Floor plans can be selected for an order.</string>' $P
       - name: Get packages
         working-directory: app
         run: flutter pub get
+      - name: Analyze source
+        working-directory: app
+        run: flutter analyze --no-fatal-infos
       - name: Build release APK
         working-directory: app
         run: flutter build apk --release
       - name: Publish APK to Release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
@@ -48,13 +69,15 @@ jobs:
         working-directory: app
         run: |
           flutter build web --release --base-href /salesman-tracker/
-          cp ../admin.html build/web/admin.html
+          cp ../admin/index.html build/web/admin.html
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: app/build/web
   deploy:
-    needs: build
+    if: github.event_name != 'pull_request'
+    needs: [build, backend-check]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

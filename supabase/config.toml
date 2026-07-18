@@ -1,0 +1,4 @@
+project_id = "salesman-tracker"
+
+[functions.send-sms]
+verify_jwt = false

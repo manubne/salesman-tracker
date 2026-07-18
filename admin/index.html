@@ -50,6 +50,14 @@
   #loginBox button { width:100%; padding:11px; }
   .err { color:var(--red); font-size:13px; margin-top:8px; }
   .muted { color:var(--muted); }
+  @media (max-width: 760px) {
+    header { flex-wrap:wrap; padding:10px 12px; }
+    header h1 { min-width:calc(100% - 90px); }
+    nav { order:3; width:100%; display:flex; overflow-x:auto; padding-bottom:2px; }
+    nav button { white-space:nowrap; }
+    main { padding:12px; }
+    #loginBox { width:min(360px, calc(100vw - 24px)); padding:24px; }
+  }
 </style>
 </head>
 <body>
@@ -210,7 +218,14 @@ async function waAuth() {
   const btn = document.getElementById('waBtn');
   if (!_waSent) {
     btn.disabled = true; btn.textContent = 'Sending…';
-    const { error } = await db.auth.signInWithOtp({ phone });
+    if (!/^\+91\d{10}$/.test(phone)) {
+      err.textContent = 'Enter a valid 10-digit mobile number';
+      return;
+    }
+    const { error } = await db.auth.signInWithOtp({
+      phone,
+      options: { shouldCreateUser: false },
+    });
     btn.disabled = false;
     if (error) { err.textContent = error.message; btn.textContent = 'Send OTP'; return; }
     _waSent = true;
@@ -228,10 +243,20 @@ async function waAuth() {
 async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) return;
+  const { data: profile, error: profileError } = await db.from('users')
+    .select('role,active').eq('id', session.user.id).maybeSingle();
+  if (profileError || !profile?.active || profile.role !== 'admin') {
+    await db.auth.signOut();
+    document.getElementById('appView').style.display = 'none';
+    document.getElementById('loginView').style.display = 'flex';
+    document.getElementById('loginErr').textContent =
+      'This dashboard is available only to an active administrator account.';
+    return;
+  }
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('appView').style.display = 'block';
-  const today = new Date().toISOString().slice(0,10);
-  const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  const today = localDate(new Date());
+  const weekAgo = localDate(new Date(Date.now()-6*864e5));
   for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
   await Promise.all([loadUsers(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories()]);
@@ -248,6 +273,8 @@ function show(v) {
 const uname = id => (cache.users.find(u => u.id === id)?.name) || (cache.users.find(u => u.id === id)?.mobile) || '—';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtDT = s => s ? new Date(s).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+const localDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const localBoundary = (value, end=false) => new Date(`${value}T${end?'23:59:59.999':'00:00:00'}`).toISOString();
 
 // ---------- data ----------
 async function loadUsers() {
@@ -263,7 +290,7 @@ async function loadOverview() {
   const { data: tv } = await db.from('visits').select('id,status,user_id')
     .gte('scheduled_at', start.toISOString());
   const { data: att } = await db.from('attendance').select('user_id,day_start_at')
-    .eq('date', new Date().toISOString().slice(0,10)).not('day_start_at','is',null);
+    .eq('date', localDate(new Date())).not('day_start_at','is',null);
   const { data: reqs } = await db.from('requirements').select('id').gte('created_at', start.toISOString());
   const v = tv || [];
   const stat = (n,l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
@@ -299,8 +326,8 @@ async function loadOverview() {
 
 async function loadVisits() {
   let q = db.from('visits').select('*, customers(name,company,mobile)')
-    .gte('scheduled_at', document.getElementById('vFrom').value + 'T00:00:00')
-    .lte('scheduled_at', document.getElementById('vTo').value + 'T23:59:59')
+    .gte('scheduled_at', localBoundary(document.getElementById('vFrom').value))
+    .lte('scheduled_at', localBoundary(document.getElementById('vTo').value, true))
     .order('scheduled_at', {ascending:false}).limit(500);
   const st = document.getElementById('vStatus').value;
   if (st) q = q.eq('status', st);
@@ -406,8 +433,8 @@ function initMap() {
 async function loadMap() {
   const { data } = await db.from('visits').select('*, customers(name,company)')
     .in('status',['verified','completed'])
-    .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00')
-    .lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
+    .gte('scheduled_at', localBoundary(document.getElementById('mFrom').value))
+    .lte('scheduled_at', localBoundary(document.getElementById('mTo').value, true))
     .not('verified_lat','is',null).limit(1000);
   markers.forEach(m => map.removeLayer(m)); markers = [];
   const pts = [];
