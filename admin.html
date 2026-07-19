@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Salesman Tracker — Admin</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root { --blue:#1F3A5F; --accent:#1F3A5F; --bg:#F6F6F3; --card:#fff; --border:#EAEAE5; --text:#16181D; --muted:#8A8F98;
@@ -198,7 +196,20 @@ const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [] };
-let map, markers = [];
+let map, markers = [], infoWin, gmapsReady;
+const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
+function ensureGmaps() {
+  if (gmapsReady) return gmapsReady;
+  gmapsReady = new Promise((resolve, reject) => {
+    if (window.google && window.google.maps) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&loading=async';
+    s.async = true; s.defer = true;
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return gmapsReady;
+}
 
 // ---------- auth ----------
 async function login() {
@@ -255,7 +266,7 @@ function show(v) {
   document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
   document.getElementById(v).classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
-  if (v === 'mapv') setTimeout(() => { if (!map) initMap(); map.invalidateSize(); loadMap(); }, 50);
+  if (v === 'mapv') setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60);
   if (v === 'orders') { loadOrders(); loadCategories(); }
 }
 
@@ -413,28 +424,54 @@ function renderOrders() {
 }
 
 // ---------- map ----------
-function initMap() {
-  map = L.map('map').setView([22.97, 78.65], 5);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+async function initMap() {
+  const el = document.getElementById('map');
+  if (GMAPS_KEY.indexOf('__') === 0) {
+    el.innerHTML = '<p class="muted" style="padding:40px;text-align:center">Google Maps key not configured yet.</p>';
+    return;
+  }
+  try {
+    await ensureGmaps();
+  } catch (e) {
+    el.innerHTML = '<p class="muted" style="padding:40px;text-align:center">Could not load Google Maps.</p>';
+    return;
+  }
+  map = new google.maps.Map(el, {
+    center: { lat: 22.97, lng: 78.65 }, zoom: 5,
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+    styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
+  });
+  infoWin = new google.maps.InfoWindow();
 }
 async function loadMap() {
+  if (!map) return;
   const { data } = await db.from('visits').select('*, customers(name,company)')
     .in('status',['verified','completed'])
     .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00')
     .lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
     .not('verified_lat','is',null).limit(1000);
-  markers.forEach(m => map.removeLayer(m)); markers = [];
-  const pts = [];
+  markers.forEach(m => m.setMap(null)); markers = [];
+  const bounds = new google.maps.LatLngBounds();
+  let n = 0;
   (data||[]).forEach(v => {
     const flagged = (v.flags||[]).length > 0;
-    const m = L.circleMarker([v.verified_lat, v.verified_lng], {
-      radius: 8, color: flagged ? '#c0392b' : '#1565c0', fillOpacity: .7 })
-      .bindPopup(`<b>${esc(v.customers?.name)}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.verified_at)}<br>` +
-        ((v.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || 'clean'))
-      .addTo(map);
-    markers.push(m); pts.push([v.verified_lat, v.verified_lng]);
+    const pos = { lat: v.verified_lat, lng: v.verified_lng };
+    const m = new google.maps.Marker({
+      position: pos, map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE, scale: 7,
+        fillColor: flagged ? '#b23b3b' : '#1F3A5F', fillOpacity: .85,
+        strokeColor: '#fff', strokeWeight: 1.5
+      }
+    });
+    m.addListener('click', () => {
+      infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(v.customers?.name)}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.verified_at)}<br>` +
+        ((v.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || 'clean') + '</div>');
+      infoWin.open(map, m);
+    });
+    markers.push(m); bounds.extend(pos); n++;
   });
-  if (pts.length) map.fitBounds(pts, { padding: [30,30] });
+  if (n) map.fitBounds(bounds, 40);
 }
 
 // ---------- helpers ----------
