@@ -98,6 +98,7 @@
       <button data-v="customers" onclick="show('customers')">Customers</button>
       <button data-v="orders" onclick="show('orders')">Orders</button>
       <button data-v="followups" onclick="show('followups')">Follow-ups</button>
+      <button data-v="reports" onclick="show('reports')">Reports</button>
       <button data-v="reqs" onclick="show('reqs')">Requirements</button>
       <button data-v="attendance" onclick="show('attendance')">Attendance</button>
       <button data-v="team" onclick="show('team')">Team</button>
@@ -173,6 +174,15 @@
       </div>
     </div>
 
+    <div id="reports" class="view">
+      <div class="cards" id="repCards"></div>
+      <div class="panel"><h2>Per-salesperson performance</h2><div id="perRepTbl"></div></div>
+      <div class="panel"><h2>Monthly targets — <span id="tgtMonthLabel"></span></h2>
+        <p class="muted" style="margin-bottom:10px">Set each rep's revenue target for this month; achievement = revenue from orders marked Won this month.</p>
+        <div id="targetsTbl"></div>
+      </div>
+    </div>
+
     <div id="followups" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -229,7 +239,7 @@ const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [] };
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [] };
 let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 function ensureGmaps() {
@@ -313,6 +323,7 @@ function show(v) {
   if (v === 'orders') { loadOrders(); loadCategories().then(loadProducts); }
   if (v === 'team') { loadUsers(); loadInvites(); }
   if (v === 'followups') loadFollowUps();
+  if (v === 'reports') loadReports();
 }
 
 // ---------- salesperson invites ----------
@@ -573,6 +584,60 @@ function renderFollowUps() {
       x.done ? '<span class="chip completed">done</span>'
              : (x.due_date < today ? '<span class="chip missed">overdue</span>' : '<span class="chip planned">open</span>')
     ]));
+}
+
+// ---------- reports & targets ----------
+const _rupees = n => 'Rs. ' + Number(n||0).toLocaleString('en-IN');
+async function loadReports() {
+  await loadTargets();
+  const orders = cache.orders || [], visits = cache.visits || [], users = (cache.users||[]).filter(u=>u.role!=='admin');
+  const won = orders.filter(o => o.stage === 'won'), lost = orders.filter(o => o.stage === 'lost');
+  const revenue = won.reduce((s, o) => s + Number(o.quote_total || 0), 0);
+  const winRate = (won.length + lost.length) ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
+  const card = (n, l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+  document.getElementById('repCards').innerHTML =
+    card(orders.length, 'Orders') + card(orders.filter(o=>o.stage==='need_quote').length, 'Need quote') +
+    card(won.length, 'Won') + card(winRate + '%', 'Win rate') + card(_rupees(revenue), 'Revenue won');
+  const rows = users.map(u => {
+    const uo = orders.filter(o => o.created_by === u.id);
+    const uw = uo.filter(o => o.stage === 'won');
+    return [esc(u.name) || esc(u.mobile), visits.filter(v => v.user_id === u.id).length,
+      uo.length, uw.length, _rupees(uw.reduce((s, o) => s + Number(o.quote_total || 0), 0))];
+  });
+  document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Visits','Orders','Won','Revenue won'], rows);
+  renderTargets();
+}
+const _monthStr = () => new Date().toISOString().slice(0,7) + '-01';
+async function loadTargets() {
+  const { data } = await db.from('sales_targets').select('*').eq('month', _monthStr());
+  cache.targets = data || [];
+}
+function renderTargets() {
+  document.getElementById('tgtMonthLabel').textContent =
+    new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const now = new Date(); const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const users = (cache.users||[]).filter(u=>u.role!=='admin');
+  const rows = users.map(u => {
+    const t = (cache.targets||[]).find(x => x.user_id === u.id);
+    const target = t ? Number(t.target_amount) : 0;
+    const achieved = (cache.orders||[]).filter(o => o.created_by === u.id && o.stage === 'won'
+        && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
+    const pct = target ? Math.round(achieved / target * 100) : 0;
+    return [
+      esc(u.name) || esc(u.mobile),
+      `<input id="tg_${u.id}" value="${target || ''}" placeholder="0" inputmode="numeric" style="width:120px;padding:6px 8px;border:1px solid var(--border);border-radius:8px"> <button class="btn sec" onclick="saveTarget('${u.id}')">Save</button>`,
+      _rupees(achieved),
+      target ? `${pct}%` : '—'
+    ];
+  });
+  document.getElementById('targetsTbl').innerHTML = tbl(['Rep','Target (this month)','Achieved','%'], rows);
+}
+async function saveTarget(userId) {
+  const amount = parseFloat(document.getElementById('tg_' + userId).value) || 0;
+  const { error } = await db.from('sales_targets').upsert(
+    { user_id: userId, month: _monthStr(), target_amount: amount }, { onConflict: 'user_id,month' });
+  if (error) { alert(error.message); return; }
+  loadReports();
 }
 
 // ---------- map ----------
