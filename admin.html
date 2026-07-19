@@ -153,6 +153,16 @@
         </div>
         <div id="catList"></div>
       </div>
+      <div class="panel"><h2>Product catalog &amp; price list</h2>
+        <div class="toolbar">
+          <input id="pName" placeholder="Product name">
+          <input id="pModel" placeholder="Model (optional)" style="max-width:140px">
+          <select id="pCat"></select>
+          <input id="pPrice" placeholder="Unit price" inputmode="decimal" style="max-width:120px">
+          <button class="btn" onclick="addProduct()">Add product</button>
+        </div>
+        <div id="prodTbl"></div>
+      </div>
       <div class="panel"><h2>Orders pipeline</h2>
         <div class="toolbar">
           <select id="oStage" onchange="renderOrders()"><option value="">All stages</option><option>draft</option><option>need_quote</option><option>quoted</option><option>won</option><option>lost</option></select>
@@ -219,7 +229,7 @@ const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [] };
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [] };
 let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 function ensureGmaps() {
@@ -300,7 +310,7 @@ function show(v) {
   document.getElementById(v).classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
   if (v === 'mapv') setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60);
-  if (v === 'orders') { loadOrders(); loadCategories(); }
+  if (v === 'orders') { loadOrders(); loadCategories().then(loadProducts); }
   if (v === 'team') { loadUsers(); loadInvites(); }
   if (v === 'followups') loadFollowUps();
 }
@@ -479,6 +489,36 @@ async function loadCategories() {
 async function setCatQuoteUser(catId, userId) {
   const { error } = await db.from('order_categories').update({ quote_user_id: userId || null }).eq('id', catId);
   if (error) alert(error.message); else loadCategories();
+}
+
+// ---------- product catalog ----------
+async function loadProducts() {
+  // fill category dropdown for the add form
+  const sel = document.getElementById('pCat');
+  if (sel) sel.innerHTML = '<option value="">— category —</option>' +
+    (_cats || []).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const { data } = await db.from('products').select('*, order_categories(name)').order('name');
+  cache.products = data || [];
+  document.getElementById('prodTbl').innerHTML = tbl(
+    ['Product','Model','Category','Unit price','Active'],
+    cache.products.map(p => [esc(p.name), esc(p.model)||'—', esc(p.order_categories?.name)||'—',
+      'Rs. ' + Number(p.unit_price||0).toLocaleString('en-IN'),
+      p.active ? '✔' : `<a href="#" onclick="toggleProduct('${p.id}',true);return false" style="color:var(--accent)">enable</a>`]));
+}
+async function addProduct() {
+  const name = document.getElementById('pName').value.trim();
+  const model = document.getElementById('pModel').value.trim();
+  const cat = document.getElementById('pCat').value;
+  const price = parseFloat(document.getElementById('pPrice').value) || 0;
+  if (!name) { alert('Enter a product name'); return; }
+  const { error } = await db.from('products').insert({ name, model: model || null, category_id: cat || null, unit_price: price });
+  if (error) { alert(error.message); return; }
+  ['pName','pModel','pPrice'].forEach(id => document.getElementById(id).value = '');
+  loadProducts();
+}
+async function toggleProduct(id, active) {
+  await db.from('products').update({ active }).eq('id', id);
+  loadProducts();
 }
 async function addCategory() {
   const el = document.getElementById('newCat');
