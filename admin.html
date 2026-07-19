@@ -360,9 +360,21 @@ async function addInvite() {
     { onConflict: 'mobile' });
   if (error) { m.textContent = error.message; return; }
   m.style.color = 'var(--green)';
-  m.innerHTML = 'Added ' + esc(name) + '. <a href="#" onclick="waInvite(\'' + mob + '\',' + JSON.stringify(name).replace(/"/g,'&quot;') + ');return false" style="color:var(--accent);font-weight:600">Send WhatsApp invite →</a>';
+  const nm = JSON.stringify(name).replace(/"/g,'&quot;');
+  let links = '<a href="#" onclick="waInvite(\'' + mob + '\',' + nm + ');return false" style="color:var(--accent);font-weight:600">Send WhatsApp invite →</a>';
+  if (email) links += ' &nbsp;·&nbsp; <a href="#" onclick="emailInvite(' + JSON.stringify(email).replace(/"/g,'&quot;') + ',' + nm + ',\'' + mob + '\');return false" style="color:var(--accent);font-weight:600">Email invite →</a>';
+  m.innerHTML = 'Added ' + esc(name) + '. ' + links;
   ['spName','spMobile','spEmail','spTerritory'].forEach(id => document.getElementById(id).value = '');
   loadInvites();
+}
+async function emailInvite(email, name, mobile) {
+  const html = `<p>Hi ${name},</p><p>You have been added to <b>BNE Salesman Tracker</b>.</p>
+    <ol><li>Install the app: <a href="${APK_URL}">${APK_URL}</a></li>
+    <li>Open it and log in with your mobile <b>${mobile}</b> — an OTP will arrive on WhatsApp.</li></ol>
+    <p>Welcome aboard!</p>`;
+  const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Salesman Tracker', html } });
+  if (error || (data && data.error)) { alert('Email failed: ' + (error?.message || data.error)); return; }
+  alert('Invite email sent to ' + email);
 }
 
 function waInvite(mob, name) {
