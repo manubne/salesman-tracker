@@ -151,6 +151,7 @@
 
     <div id="orders" class="view">
       <div class="cards" id="orderStats"></div>
+      <div class="panel" id="approvalsPanel" style="display:none"><h2>⚠ Quote discounts awaiting approval</h2><div id="approvalsTbl"></div></div>
       <div class="panel"><h2>Order types (visible to all sales users)</h2>
         <div class="toolbar">
           <input id="newCat" placeholder="New order type (e.g. VRF)">
@@ -567,6 +568,7 @@ async function loadOrders() {
     card(cache.orders.length,'Total orders') + card(stg('draft'),'Draft') + card(stg('need_quote'),'Need quote') +
     card(stg('quoted'),'Quoted') + card(stg('won'),'Won') + card(stg('lost'),'Lost');
   renderOrders();
+  renderApprovals();
 }
 function renderOrders() {
   const st = document.getElementById('oStage').value;
@@ -576,6 +578,24 @@ function renderOrders() {
     rows.map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
       o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by)),
       o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']));
+}
+function renderApprovals() {
+  const pend = (cache.orders || []).filter(o => o.needs_approval && !o.approved_at);
+  const panel = document.getElementById('approvalsPanel');
+  if (!pend.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  document.getElementById('approvalsTbl').innerHTML = tbl(
+    ['Customer','Type','Discount','Quote total','Sales person','Action'],
+    pend.map(o => [esc(o.customers?.name), esc(o.order_categories?.name)||'—',
+      (o.discount_pct||0) + '%', 'Rs. ' + Number(o.quote_total||0).toLocaleString('en-IN'),
+      esc(uname(o.created_by)),
+      `<button class="btn" onclick="approveOrder('${o.id}')">Approve</button>`]));
+}
+async function approveOrder(id) {
+  const { data: { user } } = await db.auth.getUser();
+  const { error } = await db.from('orders').update({ needs_approval: false, approved_by: user.id, approved_at: new Date().toISOString() }).eq('id', id);
+  if (error) { alert(error.message); return; }
+  loadOrders();
 }
 
 // ---------- follow-ups ----------
