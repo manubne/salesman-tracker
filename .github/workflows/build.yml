@@ -32,7 +32,7 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
           sed -i '/<manifest/a\    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>' $M
-          sed -i '/<application/a\        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"/>' $M
+          sed -i 's#</application>#        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"/>\n    </application>#' $M
           sed -i 's#</head>#  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"></script>\n</head>#' web/index.html
           echo "--- manifest ---"; head -14 $M
       - name: Get packages
