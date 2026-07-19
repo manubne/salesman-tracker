@@ -184,8 +184,21 @@
     </div>
 
     <div id="team" class="view">
+      <div class="panel">
+        <h2>Add salesperson</h2>
+        <div class="toolbar">
+          <input id="spName" placeholder="Full name">
+          <input id="spMobile" placeholder="Mobile (10 digits)" maxlength="10" inputmode="numeric">
+          <input id="spEmail" placeholder="Email (optional)">
+          <select id="spRole"><option value="sales">Sales</option><option value="quote">Quote team</option><option value="manager">Manager</option></select>
+          <input id="spTerritory" placeholder="Territory (optional)">
+          <button class="btn" onclick="addInvite()">Add &amp; invite</button>
+        </div>
+        <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
+      </div>
+      <div class="panel"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
       <div class="panel"><h2>Sales team</h2><div id="teamTbl"></div>
-      <p class="muted" style="margin-top:10px">Add users: they log in once via the mobile app, then appear here. Set name/territory/role in Supabase → Table Editor → users.</p></div>
+      <p class="muted" style="margin-top:10px">Salespeople appear here after their first mobile login. Name, role and territory from an invite are applied automatically on that first login.</p></div>
     </div>
   </main>
 </div>
@@ -268,7 +281,7 @@ async function init() {
   const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
   for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
-  await Promise.all([loadUsers(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories()]);
+  await Promise.all([loadUsers(), loadInvites(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories()]);
 }
 
 function show(v) {
@@ -277,6 +290,48 @@ function show(v) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
   if (v === 'mapv') setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60);
   if (v === 'orders') { loadOrders(); loadCategories(); }
+  if (v === 'team') { loadUsers(); loadInvites(); }
+}
+
+// ---------- salesperson invites ----------
+const APK_URL = 'https://github.com/manubne/salesman-tracker/releases/download/latest/app-release.apk';
+
+async function addInvite() {
+  const m = document.getElementById('inviteMsg'); m.style.color = 'var(--red)'; m.textContent = '';
+  const name = document.getElementById('spName').value.trim();
+  const mob = document.getElementById('spMobile').value.replace(/\D/g, '');
+  const email = document.getElementById('spEmail').value.trim();
+  const role = document.getElementById('spRole').value;
+  const territory = document.getElementById('spTerritory').value.trim();
+  if (!name) { m.textContent = 'Enter a name.'; return; }
+  if (mob.length !== 10) { m.textContent = 'Enter a valid 10-digit mobile.'; return; }
+  const { error } = await db.from('salesperson_invites').upsert(
+    { mobile: '91' + mob, name, email: email || null, role, territory: territory || null, status: 'pending' },
+    { onConflict: 'mobile' });
+  if (error) { m.textContent = error.message; return; }
+  m.style.color = 'var(--green)';
+  m.innerHTML = 'Added ' + esc(name) + '. <a href="#" onclick="waInvite(\'' + mob + '\',' + JSON.stringify(name).replace(/"/g,'&quot;') + ');return false" style="color:var(--accent);font-weight:600">Send WhatsApp invite →</a>';
+  ['spName','spMobile','spEmail','spTerritory'].forEach(id => document.getElementById(id).value = '');
+  loadInvites();
+}
+
+function waInvite(mob, name) {
+  const text = 'Hi ' + name + ', you have been added to BNE Salesman Tracker.\n\n1) Install the app: ' + APK_URL +
+    '\n2) Open it and log in with your mobile ' + mob + ' — an OTP will arrive on WhatsApp.\n\nWelcome aboard!';
+  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent(text), '_blank');
+}
+
+async function loadInvites() {
+  const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
+  const rows = data || [];
+  document.getElementById('invitesTbl').innerHTML = tbl(
+    ['Name','Mobile','Role','Territory','Status','Action'],
+    rows.map(i => [
+      esc(i.name) || '<span class="muted">(no name)</span>', esc(i.mobile), esc(i.role), esc(i.territory) || '—',
+      '<span class="chip ' + (i.status === 'accepted' ? 'completed' : 'planned') + '">' + i.status + '</span>',
+      i.status === 'accepted' ? '<span class="muted">joined</span>'
+        : '<a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="color:var(--accent);font-weight:600">WhatsApp</a>'
+    ]));
 }
 
 const uname = id => (cache.users.find(u => u.id === id)?.name) || (cache.users.find(u => u.id === id)?.mobile) || '—';
