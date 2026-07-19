@@ -416,7 +416,7 @@ function renderCustomers() {
     ['Name','Company','Type','Mobile','Verified','Territory','Owner','Location pin'],
     rows.map(c => [esc(c.name), esc(c.company)||'—', c.type, esc(c.mobile),
       c.mobile_verified_at ? '✔' : '<span class="flag">no</span>', esc(c.territory)||'—', esc(uname(c.owner_user_id)),
-      c.lat ? `<a href="https://www.openstreetmap.org/?mlat=${c.lat}&mlon=${c.lng}#map=17/${c.lat}/${c.lng}" target="_blank">view</a>` : '—']));
+      c.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" style="color:var(--accent)">view</a>` : '—']));
 }
 
 async function loadReqs() {
