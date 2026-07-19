@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Salesman Tracker — Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root { --blue:#1F3A5F; --accent:#1F3A5F; --bg:#F6F6F3; --card:#fff; --border:#EAEAE5; --text:#16181D; --muted:#8A8F98;
           --green:#1a7f37; --orange:#9a6a00; --red:#b23b3b; }
@@ -192,6 +193,17 @@
 
     <div id="reports" class="view">
       <div class="cards" id="repCards"></div>
+      <div class="panel"><h2>Insights</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px">
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Target vs Achieved (this month)</h3><canvas id="chTarget" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Achievement %</h3><canvas id="chPct" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Orders pipeline</h3><canvas id="chFunnel" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Win / Loss</h3><canvas id="chWin" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Revenue won (last 6 months)</h3><canvas id="chRev" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Orders by category</h3><canvas id="chCat" height="200"></canvas></div>
+          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Visits by status</h3><canvas id="chVisits" height="200"></canvas></div>
+        </div>
+      </div>
       <div class="panel"><h2>Per-salesperson performance</h2><div id="perRepTbl"></div></div>
       <div class="panel"><h2>Monthly targets — <span id="tgtMonthLabel"></span></h2>
         <p class="muted" style="margin-bottom:10px">Set each rep's revenue target for this month; achievement = revenue from orders marked Won this month.</p>
@@ -654,6 +666,7 @@ async function loadReports() {
   });
   document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Visits','Orders','Won','Revenue won'], rows);
   renderTargets();
+  renderCharts();
 }
 const _monthStr = () => new Date().toISOString().slice(0,7) + '-01';
 async function loadTargets() {
@@ -686,6 +699,41 @@ async function saveTarget(userId) {
     { user_id: userId, month: _monthStr(), target_amount: amount }, { onConflict: 'user_id,month' });
   if (error) { alert(error.message); return; }
   loadReports();
+}
+
+// ---------- charts ----------
+let _charts = {};
+function mkChart(id, cfg) {
+  if (typeof Chart === 'undefined') return;
+  if (_charts[id]) _charts[id].destroy();
+  const el = document.getElementById(id); if (!el) return;
+  _charts[id] = new Chart(el, cfg);
+}
+const _barOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } });
+const _pieOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } } });
+const _pal = n => { const c = ['#1F3A5F','#2E5C8A','#1a7f37','#9a6a00','#b23b3b','#6b7a8d','#7c5cbf','#0891b2']; return Array.from({length:n}, (_,i)=>c[i%c.length]); };
+function renderCharts() {
+  if (typeof Chart === 'undefined') return;
+  const users = (cache.users||[]).filter(u => u.role !== 'admin');
+  const orders = cache.orders||[], visits = cache.visits||[];
+  const now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nameOf = u => u.name || u.mobile || '—';
+  const labels = users.map(nameOf);
+  const targets = users.map(u => { const t=(cache.targets||[]).find(x=>x.user_id===u.id); return t?Number(t.target_amount):0; });
+  const achieved = users.map(u => orders.filter(o => o.created_by===u.id && o.stage==='won' && o.won_at && new Date(o.won_at)>=mStart).reduce((s,o)=>s+Number(o.quote_total||0),0));
+  mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#c9d3df'},{label:'Achieved',data:achieved,backgroundColor:'#1F3A5F'}] }, options:_barOpt() });
+  const pct = users.map((u,i)=> targets[i]? Math.round(achieved[i]/targets[i]*100):0);
+  mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#1a7f37':'#1F3A5F')}] }, options:_barOpt() });
+  const stages = ['draft','need_quote','quoted','won','lost'];
+  mkChart('chFunnel', { type:'bar', data:{ labels:stages.map(s=>s.replace('_',' ')), datasets:[{label:'Orders',data:stages.map(s=>orders.filter(o=>o.stage===s).length),backgroundColor:'#1F3A5F'}] }, options:_barOpt() });
+  mkChart('chWin', { type:'doughnut', data:{ labels:['Won','Lost'], datasets:[{data:[orders.filter(o=>o.stage==='won').length,orders.filter(o=>o.stage==='lost').length],backgroundColor:['#1a7f37','#b23b3b']}] }, options:_pieOpt() });
+  const mo = []; for (let i=5;i>=0;i--) mo.push(new Date(now.getFullYear(), now.getMonth()-i, 1));
+  const rev = mo.map(d => { const s=new Date(d.getFullYear(),d.getMonth(),1), e=new Date(d.getFullYear(),d.getMonth()+1,1); return orders.filter(o=>o.stage==='won'&&o.won_at&&new Date(o.won_at)>=s&&new Date(o.won_at)<e).reduce((a,o)=>a+Number(o.quote_total||0),0); });
+  mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#1F3A5F',backgroundColor:'rgba(31,58,95,.12)',fill:true,tension:.3}] }, options:_barOpt() });
+  const catMap = {}; orders.forEach(o => { const n=o.order_categories?.name||'—'; catMap[n]=(catMap[n]||0)+1; });
+  mkChart('chCat', { type:'doughnut', data:{ labels:Object.keys(catMap), datasets:[{data:Object.values(catMap),backgroundColor:_pal(Object.keys(catMap).length)}] }, options:_pieOpt() });
+  const vMap = {}; visits.forEach(v => { vMap[v.status]=(vMap[v.status]||0)+1; });
+  mkChart('chVisits', { type:'doughnut', data:{ labels:Object.keys(vMap), datasets:[{data:Object.values(vMap),backgroundColor:_pal(Object.keys(vMap).length)}] }, options:_pieOpt() });
 }
 
 // ---------- map ----------
