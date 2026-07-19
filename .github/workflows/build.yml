@@ -31,6 +31,7 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
+          sed -i '/<manifest/a\    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>' $M
           echo "--- manifest ---"; head -12 $M
       - name: Get packages
         working-directory: app
