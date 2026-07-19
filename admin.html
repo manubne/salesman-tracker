@@ -97,6 +97,7 @@
       <button data-v="mapv" onclick="show('mapv')">Map</button>
       <button data-v="customers" onclick="show('customers')">Customers</button>
       <button data-v="orders" onclick="show('orders')">Orders</button>
+      <button data-v="followups" onclick="show('followups')">Follow-ups</button>
       <button data-v="reqs" onclick="show('reqs')">Requirements</button>
       <button data-v="attendance" onclick="show('attendance')">Attendance</button>
       <button data-v="team" onclick="show('team')">Team</button>
@@ -162,6 +163,16 @@
       </div>
     </div>
 
+    <div id="followups" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <select id="fuFilter" onchange="renderFollowUps()"><option value="open">Open</option><option value="all">All</option><option value="overdue">Overdue</option></select>
+          <button class="btn sec" onclick="loadFollowUps()">Refresh</button>
+        </div>
+        <div id="fuTbl"></div>
+      </div>
+    </div>
+
     <div id="reqs" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -208,7 +219,7 @@ const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [] };
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [] };
 let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 function ensureGmaps() {
@@ -281,7 +292,7 @@ async function init() {
   const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
   for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
-  await Promise.all([loadUsers(), loadInvites(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories()]);
+  await Promise.all([loadUsers(), loadInvites(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories(), loadFollowUps()]);
 }
 
 function show(v) {
@@ -291,6 +302,7 @@ function show(v) {
   if (v === 'mapv') setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60);
   if (v === 'orders') { loadOrders(); loadCategories(); }
   if (v === 'team') { loadUsers(); loadInvites(); }
+  if (v === 'followups') loadFollowUps();
 }
 
 // ---------- salesperson invites ----------
@@ -497,6 +509,30 @@ function renderOrders() {
     rows.map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
       o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by)),
       o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']));
+}
+
+// ---------- follow-ups ----------
+async function loadFollowUps() {
+  const { data } = await db.from('follow_ups')
+    .select('*, customers(name,company)')
+    .order('due_date', { ascending: true }).limit(1000);
+  cache.followUps = data || [];
+  renderFollowUps();
+}
+function renderFollowUps() {
+  const f = document.getElementById('fuFilter').value;
+  const today = new Date().toISOString().slice(0,10);
+  let rows = cache.followUps || [];
+  if (f === 'open') rows = rows.filter(x => !x.done);
+  else if (f === 'overdue') rows = rows.filter(x => !x.done && x.due_date < today);
+  document.getElementById('fuTbl').innerHTML = tbl(
+    ['Customer','Note','Due','Owner','Status'],
+    rows.map(x => [
+      esc(x.customers?.name) || '—', esc(x.note) || '—', esc(x.due_date),
+      esc(uname(x.user_id)),
+      x.done ? '<span class="chip completed">done</span>'
+             : (x.due_date < today ? '<span class="chip missed">overdue</span>' : '<span class="chip planned">open</span>')
+    ]));
 }
 
 // ---------- map ----------
