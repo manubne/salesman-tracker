@@ -453,9 +453,20 @@ let _cats = [];
 async function loadCategories() {
   const { data } = await db.from('order_categories').select('*').order('name');
   _cats = data || [];
-  document.getElementById('catList').innerHTML = _cats.length ? _cats.map(c =>
-    `<span class="chip ${c.active?'verified':'missed'}" style="margin:4px 6px 4px 0">${esc(c.name)}${c.active?'':' (off)'}</span>`).join('') :
-    '<p class="muted">No order types yet. Add one above.</p>';
+  if (!_cats.length) { document.getElementById('catList').innerHTML = '<p class="muted">No order types yet. Add one above.</p>'; return; }
+  const quoteUsers = cache.users.filter(u => ['quote','manager','admin'].includes(u.role) && u.active);
+  const optsFor = (sel) => '<option value="">— unassigned —</option>' + quoteUsers.map(u =>
+    `<option value="${u.id}" ${u.id===sel?'selected':''}>${esc(u.name)||esc(u.mobile)} (${u.role})</option>`).join('');
+  document.getElementById('catList').innerHTML = tbl(
+    ['Order type','Assigned quote user'],
+    _cats.map(c => [
+      esc(c.name) + (c.active ? '' : ' <span class="muted">(off)</span>'),
+      `<select onchange="setCatQuoteUser('${c.id}', this.value)" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px">${optsFor(c.quote_user_id)}</select>`
+    ]));
+}
+async function setCatQuoteUser(catId, userId) {
+  const { error } = await db.from('order_categories').update({ quote_user_id: userId || null }).eq('id', catId);
+  if (error) alert(error.message); else loadCategories();
 }
 async function addCategory() {
   const el = document.getElementById('newCat');
@@ -482,9 +493,10 @@ function renderOrders() {
   const st = document.getElementById('oStage').value;
   const rows = (cache.orders||[]).filter(o => !st || o.stage === st);
   document.getElementById('ordersTbl').innerHTML = tbl(
-    ['Created','Customer','Type','Sq ft','Visit','Stage','Sales person'],
+    ['Created','Customer','Type','Sq ft','Visit','Stage','Sales person','Quote assigned'],
     rows.map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
-      o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by))]));
+      o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by)),
+      o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']));
 }
 
 // ---------- map ----------
