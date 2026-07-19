@@ -99,6 +99,7 @@
       <button data-v="orders" onclick="show('orders')">Orders</button>
       <button data-v="followups" onclick="show('followups')">Follow-ups</button>
       <button data-v="reports" onclick="show('reports')">Reports</button>
+      <button data-v="chat" onclick="show('chat')">Chat</button>
       <button data-v="reqs" onclick="show('reqs')">Requirements</button>
       <button data-v="attendance" onclick="show('attendance')">Attendance</button>
       <button data-v="team" onclick="show('team')">Team</button>
@@ -128,8 +129,11 @@
       <div class="panel">
         <div class="toolbar">
           <input type="date" id="mFrom"> <input type="date" id="mTo">
-          <button class="btn" onclick="loadMap()">Show</button>
-          <span class="muted">Blue = verified visit · Red = flagged</span>
+          <button class="btn" onclick="loadMap()">Show visits</button>
+          <span class="muted">Blue = verified · Red = flagged</span>
+          <span style="border-left:1px solid var(--border);height:20px;margin:0 4px"></span>
+          <select id="routeUser"></select> <input type="date" id="routeDate">
+          <button class="btn sec" onclick="loadRoute()">Show route</button>
         </div>
         <div id="map"></div>
       </div>
@@ -171,6 +175,17 @@
           <button class="btn sec" onclick="exportCsv('orders')">Export CSV</button>
         </div>
         <div id="ordersTbl"></div>
+      </div>
+    </div>
+
+    <div id="chat" class="view">
+      <div class="panel">
+        <h2>Team chat</h2>
+        <div id="chatBox" style="height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:6px"></div>
+        <div class="toolbar" style="margin-top:10px">
+          <input id="chatInput" placeholder="Message the team…" style="flex:1" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn" onclick="sendChat()">Send</button>
+        </div>
       </div>
     </div>
 
@@ -319,7 +334,8 @@ function show(v) {
   document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
   document.getElementById(v).classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
-  if (v === 'mapv') setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60);
+  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60); }
+  if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadCategories().then(loadProducts); }
   if (v === 'team') { loadUsers(); loadInvites(); }
   if (v === 'followups') loadFollowUps();
@@ -689,6 +705,62 @@ async function loadMap() {
     markers.push(m); bounds.extend(pos); n++;
   });
   if (n) map.fitBounds(bounds, 40);
+}
+
+// ---------- team chat ----------
+let _chatSub = false, _me = null;
+async function loadChat() {
+  if (!_me) { const { data: { user } } = await db.auth.getUser(); _me = user?.id; }
+  const { data } = await db.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
+  const box = document.getElementById('chatBox');
+  box.innerHTML = (data || []).map(chatBubble).join('');
+  box.scrollTop = box.scrollHeight;
+  if (!_chatSub) {
+    _chatSub = true;
+    db.channel('team-chat-web').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
+      box.insertAdjacentHTML('beforeend', chatBubble(p.new)); box.scrollTop = box.scrollHeight;
+    }).subscribe();
+  }
+}
+function chatBubble(m) {
+  const mine = m.sender_id === _me;
+  const t = m.created_at ? new Date(m.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:70%;background:${mine ? 'var(--accent)' : '#f3f3ef'};color:${mine ? '#fff' : 'var(--text)'};padding:8px 12px;border-radius:12px">
+    ${mine ? '' : `<div style="font-size:11px;font-weight:600;color:var(--accent)">${esc(m.sender_name || 'Someone')}</div>`}
+    <div>${esc(m.body)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${t}</div></div>`;
+}
+async function sendChat() {
+  const el = document.getElementById('chatInput'); const t = el.value.trim(); if (!t) return;
+  el.value = '';
+  const { error } = await db.from('messages').insert({ sender_id: _me, body: t });
+  if (error) alert(error.message);
+}
+
+// ---------- rep route (live tracking trail) ----------
+let _routeLayer = [];
+function fillRouteUsers() {
+  const sel = document.getElementById('routeUser'); if (!sel) return;
+  sel.innerHTML = '<option value="">— salesperson —</option>' +
+    (cache.users || []).filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${esc(u.name) || esc(u.mobile)}</option>`).join('');
+  document.getElementById('routeDate').value = new Date().toISOString().slice(0, 10);
+}
+async function loadRoute() {
+  if (!map) { await initMap(); }
+  if (!map) return;
+  const uid = document.getElementById('routeUser').value;
+  const d = document.getElementById('routeDate').value;
+  if (!uid || !d) { alert('Pick a salesperson and date'); return; }
+  _routeLayer.forEach(x => x.setMap(null)); _routeLayer = [];
+  const { data } = await db.from('location_pings').select('*')
+    .eq('user_id', uid).gte('at', d + 'T00:00:00').lte('at', d + 'T23:59:59').order('at');
+  const pts = (data || []).map(p => ({ lat: p.lat, lng: p.lng }));
+  if (!pts.length) { alert('No location trail for that day.'); return; }
+  const line = new google.maps.Polyline({ path: pts, strokeColor: '#1F3A5F', strokeOpacity: .9, strokeWeight: 3, map });
+  _routeLayer.push(line);
+  const start = new google.maps.Marker({ position: pts[0], map, label: 'S' });
+  const end = new google.maps.Marker({ position: pts[pts.length - 1], map, label: 'E' });
+  _routeLayer.push(start, end);
+  const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend(p)); map.fitBounds(b, 40);
 }
 
 // ---------- helpers ----------
