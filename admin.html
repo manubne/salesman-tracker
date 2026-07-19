@@ -201,11 +201,20 @@ const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 function ensureGmaps() {
   if (gmapsReady) return gmapsReady;
   gmapsReady = new Promise((resolve, reject) => {
-    if (window.google && window.google.maps) return resolve();
+    const ready = () => window.google && window.google.maps && window.google.maps.Map;
+    const waitReady = () => {
+      let n = 0;
+      const t = setInterval(() => {
+        if (ready()) { clearInterval(t); resolve(); }
+        else if (++n > 100) { clearInterval(t); reject(new Error('maps load timeout')); }
+      }, 100);
+    };
+    if (ready()) return resolve();
     const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&loading=async';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY;
     s.async = true; s.defer = true;
-    s.onload = resolve; s.onerror = reject;
+    s.onload = waitReady;      // wait until google.maps.Map is actually defined
+    s.onerror = reject;
     document.head.appendChild(s);
   });
   return gmapsReady;
