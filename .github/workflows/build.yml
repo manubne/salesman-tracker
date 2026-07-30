@@ -137,6 +137,7 @@ jobs:
           releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
           track: internal
           status: completed
+          changesNotSentForReview: true
       - name: Build web (app + admin dashboard)
         working-directory: app
         run: |
