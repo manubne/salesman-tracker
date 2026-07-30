@@ -129,6 +129,14 @@ jobs:
           files: |
             app/build/app/outputs/bundle/release/app-release.aab
             app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Publish to Play internal testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: org.bne.salesman_tracker
+          releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
       - name: Build web (app + admin dashboard)
         working-directory: app
         run: |
