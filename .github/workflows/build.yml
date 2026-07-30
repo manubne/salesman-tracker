@@ -1,4 +1,4 @@
-name: Build APK
+name: Build AAB + APK
 on:
   push:
     branches: [main]
@@ -20,9 +20,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Create platform folders
+      - name: Create platform folders (org.bne package)
         working-directory: app
-        run: flutter create --platforms=android,web .
+        run: flutter create --org org.bne --platforms=android,web .
       - name: Add Android permissions
         working-directory: app
         run: |
@@ -36,18 +36,95 @@ jobs:
           sed -i 's#</application>#        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"/>\n    </application>#' $M
           sed -i 's#</head>#  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"></script>\n</head>#' web/index.html
           echo "--- manifest ---"; head -14 $M
+      - name: Configure release signing
+        working-directory: app
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$PWD/android/upload.jks"
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=$PWD/android/upload.jks
+          EOF
+          python3 - <<'PY'
+          import os
+          p = 'android/app/build.gradle.kts'
+          groovy = not os.path.exists(p)
+          if groovy:
+              p = 'android/app/build.gradle'
+          s = open(p).read()
+          if not groovy:
+              header = (
+                  'import java.util.Properties\n'
+                  'import java.io.FileInputStream\n\n'
+                  'val keystoreProperties = Properties()\n'
+                  'val keystorePropertiesFile = rootProject.file("key.properties")\n'
+                  'if (keystorePropertiesFile.exists()) {\n'
+                  '    keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n'
+                  '}\n\n'
+              )
+              sign = (
+                  '\n    signingConfigs {\n'
+                  '        create("upload") {\n'
+                  '            keyAlias = keystoreProperties["keyAlias"] as String\n'
+                  '            keyPassword = keystoreProperties["keyPassword"] as String\n'
+                  '            storeFile = file(keystoreProperties["storeFile"] as String)\n'
+                  '            storePassword = keystoreProperties["storePassword"] as String\n'
+                  '        }\n'
+                  '    }\n'
+              )
+              s = header + s
+              s = s.replace('android {', 'android {' + sign, 1)
+              s = s.replace('signingConfig = signingConfigs.getByName("debug")',
+                            'signingConfig = signingConfigs.getByName("upload")')
+          else:
+              header = (
+                  'def keystoreProperties = new Properties()\n'
+                  'def keystorePropertiesFile = rootProject.file("key.properties")\n'
+                  'if (keystorePropertiesFile.exists()) {\n'
+                  '    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))\n'
+                  '}\n\n'
+              )
+              sign = (
+                  '\n    signingConfigs {\n'
+                  '        upload {\n'
+                  "            keyAlias keystoreProperties['keyAlias']\n"
+                  "            keyPassword keystoreProperties['keyPassword']\n"
+                  "            storeFile file(keystoreProperties['storeFile'])\n"
+                  "            storePassword keystoreProperties['storePassword']\n"
+                  '        }\n'
+                  '    }\n'
+              )
+              s = header + s
+              s = s.replace('android {', 'android {' + sign, 1)
+              s = s.replace('signingConfig signingConfigs.debug',
+                            'signingConfig signingConfigs.upload')
+          open(p, 'w').write(s)
+          print('--- patched', p, '---')
+          print(s[:900])
+          PY
       - name: Get packages
         working-directory: app
         run: flutter pub get
-      - name: Build release APK
+      - name: Build signed App Bundle (.aab)
         working-directory: app
-        run: flutter build apk --release
-      - name: Publish APK to Release
+        run: flutter build appbundle --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER}
+      - name: Build signed APK
+        working-directory: app
+        run: flutter build apk --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER}
+      - name: Publish AAB + APK to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Latest APK
-          files: app/build/app/outputs/flutter-apk/app-release.apk
+          name: Latest build
+          files: |
+            app/build/app/outputs/bundle/release/app-release.aab
+            app/build/app/outputs/flutter-apk/app-release.apk
       - name: Build web (app + admin dashboard)
         working-directory: app
         run: |
