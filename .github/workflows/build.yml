@@ -17,6 +17,10 @@ jobs:
           base64 -d appcode.b64 > app.zip
           rm -rf app
           unzip -o app.zip
+      - name: Point FCM to org.bne Firebase app
+        run: |
+          sed -i 's#android:b71e1156b884ab9bc49b4d#android:104350403e81ae6cc49b4d#' app/lib/main.dart
+          echo "--- FCM appId ---"; grep -n "appId" app/lib/main.dart || true
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
