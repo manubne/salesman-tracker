@@ -148,6 +148,21 @@
   .err { color:var(--red); font-size:13px; margin-top:8px; }
   .muted { color:var(--muted); }
   .empty { padding:26px; text-align:center; color:var(--muted); }
+  /* ---- kanban ---- */
+  .kanban { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(230px,1fr); gap:12px; overflow-x:auto; padding-bottom:8px; }
+  .kcol { background:#F3F5FA; border-radius:14px; min-height:200px; display:flex; flex-direction:column; transition:background .12s; }
+  .kcol.over { background:#E3EAFD; }
+  .khead { padding:10px 12px 8px; border-top:3px solid var(--brand); border-radius:14px 14px 0 0; display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; }
+  .khead b { font-size:13px; flex:1; } .khead .ksum { width:100%; font-size:12px; font-weight:700; color:var(--muted); }
+  .kbody { padding:0 8px 10px; display:flex; flex-direction:column; gap:8px; max-height:560px; overflow-y:auto; }
+  .kcard { background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 11px; cursor:pointer; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+  .kcard:hover { box-shadow:0 6px 16px rgba(16,24,40,.09); }
+  .kcard .kt { font-weight:700; font-size:13px; } .kcard .ks { font-size:12px; color:var(--muted); margin:2px 0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kcard .kv2 { display:flex; justify-content:space-between; font-size:13.5px; } .kcard .kf { display:flex; justify-content:space-between; gap:6px; font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .kempty { text-align:center; color:var(--muted); padding:20px 0; font-size:12px; }
+  .seg { display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .seg button { background:#fff; border:none; padding:8px 14px; font:inherit; font-size:13px; cursor:pointer; color:var(--muted); font-weight:600; }
+  .seg button.active { background:var(--brand); color:#fff; }
   .setsec { border-top:1px solid var(--border); padding-top:18px; margin-top:6px; }
 </style>
 </head>
@@ -202,8 +217,9 @@
       <button data-v="attendance" data-roles="admin,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
 
       <div class="navlabel" data-roles="admin,manager">Sales</div>
+      <button data-v="pipeline" data-roles="admin,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
       <button data-v="customers" data-roles="admin,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
-      <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Orders &amp; quotes</span></button>
+      <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
       <button data-v="followups" data-roles="admin,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
       <button data-v="reqs" data-roles="admin,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
 
@@ -240,7 +256,7 @@
       <div class="panel">
         <div class="toolbar">
           <input id="lSearch" placeholder="Search name, company, mobile…" oninput="renderLeads()" style="min-width:220px">
-          <select id="lStatus" onchange="renderLeads()"><option value="">All statuses</option><option value="open">Open (not converted/dropped)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">Converted</option><option value="dropped">Dropped</option><option value="stale">⚠ Untouched</option><option value="unassigned">Unassigned</option></select>
+          <select id="lStatus" onchange="renderLeads()"><option value="">All statuses</option><option value="open">Open (not in pipeline / dropped)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">In pipeline</option><option value="dropped">Dropped</option><option value="stale">⚠ Untouched</option><option value="unassigned">Unassigned</option></select>
           <select id="lRep" onchange="renderLeads()"></select>
           <select id="lType" onchange="renderLeads()"></select>
           <select id="lSource" onchange="renderLeads()"></select>
@@ -301,6 +317,42 @@
       </div>
     </div>
 
+    <!-- ================= PIPELINE ================= -->
+    <div id="pipeline" class="view">
+      <div class="cards" id="pipeCards"></div>
+      <div class="panel">
+        <div class="toolbar">
+          <input id="pSearch" placeholder="Search deal, customer, PO…" oninput="renderPipeline()" style="min-width:220px">
+          <select id="pRep" onchange="renderPipeline()"></select>
+          <select id="pCatF" onchange="renderPipeline()"></select>
+          <select id="pPeriod" onchange="renderPipeline()">
+            <option value="month">Won/lost: this month</option><option value="quarter">This quarter</option>
+            <option value="year">This year</option><option value="all">All time</option>
+          </select>
+          <span style="flex:1"></span>
+          <div class="seg" id="pMode">
+            <button class="active" data-m="board" onclick="setPipeMode('board')">Board</button><button data-m="table" onclick="setPipeMode('table')">Table</button>
+          </div>
+          <button class="btn sec" onclick="exportPipelineXlsx()">Export Excel</button>
+          <button class="btn" onclick="openOppForm()">+ New deal</button>
+        </div>
+        <div id="pBoard" class="kanban"></div>
+        <div id="pTable" style="display:none"></div>
+        <p class="hint">Drag a card to move it between stages. Dropping on <b>Won</b> asks for the PO; dropping on <b>Lost</b> asks for a reason.</p>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2>Open pipeline by machine category <span class="sub">value by stage</span></h2><canvas id="chPipeCat" height="230"></canvas><div id="pipeCatTbl" style="margin-top:12px"></div></div>
+        <div class="panel"><h2>Forecast <span class="sub">weighted value by expected closing month</span></h2><canvas id="chForecast" height="230"></canvas><div id="forecastTbl" style="margin-top:12px"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2>Funnel <span class="sub" id="funnelSub"></span></h2><div id="funnel"></div></div>
+        <div class="panel"><h2>Stuck deals <span class="sub" id="stuckSub"></span></h2><div id="stuckTbl"></div></div>
+      </div>
+      <div class="panel"><h2>Lead-source performance <span class="sub">which sources turn into orders</span></h2><div id="sourceTbl"></div></div>
+      <div class="panel"><h2>Won orders <span class="sub" id="wonSub"></span></h2><div id="wonTbl"></div></div>
+      <div class="panel"><h2>Lost deals — reasons <span class="sub" id="lostSub"></span></h2><div id="lostTbl"></div></div>
+    </div>
+
     <!-- ================= CUSTOMERS ================= -->
     <div id="customers" class="view">
       <div class="panel">
@@ -326,9 +378,9 @@
         </div>
         <div id="prodTbl"></div>
       </div>
-      <div class="panel"><h2>Orders pipeline</h2>
+      <div class="panel"><h2>All deals &amp; quotes <span class="sub">open the Pipeline page for the board and forecast</span></h2>
         <div class="toolbar">
-          <select id="oStage" onchange="renderOrders()"><option value="">All stages</option><option>draft</option><option>need_quote</option><option>quoted</option><option>won</option><option>lost</option></select>
+          <select id="oStage" onchange="renderOrders()"><option value="">All stages</option><option value="qualified">Qualified</option><option value="demo">Demo / site visit</option><option value="need_quote">Quote requested</option><option value="quoted">Quoted</option><option value="negotiation">Negotiation</option><option value="won">Won</option><option value="lost">Lost</option></select>
           <button class="btn sec" onclick="loadOrders()">Refresh</button>
           <button class="btn sec" onclick="exportCsv('orders')">Export CSV</button>
         </div>
@@ -357,10 +409,10 @@
           <div><h3 class="ch">Achievement %</h3><canvas id="chPct" height="200"></canvas></div>
           <div><h3 class="ch">Leads by status</h3><canvas id="chLeads" height="200"></canvas></div>
           <div><h3 class="ch">Leads by source</h3><canvas id="chSource" height="200"></canvas></div>
-          <div><h3 class="ch">Orders pipeline</h3><canvas id="chFunnel" height="200"></canvas></div>
+          <div><h3 class="ch">Deals by stage</h3><canvas id="chFunnel" height="200"></canvas></div>
           <div><h3 class="ch">Win / Loss</h3><canvas id="chWin" height="200"></canvas></div>
           <div><h3 class="ch">Revenue won (last 6 months)</h3><canvas id="chRev" height="200"></canvas></div>
-          <div><h3 class="ch">Orders by category</h3><canvas id="chCat" height="200"></canvas></div>
+          <div><h3 class="ch">Deals by category</h3><canvas id="chCat" height="200"></canvas></div>
         </div>
       </div>
       <div class="panel"><h2>Per-salesperson performance</h2><div id="perRepTbl"></div></div>
@@ -474,6 +526,25 @@
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="saveCheckin()">Save check-in rules</button> <span id="msgCheckin"></span></div>
       </div>
+      <div class="panel">
+        <h2>Pipeline &amp; order confirmation</h2>
+        <div class="grid2">
+          <div>
+            <div class="field" style="margin-bottom:6px"><label>Default chance of winning by stage (%) — used for the weighted forecast</label></div>
+            <div class="formgrid" id="setProbs" style="margin-bottom:12px"></div>
+            <div class="field"><label>Mark a deal as "stuck" after (days without a stage change)</label><input id="setStuck" type="number" min="1"></div>
+          </div>
+          <div>
+            <div class="field" style="margin-bottom:6px"><label>To mark a deal Won, require:</label></div>
+            <label class="switch"><input type="checkbox" id="setPoReq"> PO copy upload</label>
+            <label class="switch"><input type="checkbox" id="setPayReq"> Payment proof upload</label>
+            <label class="switch"><input type="checkbox" id="setAdvReq"> Advance amount greater than zero</label>
+            <p class="hint">PO number, PO date and order value are always required.</p>
+            <div class="field" style="margin-top:12px"><label>Payment modes — one per line</label><textarea id="setModes"></textarea></div>
+          </div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" onclick="savePipeSettings()">Save pipeline settings</button> <span id="msgPipe"></span></div>
+      </div>
       <p class="hint">Every change is recorded in the audit log with who changed it and when. Tracking, fuel and incentive settings arrive with Phases 3 and 4.</p>
     </div>
   </main>
@@ -520,13 +591,15 @@
           <div style="margin-top:18px">
             <h4 style="font-size:13px;margin-bottom:8px">Update</h4>
             <div class="toolbar" style="margin-bottom:8px">
-              <select id="lvStatus" onchange="lvStatusChanged()"><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">Converted</option><option value="dropped">Dropped</option></select>
+              <select id="lvStatus" onchange="lvStatusChanged()"><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">In pipeline</option><option value="dropped">Dropped</option></select>
               <select id="lvDrop" style="display:none"></select>
               <select id="lvAssign"></select>
               <button class="btn sm" onclick="saveLeadUpdate()">Save</button>
             </div>
             <div class="toolbar"><input id="lvNote" placeholder="Add a note or call summary…" style="flex:1" onkeydown="if(event.key==='Enter')addLeadNote()"><button class="btn sec sm" onclick="addLeadNote()">Add note</button></div>
             <div id="lvMsg"></div>
+            <div style="display:flex;align-items:center;margin:18px 0 6px"><h4 style="font-size:13px;flex:1">Deals</h4><button class="btn sm" onclick="openOppForm(null,{lead_id:_lv.id})" data-roles="admin,manager">+ Create deal</button></div>
+            <div id="lvDeals"></div>
           </div>
         </div>
         <div>
@@ -538,6 +611,91 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="oppFormBg" onclick="if(event.target===this)closeModal('oppFormBg')">
+  <div class="modal">
+    <div class="mh"><h3 id="ofTitle">New deal</h3><button class="xbtn" onclick="closeModal('oppFormBg')">×</button></div>
+    <div class="mb">
+      <input type="hidden" id="ofId">
+      <div class="formgrid">
+        <div class="field" id="ofLinkWrap"><label>Linked to</label>
+          <select id="ofLinkType" onchange="ofLinkChanged()"><option value="lead">A lead</option><option value="customer">An existing customer</option></select></div>
+        <div class="field" id="ofPartyWrap"><label id="ofPartyLbl">Lead *</label><select id="ofParty" onchange="ofPartyChanged()"></select></div>
+        <div class="field full"><label>Deal name *</label><input id="ofName" placeholder="e.g. 3 VRF units for new office"></div>
+        <div class="field"><label>Machine category *</label><select id="ofCat"></select></div>
+        <div class="field"><label>Approx. value (₹) *</label><input id="ofValue" inputmode="decimal"></div>
+        <div class="field"><label>Qty / units</label><input id="ofQty" inputmode="decimal"></div>
+        <div class="field"><label>Area (sq ft)</label><input id="ofSqft" inputmode="decimal"></div>
+        <div class="field"><label>Expected closing date</label><input id="ofClose" type="date"></div>
+        <div class="field"><label>Owner (salesperson)</label><select id="ofOwner"></select></div>
+        <div class="field" id="ofStageWrap"><label>Stage</label><select id="ofStage"></select></div>
+        <div class="field"><label>Chance of winning (%)</label><input id="ofProb" type="number" min="0" max="100" placeholder="auto from stage"></div>
+        <div class="field full"><label>Notes</label><textarea id="ofNotes"></textarea></div>
+      </div>
+      <div class="err" id="ofErr"></div>
+    </div>
+    <div class="mf"><button class="btn sec" onclick="closeModal('oppFormBg')">Cancel</button><button class="btn" id="ofSave" onclick="saveOpp()">Save deal</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="oppViewBg" onclick="if(event.target===this)closeModal('oppViewBg')">
+  <div class="modal" style="max-width:960px">
+    <div class="mh"><h3 id="ovTitle">Deal</h3><span id="ovChip"></span><button class="btn sec sm" id="ovEdit" onclick="editOpp()">Edit</button><button class="xbtn" onclick="closeModal('oppViewBg')">×</button></div>
+    <div class="mb">
+      <div class="grid2">
+        <div>
+          <div class="kv" id="ovKv"></div>
+          <div id="ovActions" style="margin-top:18px"></div>
+          <div class="toolbar" style="margin-top:10px"><input id="ovNote" placeholder="Add a note…" style="flex:1" onkeydown="if(event.key==='Enter')addOppNote()"><button class="btn sec sm" onclick="addOppNote()">Add note</button></div>
+          <div id="ovMsg"></div>
+        </div>
+        <div>
+          <h4 style="font-size:13px;margin-bottom:8px">Documents</h4>
+          <div class="thumbs" id="ovDocs"></div>
+          <div style="margin-top:8px"><input type="file" id="ovUpload" accept="image/*,application/pdf"> <select id="ovUpKind"><option value="drawing">Drawing</option><option value="document">Document</option><option value="po">PO copy</option><option value="payment">Payment proof</option><option value="site">Site photo</option></select> <button class="btn sec sm" onclick="uploadOppDoc()">Upload</button></div>
+          <h4 style="font-size:13px;margin:18px 0 8px">History</h4>
+          <div class="timeline" id="ovTimeline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="wonBg" onclick="if(event.target===this)closeModal('wonBg')">
+  <div class="modal">
+    <div class="mh"><h3>Mark as Won — confirm order</h3><button class="xbtn" onclick="closeModal('wonBg')">×</button></div>
+    <div class="mb">
+      <div class="warnbox" id="wnFor" style="background:#E6F6EC;border-color:#BFE6CB;color:#14532D;margin:0 0 14px"></div>
+      <div class="formgrid">
+        <div class="field"><label>PO number *</label><input id="wnPo"></div>
+        <div class="field"><label>PO date *</label><input id="wnPoDate" type="date"></div>
+        <div class="field"><label>Order value (₹) *</label><input id="wnValue" inputmode="decimal"></div>
+        <div class="field"><label id="wnAdvLbl">Advance received (₹)</label><input id="wnAdv" inputmode="decimal"></div>
+        <div class="field"><label>Payment mode</label><select id="wnMode"></select></div>
+        <div class="field"><label>UTR / cheque / reference</label><input id="wnRef"></div>
+        <div class="field"><label>Payment terms</label><input id="wnTerms" placeholder="e.g. 30% advance, balance before dispatch"></div>
+        <div class="field"><label>Committed delivery date</label><input id="wnDelivery" type="date"></div>
+        <div class="field"><label id="wnPoFileLbl">PO copy</label><input type="file" id="wnPoFile" accept="image/*,application/pdf"><p class="hint" id="wnPoHave"></p></div>
+        <div class="field"><label id="wnPayFileLbl">Payment proof</label><input type="file" id="wnPayFile" accept="image/*,application/pdf"><p class="hint" id="wnPayHave"></p></div>
+        <div class="field full"><label>Notes</label><input id="wnNotes"></div>
+      </div>
+      <div class="err" id="wnErr"></div>
+    </div>
+    <div class="mf"><button class="btn sec" onclick="closeModal('wonBg')">Cancel</button><button class="btn" id="wnSave" style="background:linear-gradient(135deg,#16A34A,#22C55E)" onclick="saveWon()">Confirm order — Mark Won</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="lostBg" onclick="if(event.target===this)closeModal('lostBg')">
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><h3>Mark as Lost</h3><button class="xbtn" onclick="closeModal('lostBg')">×</button></div>
+    <div class="mb">
+      <div class="field" style="margin-bottom:12px"><label>Reason *</label><select id="lsReason"></select></div>
+      <div class="field"><label>Notes</label><input id="lsNotes" placeholder="Competitor, price gap…"></div>
+      <div class="err" id="lsErr"></div>
+    </div>
+    <div class="mf"><button class="btn sec" onclick="closeModal('lostBg')">Cancel</button><button class="btn danger" onclick="saveLost()">Mark lost</button></div>
   </div>
 </div>
 
@@ -558,9 +716,9 @@ let SETTINGS = {};       // app_settings by key
 let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [], leads: [] };
 let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
-const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'Converted', dropped:'Dropped' };
+const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'In pipeline', dropped:'Dropped' };
 const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
-const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO', payment:'Payment', other:'Other' };
+const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO', payment:'Payment', document:'Document', other:'Other' };
 
 function ensureGmaps() {
   if (gmapsReady) return gmapsReady;
@@ -628,9 +786,11 @@ async function compressImage(file, maxDim = 1600, quality = 0.82) {
   } catch (_) { return file; }
 }
 async function uploadMedia(file, entityType, entityId, kind, caption) {
-  const blob = await compressImage(file);
-  const path = `${ME.id}/${entityType}/${entityId}/${crypto.randomUUID()}.jpg`;
-  const { error } = await db.storage.from('media').upload(path, blob, { contentType: 'image/jpeg' });
+  const isImg = (file.type || '').startsWith('image/');
+  const ext = isImg ? 'jpg' : ((file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin');
+  const blob = isImg ? await compressImage(file) : file;
+  const path = `${ME.id}/${entityType}/${entityId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await db.storage.from('media').upload(path, blob, { contentType: isImg ? 'image/jpeg' : (file.type || 'application/octet-stream') });
   if (error) throw error;
   const { error: e2 } = await db.from('media').insert({ entity_type: entityType, entity_id: entityId, kind, storage_path: path, caption: caption || null });
   if (e2) throw e2;
@@ -714,6 +874,7 @@ function show(v) {
   if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60); }
   if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadProducts(); }
+  if (v === 'pipeline') loadPipeline();
   if (v === 'team') { loadUsers(); loadInvites(); }
   if (v === 'followups') loadFollowUps();
   if (v === 'reports') loadReports();
@@ -743,6 +904,7 @@ async function saveSetting(key, value, msgId) {
 }
 function renderSettings() {
   loadCategories();
+  renderPipeSettings();
   const ls = S('lead_setup', {});
   document.getElementById('setTypes').innerHTML = (ls.contact_types || []).map((t, i) =>
     `<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><input type="checkbox" id="ctOn${i}" ${t.enabled === false ? '' : 'checked'} style="width:18px;height:18px;accent-color:var(--brand)"><input class="inp" id="ctLbl${i}" value="${esc(t.label)}" style="flex:1"><span class="muted" style="font-size:11px">${esc(t.key)}</span></div>`).join('');
@@ -962,6 +1124,7 @@ async function openLead(id) {
   document.getElementById('lvNote').value = ''; document.getElementById('lvMsg').innerHTML = '';
   openModal('leadViewBg');
   loadLeadExtras(l.id);
+  loadLeadDeals(l.id);
 }
 function lvStatusChanged() { document.getElementById('lvDrop').style.display = document.getElementById('lvStatus').value === 'dropped' ? '' : 'none'; }
 function editLead() { closeModal('leadViewBg'); openLeadForm(_lv); }
@@ -1088,15 +1251,15 @@ async function loadOverview() {
   const S2 = summ || [];
   const checkins = S2.reduce((s, r) => s + r.checkins, 0), flagged = S2.reduce((s, r) => s + r.flagged, 0);
   const orders = cache.orders || [], mStart = new Date(start.getFullYear(), start.getMonth(), 1);
-  const pipeline = orders.filter(o => !['won','lost'].includes(o.stage)).reduce((s, o) => s + Number(o.quote_total || 0), 0);
-  const wonM = orders.filter(o => o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
+  const pipeline = orders.filter(o => OPEN_STAGES.includes(o.stage)).reduce((s, o) => s + oppVal(o), 0);
+  const wonM = orders.filter(o => o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + oppVal(o), 0);
   document.getElementById('statCards').innerHTML =
     kpi(cache.leads.filter(l => new Date(l.created_at) >= start).length, 'Leads today', 'blue', '＋', "setLeadFilter('')") +
     kpi(cache.leads.filter(isStale).length, 'Untouched leads', 'red', '⚠', "setLeadFilter('stale')") +
     kpi(checkins, 'Check-ins today', 'teal', '📍', "show('visits')") +
     kpi((att || []).length, 'On duty today', 'purple', '👤', "show('attendance')") +
-    kpi(rs(pipeline), 'Open quote pipeline', 'orange', '₹', "show('orders')") +
-    kpi(rs(wonM), 'Won this month', 'green', '✓', "show('reports')");
+    kpi(rsShort(pipeline), 'Open pipeline', 'orange', '₹', "show('pipeline')") +
+    kpi(rsShort(wonM), 'Won this month', 'green', '✓', "show('pipeline')");
   document.getElementById('todayByUser').innerHTML = daySummaryTable(S2);
   const stale = cache.leads.filter(isStale).slice(0, 8);
   document.getElementById('staleHint').textContent = `new & untouched > ${staleHours()} h`;
@@ -1202,20 +1365,23 @@ async function addProduct() {
 }
 async function toggleProduct(id, active) { await db.from('products').update({ active }).eq('id', id); loadProducts(); }
 async function loadOrders() {
-  const { data } = await db.from('orders').select('*, customers(name,company), order_categories(name)').order('created_at', { ascending: false }).limit(500);
+  const { data } = await db.from('orders').select('*, customers(name,company,mobile), leads(name,company,mobile,source,contact_type), order_categories(name)').order('created_at', { ascending: false }).limit(2000);
   cache.orders = data || [];
   const stg = s => cache.orders.filter(o => o.stage === s).length;
   document.getElementById('orderStats').innerHTML =
-    kpi(cache.orders.length,'Total orders','blue','#') + kpi(stg('draft'),'Draft','orange','✎') + kpi(stg('need_quote'),'Need quote','purple','?') +
-    kpi(stg('quoted'),'Quoted','teal','₹') + kpi(stg('won'),'Won','green','✓') + kpi(stg('lost'),'Lost','red','✕');
+    kpi(stg('need_quote'),'Quote requested','orange','?', "show('pipeline')") + kpi(stg('quoted'),'Quoted','teal','₹', "show('pipeline')") +
+    kpi(stg('negotiation'),'Negotiation','purple','⇄', "show('pipeline')") + kpi(stg('won'),'Won','green','✓', "show('pipeline')");
+  const sb = document.getElementById('stuckBadge'), ns = cache.orders.filter(o => OPEN_STAGES.includes(o.stage) && daysIn(o) >= stuckDays()).length;
+  if (sb) { sb.style.display = ns ? '' : 'none'; sb.textContent = ns; }
   renderOrders(); renderApprovals();
 }
 function renderOrders() {
   const st = document.getElementById('oStage').value;
-  document.getElementById('ordersTbl').innerHTML = tbl(['Created','Customer','Type','Sq ft','Visit','Stage','Quote ₹','Salesperson','Quote assigned'],
-    (cache.orders||[]).filter(o => !st || o.stage === st).map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
-      o.sqft ?? '—', esc(o.visit_status), chip(o.stage), o.quote_total ? _rupees(o.quote_total) : '—', esc(uname(o.created_by)),
-      o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']));
+  const rows = (cache.orders||[]).filter(o => !st || o.stage === st);
+  document.getElementById('ordersTbl').innerHTML = tbl(['Created','Customer','Deal','Category','Stage','Value','Quote ₹','Owner','Quote by'],
+    rows.map(o => [fmtDT(o.created_at), esc(party(o).name || '—'), esc(o.title || '—'), esc(o.order_categories?.name)||'—',
+      stageChip(o.stage), oppVal(o) ? rs(oppVal(o)) : '—', o.quote_total ? _rupees(o.quote_total) : '—', esc(uname(ownerOf(o))),
+      o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']), i => `class="rowlink" onclick="openOpp('${rows[i].id}')"`);
 }
 function renderApprovals() {
   const pend = (cache.orders || []).filter(o => o.needs_approval && !o.approved_at);
@@ -1223,12 +1389,448 @@ function renderApprovals() {
   if (!pend.length) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
   document.getElementById('approvalsTbl').innerHTML = tbl(['Customer','Type','Discount','Quote total','Salesperson','Action'],
-    pend.map(o => [esc(o.customers?.name), esc(o.order_categories?.name)||'—', (o.discount_pct||0) + '%', _rupees(o.quote_total), esc(uname(o.created_by)),
+    pend.map(o => [esc(party(o).name), esc(o.order_categories?.name)||'—', (o.discount_pct||0) + '%', _rupees(o.quote_total), esc(uname(ownerOf(o))),
       `<button class="btn sm" onclick="approveOrder('${o.id}')">Approve</button>`]));
 }
 async function approveOrder(id) {
   const { error } = await db.from('orders').update({ needs_approval: false, approved_by: ME.id, approved_at: new Date().toISOString() }).eq('id', id);
   if (error) { alert(error.message); return; } loadOrders();
+}
+
+// ---------- pipeline (Phase 2) ----------
+const STAGES = { qualified:'Qualified', demo:'Demo / site visit', need_quote:'Quote requested', quoted:'Quoted', negotiation:'Negotiation', won:'Won', lost:'Lost' };
+const OPEN_STAGES = ['qualified','demo','need_quote','quoted','negotiation'];
+const STAGE_COLOR = { qualified:'#2F5BEA', demo:'#7C3AED', need_quote:'#D97706', quoted:'#0E7490', negotiation:'#C2410C', won:'#16A34A', lost:'#64748B' };
+const oppVal = o => Number((o.stage === 'won' ? (o.order_value ?? o.quote_total ?? o.est_value) : (o.quote_total ?? o.est_value)) || 0);
+const party = o => o.customers || o.leads || {};
+const partyName = o => { const p = party(o); return (p.name || '—') + (p.company ? ' · ' + p.company : ''); };
+const daysIn = o => Math.max(0, Math.floor((Date.now() - new Date(o.stage_changed_at || o.updated_at || o.created_at)) / 864e5));
+const stuckDays = () => Number(S('pipeline', {}).stuck_days || 15);
+const ownerOf = o => o.owner_id || o.created_by;
+const stageChip = s => `<span class="chip" style="background:${STAGE_COLOR[s] || '#64748B'}1A;color:${STAGE_COLOR[s] || '#64748B'}">${esc(STAGES[s] || s)}</span>`;
+const rsShort = n => { n = Number(n || 0); if (n >= 1e7) return '₹' + (n / 1e7).toFixed(2).replace(/\.?0+$/, '') + ' Cr'; if (n >= 1e5) return '₹' + (n / 1e5).toFixed(2).replace(/\.?0+$/, '') + ' L'; return rs(n); };
+let _pipeMode = 'board', _ov = null, _dragId = null, _wonFor = null, _lostFor = null;
+
+function periodStart() {
+  const v = (document.getElementById('pPeriod') || {}).value || 'month', n = new Date();
+  if (v === 'month') return new Date(n.getFullYear(), n.getMonth(), 1);
+  if (v === 'quarter') return new Date(n.getFullYear(), Math.floor(n.getMonth() / 3) * 3, 1);
+  if (v === 'year') return new Date(n.getMonth() >= 3 ? n.getFullYear() : n.getFullYear() - 1, 3, 1); // Indian FY (Apr–Mar)
+  return new Date(2000, 0, 1);
+}
+function periodLabel() { const v = (document.getElementById('pPeriod') || {}).value || 'month'; return { month: 'this month', quarter: 'this quarter', year: 'this FY', all: 'all time' }[v] || v; }
+function fillPipeFilters() {
+  const r = document.getElementById('pRep'); if (!r) return;
+  const cur = r.value, cc = document.getElementById('pCatF').value;
+  r.innerHTML = '<option value="">All salespeople</option>' + repOpts(cur, null);
+  document.getElementById('pCatF').innerHTML = '<option value="">All categories</option>' + _cats.map(c => `<option value="${c.id}" ${c.id === cc ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+}
+function pipeFiltered() {
+  const q = (document.getElementById('pSearch').value || '').toLowerCase(), rep = document.getElementById('pRep').value, cat = document.getElementById('pCatF').value;
+  return (cache.orders || []).filter(o => (!rep || ownerOf(o) === rep) && (!cat || o.category_id === cat) &&
+    (!q || `${o.title || ''} ${partyName(o)} ${o.po_number || ''} ${o.quote_number || ''}`.toLowerCase().includes(q)));
+}
+function setPipeMode(m) {
+  _pipeMode = m;
+  document.querySelectorAll('#pMode button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  document.getElementById('pBoard').style.display = m === 'board' ? '' : 'none';
+  document.getElementById('pTable').style.display = m === 'table' ? '' : 'none';
+}
+async function loadPipeline() { await loadOrders(); fillPipeFilters(); renderPipeline(); }
+
+function renderPipeline() {
+  if (!document.getElementById('pipeCards')) return;
+  const rows = pipeFiltered(), ps = periodStart();
+  const open = rows.filter(o => OPEN_STAGES.includes(o.stage));
+  const inP = o => new Date(o.won_at || o.closed_at || o.updated_at) >= ps;
+  const won = rows.filter(o => o.stage === 'won' && inP(o)), lost = rows.filter(o => o.stage === 'lost' && inP(o));
+  const openV = open.reduce((s, o) => s + oppVal(o), 0), wtd = open.reduce((s, o) => s + oppVal(o) * (o.probability || 0) / 100, 0);
+  const wonV = won.reduce((s, o) => s + oppVal(o), 0), stuck = open.filter(o => daysIn(o) >= stuckDays());
+  const winRate = (won.length + lost.length) ? Math.round(won.length / (won.length + lost.length) * 100) + '%' : '—';
+  document.getElementById('pipeCards').innerHTML =
+    kpi(rsShort(openV), `Open pipeline · ${open.length} deals`, 'blue', '₹') +
+    kpi(rsShort(wtd), 'Weighted forecast', 'purple', '%') +
+    kpi(rsShort(wonV), `Won · ${periodLabel()} (${won.length})`, 'green', '✓') +
+    kpi(winRate, 'Win rate', 'teal', '◎') +
+    kpi(won.length ? rsShort(wonV / won.length) : '—', 'Average order size', 'orange', 'Ø') +
+    kpi(stuck.length, `Stuck > ${stuckDays()} days`, 'red', '⏳', "document.getElementById('stuckTbl').scrollIntoView({behavior:'smooth'})");
+
+  // ---- board ----
+  const cols = [...OPEN_STAGES, 'won', 'lost'];
+  document.getElementById('pBoard').innerHTML = cols.map(s => {
+    const list = (s === 'won' ? won : s === 'lost' ? lost : open.filter(o => o.stage === s)).sort((a, b) => oppVal(b) - oppVal(a));
+    const sum = list.reduce((a, o) => a + oppVal(o), 0);
+    return `<div class="kcol" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="this.classList.remove('over');dropStage('${s}')">
+      <div class="khead" style="border-top-color:${STAGE_COLOR[s]}"><b>${esc(STAGES[s])}</b><span class="muted">${list.length}</span><div class="ksum">${rsShort(sum)}</div></div>
+      <div class="kbody">${list.map(o => {
+        const d = daysIn(o), isStuck = OPEN_STAGES.includes(o.stage) && d >= stuckDays();
+        const close = o.expected_close ? new Date(o.expected_close) : null, late = close && OPEN_STAGES.includes(o.stage) && close < new Date(todayStr());
+        return `<div class="kcard" draggable="${o.stage !== 'won' || ME.role === 'admin'}" ondragstart="_dragId='${o.id}'" onclick="openOpp('${o.id}')">
+          <div class="kt">${esc(party(o).name || '—')}</div>
+          <div class="ks">${esc(o.title || o.order_categories?.name || 'Deal')}</div>
+          <div class="kv2"><b>${oppVal(o) ? rsShort(oppVal(o)) : '—'}</b>${OPEN_STAGES.includes(o.stage) ? `<span class="muted">${o.probability ?? 0}%</span>` : ''}</div>
+          <div class="kf"><span>${esc(uname(ownerOf(o)))}</span>
+            ${o.stage === 'won' ? `<span>PO ${esc(o.po_number || '')}</span>` : o.stage === 'lost' ? `<span>${esc(o.lost_reason || '')}</span>`
+              : `<span class="${isStuck ? 'stale' : ''}">${d}d${close ? ' · ' + `<span class="${late ? 'stale' : ''}">${close.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>` : ''}</span>`}</div>
+        </div>`; }).join('') || '<div class="kempty">—</div>'}</div></div>`;
+  }).join('');
+
+  // ---- table ----
+  const tRows = [...open, ...won, ...lost];
+  document.getElementById('pTable').innerHTML = tbl(['Customer / lead', 'Deal', 'Category', 'Owner', 'Stage', 'Value', 'Prob.', 'Close by', 'Days in stage', 'PO'],
+    tRows.map(o => [`<b>${esc(party(o).name || '—')}</b>${party(o).company ? '<br><span class="muted">' + esc(party(o).company) + '</span>' : ''}`,
+      esc(o.title || '—'), esc(o.order_categories?.name || '—'), esc(uname(ownerOf(o))), stageChip(o.stage), oppVal(o) ? rs(oppVal(o)) : '—',
+      OPEN_STAGES.includes(o.stage) ? (o.probability ?? 0) + '%' : '—', esc(o.expected_close || '—'),
+      OPEN_STAGES.includes(o.stage) ? `<span class="${daysIn(o) >= stuckDays() ? 'stale' : ''}">${daysIn(o)}</span>` : '—', esc(o.po_number || '—')]),
+    i => `class="rowlink" onclick="openOpp('${tRows[i].id}')"`);
+
+  // ---- by category ----
+  const cats = [...new Set(rows.map(o => o.order_categories?.name || 'Uncategorised'))];
+  const byCat = c => rows.filter(o => (o.order_categories?.name || 'Uncategorised') === c);
+  mkChart('chPipeCat', { type: 'bar', data: { labels: cats, datasets: OPEN_STAGES.map(s => ({ label: STAGES[s], backgroundColor: STAGE_COLOR[s],
+    data: cats.map(c => byCat(c).filter(o => o.stage === s).reduce((a, o) => a + oppVal(o), 0)) })) },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: x => x.dataset.label + ': ' + rsShort(x.raw) } } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { callback: v => rsShort(v) } } } } });
+  document.getElementById('pipeCatTbl').innerHTML = tbl(['Category', 'Open deals', 'Open value', 'Weighted', 'Won (' + periodLabel() + ')'],
+    cats.map(c => { const r = byCat(c), op = r.filter(o => OPEN_STAGES.includes(o.stage)), w = r.filter(o => o.stage === 'won' && inP(o));
+      return [`<b>${esc(c)}</b>`, op.length, rs(op.reduce((a, o) => a + oppVal(o), 0)), rs(Math.round(op.reduce((a, o) => a + oppVal(o) * (o.probability || 0) / 100, 0))),
+        rs(w.reduce((a, o) => a + oppVal(o), 0)) + ` <span class="muted">(${w.length})</span>`]; }));
+
+  // ---- forecast by expected close month ----
+  const mkey = o => o.expected_close ? o.expected_close.slice(0, 7) : 'none';
+  const months = [...new Set(open.map(mkey))].sort((a, b) => a === 'none' ? 1 : b === 'none' ? -1 : a.localeCompare(b));
+  const mlabel = k => k === 'none' ? 'No date' : new Date(k + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+  const fTot = months.map(k => open.filter(o => mkey(o) === k).reduce((a, o) => a + oppVal(o), 0));
+  const fW = months.map(k => Math.round(open.filter(o => mkey(o) === k).reduce((a, o) => a + oppVal(o) * (o.probability || 0) / 100, 0)));
+  mkChart('chForecast', { type: 'bar', data: { labels: months.map(mlabel), datasets: [
+      { label: 'Total open value', data: fTot, backgroundColor: '#C7D4FB' }, { label: 'Weighted', data: fW, backgroundColor: '#2F5BEA' }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: x => x.dataset.label + ': ' + rsShort(x.raw) } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => rsShort(v) } } } } });
+  const thisM = todayStr().slice(0, 7);
+  document.getElementById('forecastTbl').innerHTML = tbl(['Closing month', 'Deals', 'Total', 'Weighted'],
+    months.map((k, i) => [`${mlabel(k)}${k !== 'none' && k < thisM ? ' <span class="flag">overdue</span>' : ''}`, open.filter(o => mkey(o) === k).length, rs(fTot[i]), `<b>${rs(fW[i])}</b>`]));
+
+  // ---- stuck ----
+  document.getElementById('stuckSub').textContent = `no stage change for ${stuckDays()}+ days`;
+  const st = stuck.sort((a, b) => daysIn(b) - daysIn(a));
+  document.getElementById('stuckTbl').innerHTML = st.length ? tbl(['Deal', 'Owner', 'Stage', 'Days', 'Value'],
+    st.map(o => [`<b>${esc(party(o).name || '—')}</b><br><span class="muted">${esc(o.title || '')}</span>`, esc(uname(ownerOf(o))), stageChip(o.stage),
+      `<span class="stale">${daysIn(o)}</span>`, rs(oppVal(o))]), i => `class="rowlink" onclick="openOpp('${st[i].id}')"`) : '<div class="empty">Nothing stuck 👍</div>';
+
+  // ---- won / lost in period ----
+  document.getElementById('wonSub').textContent = periodLabel();
+  const wl = won.sort((a, b) => new Date(b.won_at) - new Date(a.won_at));
+  document.getElementById('wonTbl').innerHTML = tbl(['Won on', 'PO', 'Customer', 'Deal', 'Category', 'Owner', 'Order value', 'Advance', 'Mode', 'Delivery'],
+    wl.map(o => [fmtDT(o.won_at), `<b>${esc(o.po_number || '—')}</b><br><span class="muted">${esc(o.po_date || '')}</span>`, esc(partyName(o)), esc(o.title || '—'),
+      esc(o.order_categories?.name || '—'), esc(uname(ownerOf(o))), `<b>${rs(oppVal(o))}</b>`, o.advance_amount ? rs(o.advance_amount) : '—',
+      esc(o.payment_mode || '—'), esc(o.delivery_date || '—')]), i => `class="rowlink" onclick="openOpp('${wl[i].id}')"`);
+  document.getElementById('lostSub').textContent = periodLabel();
+  const lr = {}; lost.forEach(o => { const k = o.lost_reason || 'Not given'; lr[k] = lr[k] || { n: 0, v: 0 }; lr[k].n++; lr[k].v += oppVal(o); });
+  document.getElementById('lostTbl').innerHTML = tbl(['Reason', 'Deals', 'Value lost'], Object.entries(lr).sort((a, b) => b[1].v - a[1].v).map(([k, x]) => [esc(k), x.n, rs(x.v)]));
+
+  renderSourcePerf(rows);
+  renderFunnel(rows, ps);
+}
+
+function renderSourcePerf(rows) {
+  const src = {};
+  const add = (k) => (src[k] = src[k] || { leads: 0, deals: 0, won: 0, wonV: 0, pipe: 0 });
+  cache.leads.forEach(l => add(l.source || 'Unknown').leads++);
+  rows.forEach(o => { const s = add(o.source || o.leads?.source || 'Direct / no lead'); s.deals++;
+    if (o.stage === 'won') { s.won++; s.wonV += oppVal(o); } else if (OPEN_STAGES.includes(o.stage)) s.pipe += oppVal(o); });
+  const ent = Object.entries(src).sort((a, b) => b[1].wonV - a[1].wonV || b[1].leads - a[1].leads);
+  document.getElementById('sourceTbl').innerHTML = tbl(['Source', 'Leads', 'Deals', 'Lead → deal', 'Won', 'Won value', 'Open pipeline'],
+    ent.map(([k, x]) => [`<b>${esc(k)}</b>`, x.leads, x.deals, x.leads ? Math.round(x.deals / x.leads * 100) + '%' : '—', x.won, rs(x.wonV), rs(x.pipe)]));
+}
+
+async function renderFunnel(rows, ps) {
+  document.getElementById('funnelSub').textContent = periodLabel() + ' · created in period';
+  const rep = document.getElementById('pRep').value;
+  let q = db.from('visits').select('id', { count: 'exact', head: true }).gte('checkin_at', ps.toISOString());
+  if (rep) q = q.eq('user_id', rep);
+  const { count } = await q;
+  const leads = cache.leads.filter(l => new Date(l.created_at) >= ps && (!rep || l.assigned_to === rep)).length;
+  const deals = rows.filter(o => new Date(o.created_at) >= ps).length;
+  const won = rows.filter(o => o.stage === 'won' && new Date(o.won_at) >= ps);
+  const steps = [['Leads', leads, '#2F5BEA'], ['Check-ins', count || 0, '#0D9488'], ['Deals created', deals, '#7C3AED'], ['Won', won.length, '#16A34A']];
+  const max = Math.max(1, ...steps.map(s => s[1]));
+  document.getElementById('funnel').innerHTML = steps.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:12px;margin:8px 0">
+      <div style="width:110px;font-weight:650;font-size:13px">${s[0]}</div>
+      <div style="flex:1;background:#EEF1F7;border-radius:8px;height:30px;position:relative">
+        <div style="width:${Math.max(4, s[1] / max * 100)}%;background:${s[2]};height:100%;border-radius:8px"></div>
+        <span style="position:absolute;left:10px;top:6px;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.3)">${s[1]}</span></div>
+      <div style="width:70px;text-align:right" class="muted">${i > 0 && steps[i - 1][1] ? Math.round(s[1] / steps[i - 1][1] * 100) + '%' : ''}</div>
+    </div>`).join('') + `<p class="hint">Won value in period: <b>${rs(won.reduce((a, o) => a + oppVal(o), 0))}</b>. Percentages are step-to-step conversion.</p>`;
+}
+
+async function dropStage(stage) {
+  const id = _dragId; _dragId = null; if (!id) return;
+  const o = cache.orders.find(x => x.id === id); if (!o || o.stage === stage) return;
+  await moveStage(id, stage);
+}
+async function moveStage(id, stage) {
+  if (stage === 'won') return openWon(id);
+  if (stage === 'lost') return openLost(id);
+  const { error } = await db.from('orders').update({ stage }).eq('id', id);
+  if (error) { alert(error.message); return; }
+  await loadPipeline(); if (_ov && _ov.id === id && document.getElementById('oppViewBg').classList.contains('show')) openOpp(id);
+}
+
+// ---- deal view ----
+async function openOpp(id) {
+  let o = cache.orders.find(x => x.id === id);
+  if (!o) { await loadOrders(); o = cache.orders.find(x => x.id === id); if (!o) return; }
+  _ov = o;
+  const p = party(o), open = OPEN_STAGES.includes(o.stage);
+  document.getElementById('ovTitle').textContent = (p.name || 'Deal') + (o.title ? ' — ' + o.title : '');
+  document.getElementById('ovChip').innerHTML = stageChip(o.stage);
+  document.getElementById('ovEdit').style.display = o.stage === 'won' ? 'none' : '';
+  const mob = p.mobile ? `<a href="tel:${esc(p.mobile)}">${esc(p.mobile)}</a> · <a target="_blank" href="https://wa.me/${esc(String(p.mobile).replace(/\D/g, '').replace(/^(\d{10})$/, '91$1'))}">WhatsApp</a>` : '—';
+  const kv = [['Customer', esc(partyName(o)) + (o.customer_id ? '' : ' <span class="chip new">lead</span>')], ['Mobile', mob],
+    ['Category', esc(o.order_categories?.name || '—')], ['Value', `<b>${oppVal(o) ? rs(oppVal(o)) : '—'}</b>`], ['Qty / area', [o.qty ? 'Qty ' + o.qty : '', o.sqft ? o.sqft + ' sq ft' : ''].filter(Boolean).join(' · ') || '—'],
+    ['Owner', esc(uname(ownerOf(o)))], ['Chance', open ? (o.probability ?? 0) + '%' : '—'], ['Expected close', esc(o.expected_close || '—')],
+    ['In this stage', open ? daysIn(o) + ' days' : '—'], ['Source', esc(o.source || o.leads?.source || '—')], ['Created', fmtDT(o.created_at) + ' by ' + esc(uname(o.created_by))]];
+  if (o.quote_total) kv.push(['Quotation', `${esc(o.quote_number || '')} · ${rs(o.quote_total)}${o.discount_pct ? ' (' + o.discount_pct + '% disc.)' : ''}`]);
+  if (o.quote_assigned_to) kv.push(['Quote by', esc(uname(o.quote_assigned_to))]);
+  if (o.stage === 'won') kv.push(['PO', `<b>${esc(o.po_number)}</b> · ${esc(o.po_date || '')}`], ['Order value', `<b>${rs(o.order_value)}</b>`],
+    ['Advance', o.advance_amount ? rs(o.advance_amount) : '—'], ['Payment', [o.payment_mode, o.payment_ref].filter(Boolean).map(esc).join(' · ') || '—'],
+    ['Terms', esc(o.payment_terms || '—')], ['Delivery', esc(o.delivery_date || '—')], ['Won on', fmtDT(o.won_at) + ' by ' + esc(uname(o.won_by))]);
+  if (o.stage === 'lost') kv.push(['Lost reason', esc(o.lost_reason || '—')], ['Notes', esc(o.lost_notes || '—')]);
+  if (o.notes) kv.push(['Notes', esc(o.notes)]);
+  document.getElementById('ovKv').innerHTML = kv.map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join('');
+  let act = '';
+  if (open) {
+    act += `<h4 style="font-size:13px;margin-bottom:8px">Move deal</h4><div class="toolbar" style="margin-bottom:8px">
+      <select id="ovStage">${OPEN_STAGES.map(s => `<option value="${s}" ${s === o.stage ? 'selected' : ''}>${STAGES[s]}</option>`).join('')}</select>
+      <button class="btn sm sec" onclick="moveStage(_ov.id, document.getElementById('ovStage').value)">Update stage</button>
+      <button class="btn sm" style="background:linear-gradient(135deg,#16A34A,#22C55E)" onclick="openWon(_ov.id)">Mark Won</button>
+      <button class="btn sm danger" onclick="openLost(_ov.id)">Lost</button></div>`;
+    if (isManager()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
+      <label class="muted" style="font-size:12px">Chance %</label><input id="ovProb" class="inp" type="number" min="0" max="100" value="${o.probability ?? ''}" style="width:80px">
+      <button class="btn sm sec" onclick="saveOppMeta()">Save</button></div>`;
+  } else if (ME.role === 'admin') {
+    act += `<button class="btn sm sec" onclick="if(confirm('Reopen this deal and move it back to Negotiation?'))moveStage(_ov.id,'negotiation')">Reopen deal</button>`;
+  }
+  document.getElementById('ovActions').innerHTML = act;
+  document.getElementById('ovNote').value = ''; document.getElementById('ovMsg').innerHTML = '';
+  openModal('oppViewBg');
+  loadOppExtras(o.id);
+}
+async function loadOppExtras(id) {
+  const [{ data: ev }, { data: md }] = await Promise.all([
+    db.from('order_events').select('*').eq('order_id', id).order('at', { ascending: false }).limit(100),
+    db.from('media').select('*').eq('entity_type', 'order').eq('entity_id', id).order('created_at')]);
+  const docs = md || [], urls = await signedUrls(docs.map(d => d.storage_path));
+  document.getElementById('ovDocs').innerHTML = docs.length ? docs.map((d, i) => {
+    const isPdf = /\.pdf$/i.test(d.storage_path);
+    return `<div style="text-align:center">${isPdf ? `<a href="${urls[i]}" target="_blank" style="display:grid;place-items:center;width:150px;height:100px;border:1px solid var(--border);border-radius:10px;background:#F4F6FB;text-decoration:none;font-weight:700">PDF ↗</a>`
+      : `<img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: d.kind, at: d.created_at, by: d.uploaded_by, lat: d.lat, lng: d.lng })})'>`}<div class="muted" style="font-size:11px">${esc(KIND_LABEL[d.kind] || d.kind)}</div></div>`; }).join('')
+    : '<span class="muted">No documents yet.</span>';
+  const lbl = { created: 'Created', stage: 'Stage', won: 'Won', owner: 'Owner →', note: 'Note' };
+  const nice = t => String(t || '').replace(/\b(qualified|demo|need_quote|quoted|negotiation|won|lost)\b/g, m => STAGES[m]);
+  document.getElementById('ovTimeline').innerHTML = (ev || []).length ? ev.map(e =>
+    `<div class="ev"><b>${esc(lbl[e.kind] || e.kind)}</b> ${esc(nice(e.note))}<small>${esc(uname(e.user_id))} · ${fmtDT(e.at)}</small></div>`).join('') : '<span class="muted">No history yet.</span>';
+}
+async function saveOppMeta() {
+  const upd = {}, ow = document.getElementById('ovOwner').value, pr = document.getElementById('ovProb').value;
+  if (ow && ow !== ownerOf(_ov)) upd.owner_id = ow;
+  if (pr !== '' && Number(pr) !== _ov.probability) upd.probability = Math.max(0, Math.min(100, parseInt(pr)));
+  if (!Object.keys(upd).length) return;
+  const { error } = await db.from('orders').update(upd).eq('id', _ov.id);
+  if (error) { flash('ovMsg', error.message, false); return; }
+  await loadPipeline(); openOpp(_ov.id); flash('ovMsg', 'Saved ✓');
+}
+async function addOppNote() {
+  const t = document.getElementById('ovNote').value.trim(); if (!t) return;
+  const { error } = await db.from('order_events').insert({ order_id: _ov.id, user_id: ME.id, kind: 'note', note: t });
+  if (error) { flash('ovMsg', error.message, false); return; }
+  document.getElementById('ovNote').value = ''; loadOppExtras(_ov.id);
+}
+async function uploadOppDoc() {
+  const f = document.getElementById('ovUpload').files[0]; if (!f) { flash('ovMsg', 'Choose a file first', false); return; }
+  try { await uploadMedia(f, 'order', _ov.id, document.getElementById('ovUpKind').value); document.getElementById('ovUpload').value = ''; loadOppExtras(_ov.id); flash('ovMsg', 'Uploaded ✓'); }
+  catch (e) { flash('ovMsg', e.message || String(e), false); }
+}
+
+// ---- create / edit deal ----
+let _ofEdit = null;
+function openOppForm(o, preset) {
+  _ofEdit = o || null; preset = preset || {};
+  document.getElementById('ofTitle').textContent = o ? 'Edit deal' : 'New deal';
+  document.getElementById('ofLinkWrap').style.display = o ? 'none' : '';
+  document.getElementById('ofPartyWrap').style.display = o ? 'none' : '';
+  document.getElementById('ofStageWrap').style.display = o ? 'none' : '';
+  document.getElementById('ofLinkType').value = preset.customer_id ? 'customer' : 'lead';
+  ofLinkChanged(preset.lead_id || preset.customer_id);
+  document.getElementById('ofCat').innerHTML = '<option value="">— choose —</option>' + _cats.filter(c => c.active || (o && c.id === o.category_id)).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  document.getElementById('ofOwner').innerHTML = repOpts(o ? ownerOf(o) : '', '— me —');
+  document.getElementById('ofOwner').disabled = !isManager();
+  document.getElementById('ofStage').innerHTML = ['qualified', 'demo', 'need_quote', 'quoted', 'negotiation'].map(s => `<option value="${s}">${STAGES[s]}</option>`).join('');
+  const v = (id, x) => document.getElementById(id).value = x ?? '';
+  v('ofName', o?.title); v('ofCat', o?.category_id); v('ofValue', o?.est_value); v('ofQty', o?.qty); v('ofSqft', o?.sqft);
+  v('ofClose', o?.expected_close || (o ? '' : new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10))); v('ofProb', o ? o.probability : ''); v('ofNotes', o?.notes);
+  document.getElementById('ofErr').textContent = '';
+  if (!o && (preset.lead_id || preset.customer_id)) ofPartyChanged();
+  closeModal('oppViewBg'); closeModal('leadViewBg'); openModal('oppFormBg');
+}
+function ofLinkChanged(sel) {
+  const t = document.getElementById('ofLinkType').value;
+  document.getElementById('ofPartyLbl').textContent = t === 'lead' ? 'Lead *' : 'Customer *';
+  const list = t === 'lead' ? cache.leads.filter(l => l.status !== 'dropped') : (cache.customers || []);
+  document.getElementById('ofParty').innerHTML = '<option value="">— choose —</option>' + list.map(x => `<option value="${x.id}" ${x.id === sel ? 'selected' : ''}>${esc(x.name)}${x.company ? ' · ' + esc(x.company) : ''}</option>`).join('');
+}
+function ofPartyChanged() {
+  if (document.getElementById('ofLinkType').value !== 'lead') return;
+  const l = cache.leads.find(x => x.id === document.getElementById('ofParty').value); if (!l) return;
+  const v = (id, x) => { const el = document.getElementById(id); if (!el.value && x != null) el.value = x; };
+  v('ofName', l.requirement); v('ofCat', l.category_id); v('ofValue', l.est_value);
+  if (l.assigned_to && isManager()) document.getElementById('ofOwner').value = l.assigned_to;
+}
+async function saveOpp() {
+  const g = id => document.getElementById(id).value.trim(), num = id => g(id) === '' ? null : Number(g(id).replace(/,/g, ''));
+  const err = m => document.getElementById('ofErr').textContent = m;
+  if (!g('ofName')) return err('Deal name is required');
+  if (!g('ofCat')) return err('Choose the machine category');
+  if (num('ofValue') == null || isNaN(num('ofValue'))) return err('Enter the approximate value');
+  const d = { title: g('ofName'), category_id: g('ofCat'), est_value: num('ofValue'), qty: num('ofQty'), sqft: num('ofSqft'),
+    expected_close: g('ofClose') || null, notes: g('ofNotes') || null };
+  if (g('ofProb') !== '') d.probability = Math.max(0, Math.min(100, parseInt(g('ofProb'))));
+  const owner = g('ofOwner');
+  const btn = document.getElementById('ofSave'); btn.disabled = true;
+  let res;
+  if (_ofEdit) {
+    if (isManager() && owner && owner !== ownerOf(_ofEdit)) d.owner_id = owner;
+    res = await db.from('orders').update(d).eq('id', _ofEdit.id).select().single();
+  } else {
+    const t = g('ofLinkType'), pid = g('ofParty');
+    if (!pid) { btn.disabled = false; return err('Choose the ' + t); }
+    if (t === 'lead') { d.lead_id = pid; const l = cache.leads.find(x => x.id === pid); if (l?.customer_id) d.customer_id = l.customer_id; } else d.customer_id = pid;
+    d.stage = g('ofStage'); d.created_by = ME.id; d.owner_id = owner || ME.id;
+    res = await db.from('orders').insert(d).select().single();
+  }
+  btn.disabled = false;
+  if (res.error) return err(res.error.message);
+  closeModal('oppFormBg'); await loadPipeline(); if (_lv) loadLeads();
+  openOpp(res.data.id);
+}
+function editOpp() { openOppForm(_ov); }
+
+// ---- won / lost ----
+async function openWon(id) {
+  const o = cache.orders.find(x => x.id === id); if (!o) return; _wonFor = o;
+  const r = S('won_rules', {}), poReq = r.po_copy_required !== false, payReq = !!r.payment_proof_required, advReq = !!r.advance_required;
+  document.getElementById('wnFor').innerHTML = `<b>${esc(partyName(o))}</b> — ${esc(o.title || o.order_categories?.name || 'Deal')}`;
+  const v = (i, x) => document.getElementById(i).value = x ?? '';
+  v('wnPo', ''); v('wnPoDate', todayStr()); v('wnValue', o.quote_total ?? o.est_value); v('wnAdv', ''); v('wnRef', ''); v('wnTerms', ''); v('wnDelivery', ''); v('wnNotes', '');
+  document.getElementById('wnMode').innerHTML = '<option value="">—</option>' + (r.payment_modes || ['NEFT / RTGS', 'Cheque', 'UPI', 'Cash', 'Credit (no advance)']).map(m => `<option>${esc(m)}</option>`).join('');
+  document.getElementById('wnPoFileLbl').textContent = 'PO copy' + (poReq ? ' *' : ' (optional)');
+  document.getElementById('wnPayFileLbl').textContent = 'Payment proof' + (payReq ? ' *' : ' (optional)');
+  document.getElementById('wnAdvLbl').textContent = 'Advance received (₹)' + (advReq ? ' *' : '');
+  ['wnPoFile', 'wnPayFile'].forEach(i => document.getElementById(i).value = '');
+  const { data: md } = await db.from('media').select('kind').eq('entity_type', 'order').eq('entity_id', id);
+  const have = k => (md || []).filter(m => m.kind === k).length;
+  document.getElementById('wnPoHave').textContent = have('po') ? `${have('po')} already uploaded` : '';
+  document.getElementById('wnPayHave').textContent = have('payment') ? `${have('payment')} already uploaded` : '';
+  _wonFor._have = { po: have('po'), payment: have('payment') };
+  document.getElementById('wnErr').textContent = '';
+  closeModal('oppViewBg'); openModal('wonBg');
+}
+async function saveWon() {
+  const o = _wonFor, r = S('won_rules', {}), g = id => document.getElementById(id).value.trim();
+  const err = m => { document.getElementById('wnErr').textContent = m; };
+  const poF = document.getElementById('wnPoFile').files[0], payF = document.getElementById('wnPayFile').files[0];
+  if (!g('wnPo')) return err('PO number is required');
+  if (!g('wnPoDate')) return err('PO date is required');
+  const val = Number(g('wnValue').replace(/,/g, '')); if (!(val > 0)) return err('Order value is required');
+  if (r.po_copy_required !== false && !poF && !o._have.po) return err('Attach the PO copy');
+  if (r.payment_proof_required && !payF && !o._have.payment) return err('Attach the payment proof');
+  const btn = document.getElementById('wnSave'); btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    if (poF) await uploadMedia(poF, 'order', o.id, 'po');
+    if (payF) await uploadMedia(payF, 'order', o.id, 'payment');
+    const { error } = await db.rpc('opportunity_mark_won', { p_order_id: o.id, p_po_number: g('wnPo'), p_po_date: g('wnPoDate'), p_order_value: val,
+      p_advance: Number(g('wnAdv').replace(/,/g, '')) || 0, p_payment_mode: g('wnMode') || null, p_payment_ref: g('wnRef') || null,
+      p_payment_terms: g('wnTerms') || null, p_delivery_date: g('wnDelivery') || null, p_notes: g('wnNotes') || null });
+    if (error) throw error;
+    closeModal('wonBg'); await loadPipeline(); loadCustomers(); openOpp(o.id);
+  } catch (e) { err(e.message || String(e)); }
+  finally { btn.disabled = false; btn.textContent = 'Confirm order — Mark Won'; }
+}
+function openLost(id) {
+  _lostFor = cache.orders.find(x => x.id === id); if (!_lostFor) return;
+  const rs2 = (S('lead_setup', {}).lost_reasons || ['Price', 'Competitor', 'Budget', 'Timeline', 'Product fit', 'Other']);
+  document.getElementById('lsReason').innerHTML = '<option value="">— choose —</option>' + rs2.map(x => `<option>${esc(x)}</option>`).join('');
+  document.getElementById('lsNotes').value = ''; document.getElementById('lsErr').textContent = '';
+  closeModal('oppViewBg'); openModal('lostBg');
+}
+async function saveLost() {
+  const reason = document.getElementById('lsReason').value;
+  if (!reason) { document.getElementById('lsErr').textContent = 'Choose a reason'; return; }
+  const { error } = await db.from('orders').update({ stage: 'lost', lost_reason: reason, lost_notes: document.getElementById('lsNotes').value.trim() || null }).eq('id', _lostFor.id);
+  if (error) { document.getElementById('lsErr').textContent = error.message; return; }
+  closeModal('lostBg'); await loadPipeline(); openOpp(_lostFor.id);
+}
+
+// ---- lead → deals ----
+async function loadLeadDeals(id) {
+  const el = document.getElementById('lvDeals'); if (!el) return;
+  const { data } = await db.from('orders').select('id, title, stage, est_value, quote_total, order_value, po_number').eq('lead_id', id).order('created_at');
+  el.innerHTML = (data || []).length ? (data || []).map(o => `<div class="rowlink" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #EEF1F7;cursor:pointer" onclick="closeModal('leadViewBg');openOpp('${o.id}')">
+      ${stageChip(o.stage)} <span style="flex:1">${esc(o.title || 'Deal')}</span><b>${oppVal(o) ? rsShort(oppVal(o)) : ''}</b></div>`).join('')
+    : '<span class="muted">No deals yet.</span>';
+}
+
+// ---- Excel export ----
+let _xlsxP;
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return _xlsxP = _xlsxP || new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function exportPipelineXlsx() {
+  try { await loadXlsx(); } catch (_) { alert('Could not load the Excel library. Check your internet connection.'); return; }
+  const rows = pipeFiltered(), ps = periodStart();
+  const deal = o => ({ 'Customer / lead': party(o).name || '', Company: party(o).company || '', Mobile: party(o).mobile || '', Deal: o.title || '',
+    Category: o.order_categories?.name || '', Owner: uname(ownerOf(o)), Stage: STAGES[o.stage] || o.stage, 'Value (₹)': oppVal(o),
+    'Chance %': OPEN_STAGES.includes(o.stage) ? (o.probability ?? 0) : '', 'Weighted (₹)': OPEN_STAGES.includes(o.stage) ? Math.round(oppVal(o) * (o.probability || 0) / 100) : '',
+    'Expected close': o.expected_close || '', 'Days in stage': OPEN_STAGES.includes(o.stage) ? daysIn(o) : '', Source: o.source || o.leads?.source || '',
+    'Quote no.': o.quote_number || '', 'Quote (₹)': o.quote_total ?? '', Created: (o.created_at || '').slice(0, 10) });
+  const wonRow = o => ({ 'Won on': (o.won_at || '').slice(0, 10), 'PO no.': o.po_number, 'PO date': o.po_date, Customer: party(o).name || '', Company: party(o).company || '',
+    Deal: o.title || '', Category: o.order_categories?.name || '', Owner: uname(ownerOf(o)), 'Order value (₹)': Number(o.order_value || 0),
+    'Advance (₹)': Number(o.advance_amount || 0), 'Payment mode': o.payment_mode || '', Reference: o.payment_ref || '', Terms: o.payment_terms || '', Delivery: o.delivery_date || '' });
+  const wb = XLSX.utils.book_new();
+  const add = (name, data) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.length ? data : [{ Note: 'No data' }]), name);
+  add('Open pipeline', rows.filter(o => OPEN_STAGES.includes(o.stage)).map(deal));
+  add('Won orders', rows.filter(o => o.stage === 'won' && new Date(o.won_at) >= ps).map(wonRow));
+  add('Lost', rows.filter(o => o.stage === 'lost' && new Date(o.closed_at || o.updated_at) >= ps).map(o => ({ ...deal(o), 'Lost reason': o.lost_reason || '', Notes: o.lost_notes || '' })));
+  const cats = [...new Set(rows.map(o => o.order_categories?.name || 'Uncategorised'))];
+  add('By category', cats.map(c => { const r = rows.filter(o => (o.order_categories?.name || 'Uncategorised') === c), op = r.filter(o => OPEN_STAGES.includes(o.stage));
+    return { Category: c, 'Open deals': op.length, 'Open value (₹)': op.reduce((a, o) => a + oppVal(o), 0), 'Weighted (₹)': Math.round(op.reduce((a, o) => a + oppVal(o) * (o.probability || 0) / 100, 0)),
+      ...Object.fromEntries(OPEN_STAGES.map(s => [STAGES[s] + ' (₹)', op.filter(o => o.stage === s).reduce((a, o) => a + oppVal(o), 0)])),
+      'Won in period (₹)': r.filter(o => o.stage === 'won' && new Date(o.won_at) >= ps).reduce((a, o) => a + oppVal(o), 0) }; }));
+  add('By salesperson', salesReps().map(u => { const r = rows.filter(o => ownerOf(o) === u.id), op = r.filter(o => OPEN_STAGES.includes(o.stage)), w = r.filter(o => o.stage === 'won' && new Date(o.won_at) >= ps);
+    return { Salesperson: u.name || u.mobile, 'Open deals': op.length, 'Open value (₹)': op.reduce((a, o) => a + oppVal(o), 0), 'Won deals (period)': w.length, 'Won value (₹)': w.reduce((a, o) => a + oppVal(o), 0) }; }));
+  XLSX.writeFile(wb, `pipeline_${todayStr()}.xlsx`);
+}
+
+// ---- settings: pipeline & won rules ----
+function renderPipeSettings() {
+  const p = S('pipeline', {}), pr = p.probability || {}, w = S('won_rules', {});
+  document.getElementById('setProbs').innerHTML = OPEN_STAGES.map(s => `<div class="field"><label>${STAGES[s]}</label><input id="pr_${s}" type="number" min="0" max="100" value="${pr[s] ?? ''}"></div>`).join('');
+  document.getElementById('setStuck').value = p.stuck_days || 15;
+  document.getElementById('setPoReq').checked = w.po_copy_required !== false;
+  document.getElementById('setPayReq').checked = !!w.payment_proof_required;
+  document.getElementById('setAdvReq').checked = !!w.advance_required;
+  document.getElementById('setModes').value = (w.payment_modes || ['NEFT / RTGS', 'Cheque', 'UPI', 'Cash', 'Credit (no advance)']).join('\n');
+}
+async function savePipeSettings() {
+  const probability = { won: 100, lost: 0 };
+  for (const s of OPEN_STAGES) { const v = parseInt(document.getElementById('pr_' + s).value); probability[s] = isNaN(v) ? 10 : Math.max(0, Math.min(100, v)); }
+  const ok = await saveSetting('pipeline', { probability, stuck_days: Math.max(1, parseInt(document.getElementById('setStuck').value) || 15) }, 'msgPipe');
+  if (!ok) return;
+  await saveSetting('won_rules', { po_copy_required: document.getElementById('setPoReq').checked, payment_proof_required: document.getElementById('setPayReq').checked,
+    advance_required: document.getElementById('setAdvReq').checked,
+    payment_modes: document.getElementById('setModes').value.split('\n').map(x => x.trim()).filter(Boolean) }, 'msgPipe');
 }
 
 // ---------- follow-ups ----------
@@ -1247,14 +1849,15 @@ async function loadReports() {
   await loadTargets();
   const orders = cache.orders || [], visits = cache.visits || [], users = salesReps();
   const won = orders.filter(o => o.stage === 'won'), lost = orders.filter(o => o.stage === 'lost');
-  const revenue = won.reduce((s, o) => s + Number(o.quote_total || 0), 0);
+  const revenue = won.reduce((s, o) => s + oppVal(o), 0);
   const winRate = (won.length + lost.length) ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
   document.getElementById('repCards').innerHTML =
-    kpi(cache.leads.length, 'Leads (all time)', 'blue', '◎') + kpi(cache.leads.filter(l => l.status === 'converted').length, 'Leads converted', 'teal', '✓') +
-    kpi(orders.length, 'Orders', 'purple', '#') + kpi(won.length, 'Won', 'green', '✓') + kpi(winRate + '%', 'Win rate', 'orange', '%') + kpi(_rupees(revenue), 'Revenue won', 'green', '₹');
-  document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Leads','Converted','Visits (range)','Orders','Won','Revenue won'],
-    users.map(u => { const uo = orders.filter(o => o.created_by === u.id), uw = uo.filter(o => o.stage === 'won'), ul = cache.leads.filter(l => l.assigned_to === u.id);
-      return [esc(u.name) || esc(u.mobile), ul.length, ul.filter(l => l.status === 'converted').length, visits.filter(v => v.user_id === u.id).length, uo.length, uw.length, _rupees(uw.reduce((s, o) => s + Number(o.quote_total || 0), 0))]; }));
+    kpi(cache.leads.length, 'Leads (all time)', 'blue', '◎') + kpi(cache.leads.filter(l => l.status === 'converted').length, 'Leads in pipeline', 'teal', '✓') +
+    kpi(orders.length, 'Deals', 'purple', '#') + kpi(won.length, 'Won', 'green', '✓') + kpi(winRate + '%', 'Win rate', 'orange', '%') + kpi(_rupees(revenue), 'Revenue won', 'green', '₹');
+  document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Leads','Into pipeline','Visits (range)','Deals','Open pipeline','Won','Revenue won'],
+    users.map(u => { const uo = orders.filter(o => ownerOf(o) === u.id), uw = uo.filter(o => o.stage === 'won'), ul = cache.leads.filter(l => l.assigned_to === u.id);
+      return [esc(u.name) || esc(u.mobile), ul.length, ul.filter(l => l.status === 'converted').length, visits.filter(v => v.user_id === u.id).length, uo.length,
+        _rupees(uo.filter(o => OPEN_STAGES.includes(o.stage)).reduce((s, o) => s + oppVal(o), 0)), uw.length, _rupees(uw.reduce((s, o) => s + oppVal(o), 0))]; }));
   renderTargets(); renderCharts();
 }
 const _monthStr = () => todayStr().slice(0,7) + '-01';
@@ -1265,7 +1868,7 @@ function renderTargets() {
   document.getElementById('targetsTbl').innerHTML = tbl(['Rep','Target (this month)','Achieved','%'],
     salesReps().map(u => {
       const t = (cache.targets||[]).find(x => x.user_id === u.id), target = t ? Number(t.target_amount) : 0;
-      const achieved = (cache.orders||[]).filter(o => o.created_by === u.id && o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
+      const achieved = (cache.orders||[]).filter(o => ownerOf(o) === u.id && o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + oppVal(o), 0);
       return [esc(u.name) || esc(u.mobile),
         `<input id="tg_${u.id}" class="inp" value="${target || ''}" placeholder="0" inputmode="numeric" style="width:120px"> <button class="btn sec sm" onclick="saveTarget('${u.id}')">Save</button>`,
         _rupees(achieved), target ? Math.round(achieved / target * 100) + '%' : '—'];
@@ -1287,7 +1890,7 @@ function renderCharts() {
   const now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const labels = users.map(u => u.name || u.mobile || '—');
   const targets = users.map(u => { const t=(cache.targets||[]).find(x=>x.user_id===u.id); return t?Number(t.target_amount):0; });
-  const achieved = users.map(u => orders.filter(o => o.created_by===u.id && o.stage==='won' && o.won_at && new Date(o.won_at)>=mStart).reduce((s,o)=>s+Number(o.quote_total||0),0));
+  const achieved = users.map(u => orders.filter(o => ownerOf(o)===u.id && o.stage==='won' && o.won_at && new Date(o.won_at)>=mStart).reduce((s,o)=>s+oppVal(o),0));
   mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#C7D4FB'},{label:'Achieved',data:achieved,backgroundColor:'#2F5BEA'}] }, options:_barOpt() });
   const pct = users.map((u,i)=> targets[i]? Math.round(achieved[i]/targets[i]*100):0);
   mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#16A34A':'#2F5BEA')}] }, options:_barOpt() });
@@ -1295,11 +1898,11 @@ function renderCharts() {
   mkChart('chLeads', { type:'bar', data:{ labels:ls.map(s=>STATUS_LABEL[s]), datasets:[{label:'Leads',data:ls.map(s=>cache.leads.filter(l=>l.status===s).length),backgroundColor:_pal(ls.length)}] }, options:{ ..._barOpt(), plugins:{ legend:{ display:false } } } });
   const srcMap = {}; cache.leads.forEach(l => { const n = l.source || 'Unknown'; srcMap[n] = (srcMap[n]||0)+1; });
   mkChart('chSource', { type:'doughnut', data:{ labels:Object.keys(srcMap), datasets:[{data:Object.values(srcMap),backgroundColor:_pal(Object.keys(srcMap).length)}] }, options:_pieOpt() });
-  const stages = ['draft','need_quote','quoted','won','lost'];
-  mkChart('chFunnel', { type:'bar', data:{ labels:stages.map(s=>s.replace('_',' ')), datasets:[{label:'Orders',data:stages.map(s=>orders.filter(o=>o.stage===s).length),backgroundColor:'#2F5BEA'}] }, options:_barOpt() });
+  const stages = [...OPEN_STAGES, 'won', 'lost'];
+  mkChart('chFunnel', { type:'bar', data:{ labels:stages.map(s=>STAGES[s]), datasets:[{label:'Deals',data:stages.map(s=>orders.filter(o=>o.stage===s).length),backgroundColor:stages.map(s=>STAGE_COLOR[s])}] }, options:{ ..._barOpt(), plugins:{ legend:{ display:false } } } });
   mkChart('chWin', { type:'doughnut', data:{ labels:['Won','Lost'], datasets:[{data:[orders.filter(o=>o.stage==='won').length,orders.filter(o=>o.stage==='lost').length],backgroundColor:['#16A34A','#DC2626']}] }, options:_pieOpt() });
   const mo = []; for (let i=5;i>=0;i--) mo.push(new Date(now.getFullYear(), now.getMonth()-i, 1));
-  const rev = mo.map(d => { const s=new Date(d.getFullYear(),d.getMonth(),1), e=new Date(d.getFullYear(),d.getMonth()+1,1); return orders.filter(o=>o.stage==='won'&&o.won_at&&new Date(o.won_at)>=s&&new Date(o.won_at)<e).reduce((a,o)=>a+Number(o.quote_total||0),0); });
+  const rev = mo.map(d => { const s=new Date(d.getFullYear(),d.getMonth(),1), e=new Date(d.getFullYear(),d.getMonth()+1,1); return orders.filter(o=>o.stage==='won'&&o.won_at&&new Date(o.won_at)>=s&&new Date(o.won_at)<e).reduce((a,o)=>a+oppVal(o),0); });
   mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#2F5BEA',backgroundColor:'rgba(47,91,234,.12)',fill:true,tension:.3}] }, options:_barOpt() });
   const catMap = {}; orders.forEach(o => { const n=o.order_categories?.name||'—'; catMap[n]=(catMap[n]||0)+1; });
   mkChart('chCat', { type:'doughnut', data:{ labels:Object.keys(catMap), datasets:[{data:Object.values(catMap),backgroundColor:_pal(Object.keys(catMap).length)}] }, options:_pieOpt() });
@@ -1371,7 +1974,9 @@ function exportCsv(kind) {
     customers: c => ({ name: c.name, company: c.company, type: c.type, mobile: c.mobile, verified: !!c.mobile_verified_at, territory: c.territory, owner: uname(c.owner_user_id), lat: c.lat, lng: c.lng }),
     requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity, expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
     attendance: a => ({ date: a.date, salesperson: uname(a.user_id), day_start: a.day_start_at, day_end: a.day_end_at }),
-    orders: o => ({ created: o.created_at, customer: o.customers?.name, company: o.customers?.company, type: o.order_categories?.name, sqft: o.sqft, visit_status: o.visit_status, stage: o.stage, quote_total: o.quote_total, salesperson: uname(o.created_by) }),
+    orders: o => ({ created: o.created_at, customer: party(o).name, company: party(o).company, deal: o.title, category: o.order_categories?.name, stage: STAGES[o.stage] || o.stage,
+      value: oppVal(o), probability: o.probability, expected_close: o.expected_close, quote_no: o.quote_number, quote_total: o.quote_total, po_number: o.po_number, po_date: o.po_date,
+      order_value: o.order_value, advance: o.advance_amount, lost_reason: o.lost_reason, owner: uname(ownerOf(o)) }),
   }[kind];
   const src = kind === 'leads' ? filteredLeads() : cache[kind];
   const rows = (src || []).map(flat);
