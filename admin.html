@@ -148,6 +148,13 @@
   .err { color:var(--red); font-size:13px; margin-top:8px; }
   .muted { color:var(--muted); }
   .empty { padding:26px; text-align:center; color:var(--muted); }
+  /* ---- live map ---- */
+  .mapgrid { display:grid; grid-template-columns:1fr 340px; gap:14px; }
+  #mapSide { max-height:520px; overflow-y:auto; }
+  #map { height:520px; }
+  .liverow { padding:10px 10px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; cursor:pointer; background:#fff; }
+  .liverow:hover { background:#F8FAFE; }
+  @media (max-width:1000px) { .mapgrid { grid-template-columns:1fr; } #mapSide { max-height:none; } }
   /* ---- kanban ---- */
   .kanban { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(230px,1fr); gap:12px; overflow-x:auto; padding-bottom:8px; }
   .kcol { background:#F3F5FA; border-radius:14px; min-height:200px; display:flex; flex-direction:column; transition:background .12s; }
@@ -213,7 +220,8 @@
       <div class="navlabel" data-roles="admin,manager,coordinator,telecaller">Field</div>
       <button data-v="visits" data-roles="admin,manager" onclick="show('visits')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Visits &amp; check-ins</span></button>
       <button data-v="photos" data-roles="admin,manager,coordinator,telecaller" onclick="show('photos')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Photos &amp; cards</span></button>
-      <button data-v="mapv" data-roles="admin,manager" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Map &amp; routes</span></button>
+      <button data-v="mapv" data-roles="admin,manager" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Live map &amp; routes</span></button>
+      <button data-v="travel" data-roles="admin,manager" onclick="show('travel')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M8 22v-6h8v6"/><circle cx="12" cy="10" r="2"/></svg><span>Travel &amp; fuel</span><span class="badge" id="claimBadge" style="display:none"></span></button>
       <button data-v="attendance" data-roles="admin,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
 
       <div class="navlabel" data-roles="admin,manager">Sales</div>
@@ -304,16 +312,43 @@
 
     <!-- ================= MAP ================= -->
     <div id="mapv" class="view">
+      <div class="cards" id="liveCards"></div>
       <div class="panel">
         <div class="toolbar">
-          <input type="date" id="mFrom"> <input type="date" id="mTo">
-          <button class="btn" onclick="loadMap()">Show visits</button>
-          <span class="muted">● Blue = clean check-in · ● Red = flagged</span>
-          <span style="border-left:1px solid var(--border);height:20px;margin:0 4px"></span>
-          <select id="routeUser"></select> <input type="date" id="routeDate">
-          <button class="btn sec" onclick="loadRoute()">Show route</button>
+          <div class="seg" id="mapMode">
+            <button class="active" data-m="live" onclick="setMapMode('live')">Live team</button><button data-m="route" onclick="setMapMode('route')">Route replay</button><button data-m="visits" onclick="setMapMode('visits')">Visits</button>
+          </div>
+          <span id="mmLive" style="display:inline-flex;gap:10px;align-items:center"><span class="muted" id="liveUpd"></span><button class="btn sec sm" onclick="loadLive()">Refresh</button>
+            <span class="muted" style="font-size:12px">● green = updated &lt; 20 min · ● orange = 20–60 min · ● grey = older / off duty · ● red = fake GPS</span></span>
+          <span id="mmRoute" style="display:none;gap:8px;align-items:center"><select id="routeUser"></select> <input type="date" id="routeDate"> <button class="btn" onclick="loadRoute()">Show route</button></span>
+          <span id="mmVisits" style="display:none;gap:8px;align-items:center"><input type="date" id="mFrom"> <input type="date" id="mTo"> <button class="btn" onclick="loadMap()">Show visits</button>
+            <span class="muted">● Blue = clean check-in · ● Red = flagged</span></span>
         </div>
-        <div id="map"></div>
+        <div class="mapgrid">
+          <div id="map"></div>
+          <div id="mapSide"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TRAVEL & FUEL ================= -->
+    <div id="travel" class="view">
+      <div id="rateWarn"></div>
+      <div class="cards" id="travelCards"></div>
+      <div class="panel">
+        <div class="toolbar">
+          <input type="month" id="tMonth" onchange="loadTravel()">
+          <select id="tRep" onchange="renderTravel()"></select>
+          <span style="flex:1"></span>
+          <button class="btn sec" id="tRecalc" onclick="recalcTravel()">Recalculate km</button>
+          <button class="btn sec" onclick="exportTravelXlsx()">Export Excel</button>
+        </div>
+        <h2 style="margin-top:6px">Monthly fuel claims <span class="sub">approve once the month is over</span></h2>
+        <div id="claimTbl"></div>
+      </div>
+      <div class="panel">
+        <h2>Daily km <span class="sub">calculated every night from on-duty tracking · adjust a day if needed</span></h2>
+        <div id="travelTbl"></div>
       </div>
     </div>
 
@@ -545,7 +580,34 @@
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="savePipeSettings()">Save pipeline settings</button> <span id="msgPipe"></span></div>
       </div>
-      <p class="hint">Every change is recorded in the audit log with who changed it and when. Tracking, fuel and incentive settings arrive with Phases 3 and 4.</p>
+      <div class="panel">
+        <h2>Tracking &amp; fuel <span class="sub">location every few minutes between Start Day and End Day</span></h2>
+        <div class="grid2">
+          <div>
+            <label class="switch"><input type="checkbox" id="setTrkOn"> Track location while salespeople are on duty</label>
+            <div class="formgrid" style="margin-top:8px">
+              <div class="field"><label>Record location every (minutes)</label><input id="setTrkInt" type="number" min="2" max="60"></div>
+              <div class="field"><label>Ignore points less accurate than (m)</label><input id="setTrkAcc" type="number" min="20"></div>
+              <div class="field"><label>Treat moves under (m) as standing still</label><input id="setTrkStill" type="number" min="10"></div>
+              <div class="field"><label>Ignore jumps faster than (km/h)</label><input id="setTrkSpd" type="number" min="40"></div>
+            </div>
+            <p class="hint">Duty auto-ends at the "Auto end-day" time in Duty hours. Changes apply from the next Start Day.</p>
+          </div>
+          <div>
+            <div class="formgrid">
+              <div class="field"><label>Fuel rate — bike (₹ per km)</label><input id="setRateBike" type="number" min="0" step="0.1"></div>
+              <div class="field"><label>Fuel rate — car (₹ per km)</label><input id="setRateCar" type="number" min="0" step="0.1"></div>
+              <div class="field"><label>Default vehicle</label><select id="setDefVeh"><option value="bike">Bike</option><option value="car">Car</option></select></div>
+              <div class="field"><label>Maximum km per day</label><input id="setCap" type="number" min="10"></div>
+              <div class="field"><label>Km calculation</label><select id="setFuelMethod"><option value="road">Road distance (Google)</option><option value="estimated">Straight line × factor</option><option value="straight">Straight line only</option></select></div>
+              <div class="field"><label>Factor when road distance is unavailable</label><input id="setFuelFactor" type="number" min="1" max="2" step="0.05"></div>
+            </div>
+            <p class="hint">Per-salesperson vehicle and rate can be set on the Team page. Road distance needs the Google <b>Routes API</b> enabled on your Maps key; until then the factor is used automatically.</p>
+          </div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" onclick="saveTravelSettings()">Save tracking &amp; fuel</button> <span id="msgTravel"></span></div>
+      </div>
+      <p class="hint">Every change is recorded in the audit log with who changed it and when. Incentive settings arrive with Phase 4.</p>
     </div>
   </main>
   </div>
@@ -849,6 +911,7 @@ async function init() {
   subscribeLeads();
   if (isManager()) {
     show('overview');
+    loadClaimBadge();
     Promise.all([loadInvites(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadFollowUps()]).then(loadOverview);
   } else {
     show('leads');
@@ -871,7 +934,8 @@ function show(v) {
   if (v === 'leads') renderLeads();
   if (v === 'visits') { loadDaySummary(); loadVisits(); }
   if (v === 'photos') loadPhotos();
-  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60); }
+  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); setMapMode(_mapMode || 'live'); } }, 60); }
+  if (v === 'travel') loadTravel();
   if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'pipeline') loadPipeline();
@@ -905,6 +969,7 @@ async function saveSetting(key, value, msgId) {
 function renderSettings() {
   loadCategories();
   renderPipeSettings();
+  renderTravelSettings();
   const ls = S('lead_setup', {});
   document.getElementById('setTypes').innerHTML = (ls.contact_types || []).map((t, i) =>
     `<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><input type="checkbox" id="ctOn${i}" ${t.enabled === false ? '' : 'checked'} style="width:18px;height:18px;accent-color:var(--brand)"><input class="inp" id="ctLbl${i}" value="${esc(t.label)}" style="flex:1"><span class="muted" style="font-size:11px">${esc(t.key)}</span></div>`).join('');
@@ -1233,10 +1298,12 @@ async function loadUsers() {
   const el = document.getElementById('teamTbl'); if (!el) return;
   const roles = ['sales','coordinator','telecaller','quote','manager','admin'];
   const canEdit = ME && ME.role === 'admin';
-  el.innerHTML = tbl(['Name','Mobile','Role','Territory','Active'],
-    cache.users.map(u => [esc(u.name) || '<span class="muted">(no name)</span>', esc(u.mobile),
+  el.innerHTML = tbl(['Name','Mobile','Role','Territory','Vehicle','Own rate ₹/km','Active'],
+    cache.users.map(u => [canEdit ? `<input class="inp" value="${esc(u.name)}" placeholder="add name" onchange="setUser('${u.id}',{name:this.value.trim()})" style="width:150px">` : (esc(u.name) || '<span class="muted">(no name)</span>'), esc(u.mobile),
       canEdit && u.id !== ME.id ? `<select class="inp" onchange="setUser('${u.id}',{role:this.value})">${roles.map(r => `<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select>` : esc(u.role),
       canEdit ? `<input class="inp" value="${esc(u.territory)}" onchange="setUser('${u.id}',{territory:this.value||null})" style="width:130px">` : (esc(u.territory) || '—'),
+      canEdit ? `<select class="inp" onchange="setUser('${u.id}',{vehicle_type:this.value||null})"><option value="">default</option>${['bike','car','none'].map(v => `<option ${u.vehicle_type===v?'selected':''}>${v}</option>`).join('')}</select>` : (esc(u.vehicle_type) || 'default'),
+      canEdit ? `<input class="inp" value="${u.fuel_rate ?? ''}" placeholder="default" inputmode="decimal" onchange="setUser('${u.id}',{fuel_rate:this.value===''?null:Number(this.value)})" style="width:90px">` : (u.fuel_rate ?? 'default'),
       canEdit && u.id !== ME.id ? `<input type="checkbox" ${u.active?'checked':''} onchange="setUser('${u.id}',{active:this.checked})" style="width:18px;height:18px;accent-color:var(--brand)">` : (u.active ? '✔' : '✖')]));
 }
 async function setUser(id, patch) { const { error } = await db.from('users').update(patch).eq('id', id); if (error) alert(error.message); else loadUsers(); }
@@ -1922,7 +1989,7 @@ async function loadMap() {
     .in('status',['verified','completed','checked_in'])
     .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00').lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
     .not('verified_lat','is',null).limit(1000);
-  markers.forEach(m => m.setMap(null)); markers = [];
+  clearMapLayers();
   const bounds = new google.maps.LatLngBounds(); let n = 0;
   (data||[]).forEach(v => {
     const flagged = realFlags(v.flags).length > 0, pos = { lat: v.verified_lat, lng: v.verified_lng };
@@ -1933,19 +2000,277 @@ async function loadMap() {
   if (n) map.fitBounds(bounds, 40);
 }
 let _routeLayer = [];
-function fillRouteUsers() { document.getElementById('routeUser').innerHTML = repOpts('', '— salesperson —'); document.getElementById('routeDate').value = todayStr(); }
+function fillRouteUsers() { const el = document.getElementById('routeUser'); const cur = el.value; el.innerHTML = repOpts(cur, '— salesperson —'); if (!document.getElementById('routeDate').value) document.getElementById('routeDate').value = todayStr(); }
+// ---------- live map, route replay (Phase 3) ----------
+let _mapMode = 'live', _liveTimer = null, _liveMarkers = [];
+const istDayStart = d => new Date(d + 'T00:00:00+05:30');
+const minsAgo = s => s ? Math.round((Date.now() - new Date(s)) / 60000) : null;
+function setMapMode(m) {
+  _mapMode = m;
+  document.querySelectorAll('#mapMode button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  document.getElementById('mmLive').style.display = m === 'live' ? 'inline-flex' : 'none';
+  document.getElementById('mmRoute').style.display = m === 'route' ? 'inline-flex' : 'none';
+  document.getElementById('mmVisits').style.display = m === 'visits' ? 'inline-flex' : 'none';
+  clearMapLayers();
+  document.getElementById('mapSide').innerHTML = '';
+  if (m === 'live') loadLive(); else if (m === 'visits') loadMap();
+  else document.getElementById('mapSide').innerHTML = '<div class="empty">Pick a salesperson and a date, then “Show route”.</div>';
+}
+function clearMapLayers() {
+  markers.forEach(x => x.setMap(null)); markers = [];
+  _routeLayer.forEach(x => x.setMap(null)); _routeLayer = [];
+  _liveMarkers.forEach(x => x.setMap(null)); _liveMarkers = [];
+}
+function openMapView(mode) {
+  show('mapv');
+  setTimeout(() => setMapMode(mode || 'live'), 120);
+}
+function liveColor(r) {
+  if (r.mock) return '#DC2626';
+  const m = minsAgo(r.at), onDuty = r.day_start_at && !r.day_end_at;
+  if (!onDuty || m == null || m > 60) return '#94A3B8';
+  return m <= 20 ? '#16A34A' : '#D97706';
+}
+async function loadLive() {
+  if (!isManager()) return;
+  const { data, error } = await db.rpc('live_reps');
+  if (error) { document.getElementById('mapSide').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  const rows = (data || []).filter(r => r.role === 'sales' || r.at);
+  const onDuty = rows.filter(r => r.day_start_at && !r.day_end_at);
+  const fresh = onDuty.filter(r => minsAgo(r.at) != null && minsAgo(r.at) <= 20);
+  const lowBat = onDuty.filter(r => r.battery != null && r.battery < 20);
+  document.getElementById('liveCards').innerHTML =
+    kpi(onDuty.length + ' / ' + rows.filter(r => r.role === 'sales').length, 'On duty now', 'blue', '👤') +
+    kpi(onDuty.filter(r => r.tracking_on).length, 'Tracking on', 'teal', '📡') +
+    kpi(fresh.length, 'Updated in last 20 min', 'green', '✓') +
+    kpi(onDuty.length - fresh.length, 'Not updating', onDuty.length - fresh.length ? 'red' : 'green', '⚠') +
+    kpi(lowBat.length, 'Battery below 20%', 'orange', '🔋') +
+    kpi(rows.filter(r => r.open_visit).length, 'At a customer site', 'purple', '📍');
+  document.getElementById('liveUpd').textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  // side list
+  const status = r => r.open_visit ? `<span class="chip live">At ${esc(r.open_visit)}</span>`
+    : r.day_end_at ? chip('done', 'Day ended') : r.day_start_at ? chip('new', 'On duty') : chip('pending', 'Not started');
+  const sorted = [...rows].sort((a, b) => (b.day_start_at && !b.day_end_at) - (a.day_start_at && !a.day_end_at) || new Date(b.at || 0) - new Date(a.at || 0));
+  document.getElementById('mapSide').innerHTML = sorted.map(r => {
+    const m = minsAgo(r.at), c = liveColor(r);
+    return `<div class="liverow" onclick="focusRep('${r.user_id}')">
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${c};flex:none"></span><b style="flex:1">${esc(r.name || r.mobile)}</b>${status(r)}</div>
+      <div class="muted" style="font-size:12px;margin:4px 0 0 18px">${r.at ? 'Last seen ' + (m < 1 ? 'just now' : ago(r.at)) : 'No location yet'}
+        ${r.battery != null ? ` · <span class="${r.battery < 20 ? 'stale' : ''}">🔋 ${r.battery}%</span>` : ''}${r.pings_today ? ` · ${r.pings_today} points today` : ''}
+        ${r.day_start_at && !r.day_end_at && !r.tracking_on ? ' · <span class="stale">tracking off</span>' : ''}${r.mock ? ' · <span class="stale">fake GPS</span>' : ''}</div>
+      <div style="margin:6px 0 0 18px"><a href="#" onclick="event.stopPropagation();routeFor('${r.user_id}');return false" style="font-size:12px">Today's route →</a></div></div>`;
+  }).join('') || '<div class="empty">No salespeople yet.</div>';
+  // markers
+  if (!map) await initMap(); if (!map) return;
+  if (_mapMode !== 'live') return;
+  _liveMarkers.forEach(x => x.setMap(null)); _liveMarkers = [];
+  const b = new google.maps.LatLngBounds(); let n = 0;
+  rows.filter(r => r.lat != null).forEach(r => {
+    const pos = { lat: r.lat, lng: r.lng };
+    const mk = new google.maps.Marker({ position: pos, map, title: r.name || r.mobile,
+      label: { text: (r.name || r.mobile || '?').trim()[0].toUpperCase(), color: '#fff', fontWeight: '700', fontSize: '12px' },
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 13, fillColor: liveColor(r), fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
+    mk._uid = r.user_id;
+    mk.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif;min-width:180px"><b>${esc(r.name || r.mobile)}</b><br>${r.open_visit ? 'At ' + esc(r.open_visit) + '<br>' : ''}Last seen ${ago(r.at)} (${fmtDT(r.at)})<br>${r.battery != null ? 'Battery ' + r.battery + '%<br>' : ''}${r.accuracy_m ? 'Accuracy ±' + Math.round(r.accuracy_m) + ' m<br>' : ''}<a href="#" onclick="routeFor('${r.user_id}');return false">Today's route →</a></div>`); infoWin.open(map, mk); });
+    _liveMarkers.push(mk); b.extend(pos); n++;
+  });
+  if (n === 1) { map.setCenter(b.getCenter()); map.setZoom(13); } else if (n) map.fitBounds(b, 50);
+  if (!_liveTimer) _liveTimer = setInterval(() => { if (document.getElementById('mapv').classList.contains('active') && _mapMode === 'live') loadLive(); }, 60000);
+}
+function focusRep(uid) {
+  const m = _liveMarkers.find(x => x._uid === uid); if (!m || !map) return;
+  map.panTo(m.getPosition()); map.setZoom(14); google.maps.event.trigger(m, 'click');
+}
+function routeFor(uid, day) {
+  setMapMode('route');
+  document.getElementById('routeUser').value = uid; document.getElementById('routeDate').value = day || todayStr();
+  loadRoute();
+}
+const SRC_LABEL = { bg: 'Tracking', start: 'Day start', end: 'Day end', checkin: 'Check-in', checkout: 'Check-out', app: 'App' };
 async function loadRoute() {
   if (!map) await initMap(); if (!map) return;
   const uid = document.getElementById('routeUser').value, d = document.getElementById('routeDate').value;
   if (!uid || !d) { alert('Pick a salesperson and date'); return; }
-  _routeLayer.forEach(x => x.setMap(null)); _routeLayer = [];
-  const { data } = await db.from('location_pings').select('*').eq('user_id', uid).gte('at', d + 'T00:00:00').lte('at', d + 'T23:59:59').order('at');
-  const pts = (data || []).map(p => ({ lat: p.lat, lng: p.lng }));
-  if (!pts.length) { alert('No location trail for that day.'); return; }
-  _routeLayer.push(new google.maps.Polyline({ path: pts, strokeColor: '#2F5BEA', strokeOpacity: .9, strokeWeight: 3, map }));
-  _routeLayer.push(new google.maps.Marker({ position: pts[0], map, label: 'S' }), new google.maps.Marker({ position: pts[pts.length - 1], map, label: 'E' }));
-  const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend(p)); map.fitBounds(b, 40);
+  clearMapLayers();
+  const s = istDayStart(d), e = new Date(s.getTime() + 864e5);
+  const [{ data }, { data: vs }, { data: tr }] = await Promise.all([
+    db.from('location_pings').select('*').eq('user_id', uid).gte('at', s.toISOString()).lt('at', e.toISOString()).order('at').limit(5000),
+    db.from('visits').select('*, customers(name,company), leads(name,company)').eq('user_id', uid).gte('checkin_at', s.toISOString()).lt('checkin_at', e.toISOString()).order('checkin_at'),
+    db.from('daily_travel').select('*').eq('user_id', uid).eq('day', d).maybeSingle()]);
+  const P = data || [];
+  const side = document.getElementById('mapSide');
+  if (!P.length) { side.innerHTML = '<div class="empty">No location trail for that day.</div>'; return; }
+  const good = P.filter(p => !p.mock), path = good.map(p => ({ lat: p.lat, lng: p.lng }));
+  _routeLayer.push(new google.maps.Polyline({ path, strokeColor: '#2F5BEA', strokeOpacity: .85, strokeWeight: 4, map,
+    icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 2.5, strokeColor: '#1E3A8A' }, offset: '0', repeat: '120px' }] }));
+  P.forEach(p => {
+    const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#2F5BEA';
+    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: c, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1 } });
+    m.addListener('click', () => { infoWin.setContent(`<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`); infoWin.open(map, m); });
+    _routeLayer.push(m);
+  });
+  _routeLayer.push(new google.maps.Marker({ position: path[0] || P[0], map, label: { text: 'S', color: '#fff', fontWeight: '700' }, zIndex: 999 }));
+  _routeLayer.push(new google.maps.Marker({ position: path[path.length - 1] || P[P.length - 1], map, label: { text: 'E', color: '#fff', fontWeight: '700' }, zIndex: 999 }));
+  (vs || []).forEach((v, i) => {
+    if (v.verified_lat == null) return;
+    const m = new google.maps.Marker({ position: { lat: v.verified_lat, lng: v.verified_lng }, map, zIndex: 998,
+      label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+      icon: { path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z', fillColor: realFlags(v.flags).length ? '#DC2626' : '#0D9488', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1, labelOrigin: new google.maps.Point(0, -30) } });
+    m.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>${esc(v.outcome || '')}</div>`); infoWin.open(map, m); });
+    _routeLayer.push(m);
+  });
+  const b = new google.maps.LatLngBounds(); P.forEach(p => b.extend({ lat: p.lat, lng: p.lng })); map.fitBounds(b, 40);
+  // timeline with gaps & stops
+  const interval = Number(S('tracking', {}).interval_min || 10);
+  let html = '', lastT = null;
+  P.forEach(p => {
+    const t = new Date(p.at);
+    if (lastT && (t - lastT) / 60000 > interval * 2.5) html += `<div class="ev" style="color:var(--red)"><b>No signal for ${Math.round((t - lastT) / 60000)} min</b><small>phone off, no network, or tracking stopped</small></div>`;
+    if (p.source && p.source !== 'bg') html += `<div class="ev"><b>${esc(SRC_LABEL[p.source] || p.source)}</b>${p.mock ? ' <span class="flag">Fake GPS</span>' : ''}<small>${fmtT(p.at)}${p.battery != null ? ' · 🔋 ' + p.battery + '%' : ''}</small></div>`;
+    lastT = t;
+  });
+  (vs || []).forEach((v, i) => { html += `<div class="ev"><b>${i + 1}. ${esc(placeName(v))}</b> ${realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : ''}<small>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}</small></div>`; });
+  const kmLine = tr ? `<b style="font-size:20px">${Number(tr.adjusted_km ?? tr.km_final ?? 0).toFixed(1)} km</b> <span class="muted">${tr.adjusted_km != null ? 'adjusted' : esc(tr.method || '')}</span>${tr.amount ? ' · ' + rs(tr.amount) : ''}`
+    : '<span class="muted">Km not calculated yet</span>';
+  side.innerHTML = `<div style="padding:4px 2px 10px"><div style="font-weight:700">${esc(uname(uid))} · ${esc(d)}</div><div style="margin:6px 0">${kmLine}</div>
+    <div class="muted" style="font-size:12px">${P.length} points · ${fmtT(P[0].at)} – ${fmtT(P[P.length - 1].at)} · ${(vs || []).length} check-ins${P.some(p => p.mock) ? ' · <span class="stale">' + P.filter(p => p.mock).length + ' fake-GPS points</span>' : ''}</div>
+    <button class="btn sec sm" style="margin-top:8px" onclick="recalcDay('${uid}','${d}')">Recalculate km</button></div><div class="timeline">${html || '<span class="muted">Only regular tracking points.</span>'}</div>`;
 }
+async function callTravel(body) {
+  const { data, error } = await db.functions.invoke('compute-travel', { body });
+  if (error) throw error;
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+async function recalcDay(uid, d) {
+  try { await callTravel({ user_id: uid, day: d }); await loadRoute(); } catch (e) { alert(e.message || e); }
+}
+
+// ---------- travel & fuel ----------
+async function loadClaimBadge() {
+  const { count } = await db.from('fuel_claims').select('id', { count: 'exact', head: true }).eq('status', 'submitted');
+  const b = document.getElementById('claimBadge'); if (b) { b.style.display = count ? '' : 'none'; b.textContent = count || ''; }
+}
+let _travel = [], _claims = [];
+const monthRange = () => { const v = document.getElementById('tMonth').value || todayStr().slice(0, 7); const s = v + '-01', n = new Date(+v.slice(0, 4), +v.slice(5, 7), 1); return [s, `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`]; };
+const effKm = t => Number(t.adjusted_km ?? t.km_final ?? 0);
+async function loadTravel() {
+  if (!document.getElementById('tMonth').value) document.getElementById('tMonth').value = todayStr().slice(0, 7);
+  const tr = document.getElementById('tRep'); if (!tr.options || !tr.innerHTML) tr.innerHTML = '<option value="">All salespeople</option>' + repOpts('', null);
+  const [s, n] = monthRange();
+  const [{ data: t }, { data: c }] = await Promise.all([
+    db.from('daily_travel').select('*').gte('day', s).lt('day', n).order('day', { ascending: false }).limit(5000),
+    db.from('fuel_claims').select('*').eq('month', s)]);
+  _travel = t || []; _claims = c || [];
+  renderTravel(); loadClaimBadge();
+}
+function renderTravel() {
+  const rep = document.getElementById('tRep').value, rows = _travel.filter(t => !rep || t.user_id === rep);
+  const f = S('fuel', {}), rates = f.rates || {};
+  document.getElementById('rateWarn').innerHTML = (!Number(rates.bike) && !Number(rates.car)) ?
+    `<div class="warnbox" style="margin:0 0 16px">Fuel rates are not set yet, so amounts show ₹0. Set ₹/km for bike and car in <a href="#" onclick="show('settings');return false">Settings → Travel &amp; fuel</a> (and per-rep overrides on the Team page), then click “Recalculate km”.</div>` : '';
+  const km = rows.reduce((a, t) => a + effKm(t), 0), amt = rows.reduce((a, t) => a + Number(t.amount || 0), 0);
+  const reps = [...new Set(rows.map(t => t.user_id))];
+  document.getElementById('travelCards').innerHTML =
+    kpi(km.toFixed(0) + ' km', 'Total distance', 'blue', '🛣') + kpi(rs(Math.round(amt)), 'Fuel amount', 'green', '₹') +
+    kpi(reps.length, 'Salespeople travelled', 'teal', '👤') + kpi(_claims.filter(c => c.status === 'submitted').length, 'Claims awaiting approval', 'orange', '⏳') +
+    kpi(rows.filter(t => t.mock_points > 0).length, 'Days with fake GPS', rows.some(t => t.mock_points > 0) ? 'red' : 'green', '⚠');
+  // monthly per rep
+  const [s] = monthRange();
+  const per = salesReps().filter(u => !rep || u.id === rep).map(u => {
+    const r = _travel.filter(t => t.user_id === u.id), c = _claims.find(x => x.user_id === u.id);
+    return { u, days: r.length, km: r.reduce((a, t) => a + effKm(t), 0), amt: r.reduce((a, t) => a + Number(t.amount || 0), 0), c };
+  }).filter(x => x.days || x.c);
+  document.getElementById('claimTbl').innerHTML = tbl(['Salesperson', 'Vehicle · rate', 'Days', 'Km', 'Amount', 'Claim', 'Action'],
+    per.map(x => {
+      const veh = x.u.vehicle_type || f.default_vehicle || 'bike', rate = x.u.fuel_rate != null ? x.u.fuel_rate : (rates[veh] || 0);
+      const st = x.c ? x.c.status : 'not submitted';
+      const changed = x.c && (Math.abs(Number(x.c.total_km) - x.km) > 0.05) && ['submitted', 'approved'].includes(x.c.status);
+      const act = !x.c || ['submitted', 'rejected'].includes(x.c.status)
+        ? `<button class="btn sm" onclick="decideClaim('${x.u.id}','approved')">Approve</button> <button class="btn sm danger" onclick="decideClaim('${x.u.id}','rejected')">Reject</button>`
+        : x.c.status === 'approved' ? `<button class="btn sm sec" onclick="decideClaim('${x.u.id}','paid')">Mark paid</button>` : `<span class="muted">Paid ${fmtDT(x.c.paid_at)}</span>`;
+      return [`<b>${esc(x.u.name || x.u.mobile)}</b>`, `${esc(veh)} · ₹${rate}/km`, x.days, x.km.toFixed(1), rs(Math.round(x.amt)),
+        chip(st === 'not submitted' ? 'pending' : st === 'submitted' ? 'open' : st === 'approved' || st === 'paid' ? 'won' : 'lost', st) +
+        (x.c?.rep_note ? `<br><span class="muted" style="font-size:12px">“${esc(x.c.rep_note)}”</span>` : '') +
+        (x.c && x.c.status !== 'submitted' ? `<br><span class="muted" style="font-size:12px">${esc(x.c.total_km)} km · ${rs(x.c.amount)}${x.c.decision_note ? ' · ' + esc(x.c.decision_note) : ''}</span>` : '') +
+        (changed ? '<br><span class="flag">km changed since</span>' : ''), act];
+    }));
+  // daily
+  const list = rows;
+  document.getElementById('travelTbl').innerHTML = tbl(['Date', 'Salesperson', 'Km', 'Method', 'On duty', 'Points', 'Longest gap', 'Amount', ''],
+    list.map(t => [esc(t.day), esc(uname(t.user_id)),
+      `<b>${effKm(t).toFixed(1)}</b>${t.adjusted_km != null ? ` <span class="flag info" title="${esc(t.adjust_reason || '')}">adjusted from ${Number(t.km_final).toFixed(1)}</span>` : ''}`,
+      `${esc(t.method || '—')}${t.note ? `<br><span class="muted" style="font-size:11px">${esc(t.note.slice(0, 90))}</span>` : ''}`,
+      t.first_at ? fmtT(t.first_at) + ' – ' + fmtT(t.last_at) : '—',
+      `${t.points_used}/${t.points}${t.mock_points ? ` <span class="flag">${t.mock_points} fake</span>` : ''}`,
+      t.max_gap_min > 45 ? `<span class="stale">${t.max_gap_min} min</span>` : (t.max_gap_min ?? '—') + ' min',
+      rs(t.amount || 0),
+      `<button class="btn sm sec" onclick="routeFromTravel('${t.user_id}','${t.day}')">Route</button> <button class="btn sm sec" onclick="adjustKm('${t.user_id}','${t.day}')">Adjust</button>`]));
+}
+function routeFromTravel(uid, d) { show('mapv'); setTimeout(() => routeFor(uid, d), 150); }
+async function adjustKm(uid, d) {
+  const t = _travel.find(x => x.user_id === uid && x.day === d); if (!t) return;
+  const v = prompt(`Km for ${uname(uid)} on ${d} (calculated ${Number(t.km_final).toFixed(1)} km). Leave empty to remove the adjustment:`, t.adjusted_km ?? '');
+  if (v === null) return;
+  let reason = null;
+  if (v.trim() !== '') { reason = prompt('Reason for the adjustment (shown to the salesperson):', t.adjust_reason || ''); if (!reason) return; }
+  const { error } = await db.from('daily_travel').update({ adjusted_km: v.trim() === '' ? null : Number(v), adjust_reason: v.trim() === '' ? null : reason }).eq('user_id', uid).eq('day', d);
+  if (error) { alert(error.message); return; }
+  loadTravel();
+}
+async function decideClaim(uid, status) {
+  const note = status === 'rejected' ? prompt('Reason for rejecting (shown to the salesperson):') : (status === 'approved' ? (prompt('Note (optional):') ?? null) : null);
+  if (status === 'rejected' && !note) return;
+  const [s] = monthRange();
+  const { error } = await db.rpc('fuel_claim_decide', { p_user: uid, p_month: s, p_status: status, p_note: note || null });
+  if (error) { alert(error.message); return; }
+  loadTravel();
+}
+async function recalcTravel() {
+  const [s, n] = monthRange(), today = todayStr();
+  const end = new Date(new Date(n) - 864e5).toISOString().slice(0, 10);
+  const to = end > today ? today : end;
+  const btn = document.getElementById('tRecalc'); btn.disabled = true; btn.textContent = 'Recalculating…';
+  try { const r = await callTravel({ from: s, to, user_id: document.getElementById('tRep').value || undefined }); await loadTravel(); flashTop(`Recalculated ${(r.results || []).length} rep-days`); }
+  catch (e) { alert(e.message || e); }
+  finally { btn.disabled = false; btn.textContent = 'Recalculate km'; }
+}
+function flashTop(t) { const w = document.getElementById('rateWarn'); w.insertAdjacentHTML('afterbegin', `<div class="okmsg" style="margin-bottom:10px">${esc(t)} ✓</div>`); setTimeout(() => { const m = w.querySelector('.okmsg'); if (m) m.remove(); }, 4000); }
+async function exportTravelXlsx() {
+  try { await loadXlsx(); } catch (_) { alert('Could not load the Excel library.'); return; }
+  const [s] = monthRange(), f = S('fuel', {}), rates = f.rates || {};
+  const wb = XLSX.utils.book_new();
+  const summary = salesReps().map(u => { const r = _travel.filter(t => t.user_id === u.id), c = _claims.find(x => x.user_id === u.id);
+    const veh = u.vehicle_type || f.default_vehicle || 'bike';
+    return { Salesperson: u.name || u.mobile, Vehicle: veh, 'Rate (₹/km)': u.fuel_rate != null ? Number(u.fuel_rate) : Number(rates[veh] || 0), Days: r.length,
+      Km: +r.reduce((a, t) => a + effKm(t), 0).toFixed(1), 'Amount (₹)': +r.reduce((a, t) => a + Number(t.amount || 0), 0).toFixed(2),
+      'Claim status': c ? c.status : 'not submitted', 'Approved km': c ? Number(c.total_km) : '', 'Approved amount (₹)': c ? Number(c.amount) : '' }; }).filter(x => x.Days);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary.length ? summary : [{ Note: 'No data' }]), 'Monthly summary');
+  const daily = _travel.map(t => ({ Date: t.day, Salesperson: uname(t.user_id), 'Km (final)': effKm(t), 'Km calculated': Number(t.km_final || 0), 'Km straight-line': Number(t.km_straight || 0),
+    Method: t.method, 'Adjusted reason': t.adjust_reason || '', 'Rate (₹/km)': Number(t.rate || 0), 'Amount (₹)': Number(t.amount || 0),
+    'First point': t.first_at ? fmtDT(t.first_at) : '', 'Last point': t.last_at ? fmtDT(t.last_at) : '', Points: t.points, 'Fake GPS points': t.mock_points, 'Longest gap (min)': t.max_gap_min, Note: t.note || '' }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(daily.length ? daily : [{ Note: 'No data' }]), 'Daily km');
+  XLSX.writeFile(wb, `fuel_${s.slice(0, 7)}.xlsx`);
+}
+
+// ---------- settings: tracking & fuel ----------
+function renderTravelSettings() {
+  const t = S('tracking', {}), f = S('fuel', {});
+  const v = (id, x) => { const el = document.getElementById(id); if (el) el.value = x ?? ''; };
+  document.getElementById('setTrkOn').checked = t.enabled !== false;
+  v('setTrkInt', t.interval_min || 10); v('setTrkAcc', t.max_accuracy_m || 100); v('setTrkStill', t.stationary_m || 60); v('setTrkSpd', t.max_speed_kmh || 150);
+  v('setFuelMethod', f.method || 'road'); v('setFuelFactor', f.road_factor || 1.3); v('setRateBike', (f.rates || {}).bike ?? 0); v('setRateCar', (f.rates || {}).car ?? 0);
+  v('setDefVeh', f.default_vehicle || 'bike'); v('setCap', f.daily_cap_km || 300);
+}
+async function saveTravelSettings() {
+  const n = (id, d) => { const x = parseFloat(document.getElementById(id).value); return isNaN(x) ? d : x; };
+  const ok = await saveSetting('tracking', { enabled: document.getElementById('setTrkOn').checked, interval_min: Math.max(2, Math.min(60, Math.round(n('setTrkInt', 10)))),
+    max_accuracy_m: n('setTrkAcc', 100), stationary_m: n('setTrkStill', 60), max_speed_kmh: n('setTrkSpd', 150) }, 'msgTravel');
+  if (!ok) return;
+  await saveSetting('fuel', { method: document.getElementById('setFuelMethod').value, road_factor: n('setFuelFactor', 1.3),
+    rates: { bike: n('setRateBike', 0), car: n('setRateCar', 0) }, default_vehicle: document.getElementById('setDefVeh').value, daily_cap_km: n('setCap', 300) }, 'msgTravel');
+}
+
 
 // ---------- team chat ----------
 let _chatSub = false;
