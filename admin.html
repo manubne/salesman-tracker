@@ -3,98 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Salesman Tracker — Admin</title>
+<title>BNE Sales — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root { --blue:#1F3A5F; --accent:#1F3A5F; --bg:#F6F6F3; --card:#fff; --border:#EAEAE5; --text:#16181D; --muted:#8A8F98;
-          --green:#1a7f37; --orange:#9a6a00; --red:#b23b3b; }
+  :root { --brand:#2F5BEA; --brand2:#5B8DEF; --navy:#0F1B33; --navy2:#16264A; --bg:#F4F6FB; --card:#fff; --border:#E5E9F2;
+          --text:#0F172A; --muted:#64748B; --green:#16A34A; --orange:#D97706; --red:#DC2626; --teal:#0D9488; --purple:#7C3AED;
+          --accent:var(--brand); --blue:var(--brand); }
   * { box-sizing:border-box; margin:0; }
   html,body { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif; background:var(--bg); color:var(--text); letter-spacing:-0.1px; }
-  /* ---- app shell: left sidebar + content ---- */
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif; background:var(--bg); color:var(--text); letter-spacing:-0.1px; font-size:14px; }
+  a { color:var(--brand); }
+  /* ---- shell ---- */
   .shell { display:flex; min-height:100vh; }
-  .sidebar { width:236px; flex:none; background:#fff; border-right:1px solid var(--border);
-             position:fixed; top:0; left:0; bottom:0; overflow-y:auto; padding:14px 12px; z-index:40; }
-  .sidebar .brand { display:flex; align-items:center; gap:10px; padding:8px 10px 14px; font-weight:600; font-size:15px; letter-spacing:-0.3px; }
-  .sidebar .brand .logo { width:28px; height:28px; border-radius:8px; background:var(--accent); flex:none; }
+  .sidebar { width:240px; flex:none; background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%); color:#fff;
+             position:fixed; top:0; left:0; bottom:0; overflow-y:auto; padding:16px 12px; z-index:40; }
+  .sidebar .brand { display:flex; align-items:center; gap:10px; padding:6px 10px 16px; font-weight:700; font-size:15.5px; letter-spacing:-0.3px; }
+  .sidebar .brand .logo { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--brand2),var(--brand)); flex:none;
+             display:grid; place-items:center; font-size:15px; font-weight:800; box-shadow:0 4px 12px rgba(47,91,234,.45); }
+  .sidebar .me { margin:0 6px 10px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.06); font-size:12.5px; }
+  .sidebar .me b { display:block; font-size:13.5px; }
+  .sidebar .me span { color:rgba(255,255,255,.55); text-transform:capitalize; }
   .sidebar nav { display:flex; flex-direction:column; gap:2px; }
-  .navlabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); padding:14px 10px 4px; font-weight:600; }
+  .navlabel { font-size:10.5px; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.42); padding:14px 10px 5px; font-weight:700; }
   .sidebar nav button { display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:transparent; border:none;
-             color:var(--text); padding:9px 10px; border-radius:9px; font-size:13.5px; font-weight:500; cursor:pointer; transition:all .12s; letter-spacing:-0.1px; }
-  .sidebar nav button .ic { width:17px; height:17px; color:var(--muted); flex:none; }
-  .sidebar nav button:hover { background:rgba(0,0,0,.045); }
-  .sidebar nav button.active { background:var(--accent); color:#fff; }
+             color:rgba(255,255,255,.82); padding:9px 11px; border-radius:10px; font-size:13.5px; font-weight:500; cursor:pointer; transition:all .12s; }
+  .sidebar nav button .ic { width:17px; height:17px; color:rgba(255,255,255,.55); flex:none; }
+  .sidebar nav button:hover { background:rgba(255,255,255,.07); color:#fff; }
+  .sidebar nav button.active { background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#fff; box-shadow:0 4px 14px rgba(47,91,234,.35); }
   .sidebar nav button.active .ic { color:#fff; }
-  .content { margin-left:236px; flex:1; min-width:0; display:flex; flex-direction:column; }
-  .topbar { position:sticky; top:0; z-index:20; background:rgba(246,246,243,.9); backdrop-filter:saturate(180%) blur(12px);
+  .sidebar nav button .badge { margin-left:auto; background:var(--red); color:#fff; font-size:11px; font-weight:700; border-radius:10px; padding:1px 7px; }
+  .content { margin-left:240px; flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar { position:sticky; top:0; z-index:20; background:rgba(244,246,251,.88); backdrop-filter:saturate(180%) blur(12px);
             border-bottom:1px solid var(--border); padding:13px 26px; display:flex; align-items:center; gap:12px; }
-  .topbar h2 { font-size:17px; font-weight:650; letter-spacing:-0.4px; flex:1; }
+  .topbar h2 { font-size:18px; font-weight:700; letter-spacing:-0.4px; flex:1; }
   .hamb { display:none; background:transparent; border:none; cursor:pointer; color:var(--text); padding:4px; }
   .hamb svg { width:22px; height:22px; }
-  #logoutBtn { background:#fff; border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:500; }
-  #logoutBtn:hover { background:#FAFAF7; }
-  #scrim { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:35; }
-  main { padding:26px; max-width:1300px; margin:0 auto; width:100%; }
+  #scrim { display:none; position:fixed; inset:0; background:rgba(15,23,42,.4); z-index:35; }
+  main { padding:24px 26px; max-width:1320px; margin:0 auto; width:100%; }
   @media (max-width:900px) {
-    .sidebar { transform:translateX(-100%); transition:transform .2s ease; box-shadow:0 0 40px rgba(0,0,0,.15); }
+    .sidebar { transform:translateX(-100%); transition:transform .2s ease; box-shadow:0 0 40px rgba(0,0,0,.25); }
     .sidebar.open { transform:none; }
     .content { margin-left:0; }
     .hamb { display:inline-flex; }
     #scrim.show { display:block; }
-    main { padding:18px; }
+    main { padding:16px; }
   }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .card .num { font-size:30px; font-weight:650; letter-spacing:-1px; }
-  .card .lbl { font-size:12px; color:var(--muted); margin-top:6px; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
-  .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:20px; }
-  .panel h2 { font-size:14px; margin-bottom:16px; font-weight:600; letter-spacing:-0.2px; }
+  /* ---- KPI tiles ---- */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:22px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:0 1px 2px rgba(16,24,40,.04);
+          display:flex; align-items:center; gap:14px; }
+  .card .ico { width:44px; height:44px; border-radius:13px; display:grid; place-items:center; flex:none; font-size:20px; }
+  .card .num { font-size:24px; font-weight:750; letter-spacing:-0.8px; line-height:1.1; }
+  .card .lbl { font-size:12px; color:var(--muted); margin-top:3px; font-weight:600; }
+  .card.click { cursor:pointer; transition:transform .1s, box-shadow .1s; }
+  .card.click:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,24,40,.08); }
+  .t-blue .ico { background:#E8EEFE; color:var(--brand); } .t-green .ico { background:#E6F6EC; color:var(--green); }
+  .t-orange .ico { background:#FEF3E2; color:var(--orange); } .t-red .ico { background:#FDECEC; color:var(--red); }
+  .t-teal .ico { background:#E1F5F3; color:var(--teal); } .t-purple .ico { background:#F1EBFE; color:var(--purple); }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:20px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+  .panel h2 { font-size:15px; margin-bottom:14px; font-weight:700; letter-spacing:-0.2px; display:flex; align-items:center; gap:8px; }
+  .panel h2 .sub { font-weight:500; color:var(--muted); font-size:12.5px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:1000px) { .grid2 { grid-template-columns:1fr; } }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; color:var(--muted); font-weight:600; padding:10px 8px; border-bottom:1px solid var(--border);
-       text-transform:uppercase; font-size:11px; letter-spacing:.5px; }
-  td { padding:12px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { text-align:left; color:var(--muted); font-weight:700; padding:10px 8px; border-bottom:1px solid var(--border);
+       text-transform:uppercase; font-size:10.5px; letter-spacing:.6px; white-space:nowrap; }
+  td { padding:11px 8px; border-bottom:1px solid #EEF1F7; vertical-align:middle; }
   tr:last-child td { border-bottom:none; }
-  tr:hover td { background:#FAFAF7; }
-  .chip { display:inline-block; padding:3px 11px; border-radius:20px; font-size:12px; font-weight:600; letter-spacing:-0.1px; }
-  .chip.planned { background:#FBF3E4; color:var(--orange); }
-  .chip.verified { background:#EAF0F6; color:var(--accent); }
-  .chip.completed { background:#EAF3EC; color:var(--green); }
-  .chip.missed, .chip.unverified { background:#F7EBEB; color:var(--red); }
-  .flag { display:inline-block; background:#F7EBEB; color:var(--red); border-radius:6px; padding:2px 7px; font-size:11px; margin-right:4px; font-weight:600; }
+  tbody tr:hover td { background:#F8FAFE; }
+  tr.rowlink { cursor:pointer; }
+  /* ---- chips ---- */
+  .chip { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:650; white-space:nowrap; text-transform:capitalize; }
+  .chip.planned, .chip.visit_scheduled, .chip.draft, .chip.open { background:#FEF3E2; color:var(--orange); }
+  .chip.verified, .chip.new, .chip.need_quote { background:#E8EEFE; color:var(--brand); }
+  .chip.contacted, .chip.quoted { background:#F1EBFE; color:var(--purple); }
+  .chip.checked_in, .chip.visited { background:#E1F5F3; color:var(--teal); }
+  .chip.completed, .chip.converted, .chip.won, .chip.done, .chip.accepted { background:#E6F6EC; color:var(--green); }
+  .chip.missed, .chip.unverified, .chip.lost, .chip.overdue { background:#FDECEC; color:var(--red); }
+  .chip.dropped, .chip.pending { background:#EEF1F5; color:#475569; }
+  .chip.live { background:var(--teal); color:#fff; }
+  .flag { display:inline-block; background:#FDECEC; color:var(--red); border-radius:6px; padding:2px 7px; font-size:11px; margin:1px 3px 1px 0; font-weight:650; white-space:nowrap; }
+  .flag.info { background:#EEF1F5; color:#475569; }
+  .stale { color:var(--red); font-weight:650; }
+  /* ---- forms ---- */
   .toolbar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
-  .toolbar input, .toolbar select { padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; color:var(--text); }
-  .toolbar input:focus, .toolbar select:focus { outline:none; border-color:var(--accent); }
-  .btn { background:var(--accent); color:#fff; border:none; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; transition:opacity .15s; }
-  .btn:hover { opacity:.9; }
+  input, select, textarea { font:inherit; }
+  .toolbar input, .toolbar select, .field input, .field select, .field textarea, .inp {
+    padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; color:var(--text); }
+  .toolbar input:focus, .toolbar select:focus, .field input:focus, .field select:focus, .field textarea:focus, .inp:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 3px rgba(47,91,234,.12); }
+  .btn { background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#fff; border:none; padding:9px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:650; transition:opacity .15s; white-space:nowrap; }
+  .btn:hover { opacity:.92; } .btn:disabled { opacity:.5; cursor:default; }
   .btn.sec { background:#fff; color:var(--text); border:1px solid var(--border); }
-  .btn.sec:hover { background:#FAFAF7; opacity:1; }
-  #map { height:480px; border-radius:14px; }
+  .btn.sec:hover { background:#F8FAFE; opacity:1; }
+  .btn.danger { background:#fff; color:var(--red); border:1px solid #F5C9C9; }
+  .btn.sm { padding:6px 11px; font-size:12px; }
+  .formgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+  .formgrid .full { grid-column:1/-1; }
+  .field label { display:block; font-size:12px; font-weight:650; color:var(--muted); margin-bottom:5px; }
+  .field input, .field select, .field textarea { width:100%; }
+  .field textarea { min-height:80px; resize:vertical; }
+  .hint { font-size:12px; color:var(--muted); margin-top:4px; }
+  .warnbox { background:#FEF3E2; border:1px solid #F8DDB0; color:#7A4A00; border-radius:10px; padding:10px 12px; font-size:12.5px; margin-top:6px; }
+  .okmsg { color:var(--green); font-size:13px; font-weight:600; }
+  .switch { display:flex; align-items:center; gap:10px; padding:8px 0; }
+  .switch input { width:18px; height:18px; accent-color:var(--brand); }
+  #map { height:500px; border-radius:14px; }
   .view { display:none; }
   .view.active { display:block; }
-  /* login */
-  #loginView { display:flex; min-height:100vh; align-items:center; justify-content:center; padding:20px; }
-  #loginBox { background:#fff; border:1px solid var(--border); border-radius:18px; padding:40px; width:380px; box-shadow:0 1px 3px rgba(0,0,0,.03); }
-  #loginBox h1 { color:var(--text); font-size:22px; margin-bottom:6px; font-weight:650; letter-spacing:-0.5px; }
-  #loginBox p { color:var(--muted); font-size:13.5px; margin-bottom:24px; }
+  /* ---- modal ---- */
+  .modal-bg { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:60; display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; width:100%; max-width:760px; box-shadow:0 24px 60px rgba(15,23,42,.25); }
+  .modal .mh { display:flex; align-items:center; gap:10px; padding:18px 22px; border-bottom:1px solid var(--border); }
+  .modal .mh h3 { flex:1; font-size:17px; font-weight:700; }
+  .modal .mb { padding:20px 22px; }
+  .modal .mf { padding:14px 22px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+  .xbtn { background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); line-height:1; }
+  .kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:13px; }
+  .kv div:nth-child(odd) { color:var(--muted); font-weight:600; }
+  .timeline { border-left:2px solid var(--border); margin-left:6px; padding-left:16px; }
+  .timeline .ev { position:relative; padding:4px 0 12px; font-size:13px; }
+  .timeline .ev:before { content:''; position:absolute; left:-22px; top:9px; width:10px; height:10px; border-radius:50%; background:var(--brand); border:2px solid #fff; }
+  .timeline .ev small { color:var(--muted); display:block; }
+  /* ---- photo grid ---- */
+  .pgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+  .ph { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; cursor:pointer; }
+  .ph .img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#EEF1F5; }
+  .ph .cap { padding:7px 9px; font-size:11.5px; color:var(--muted); line-height:1.35; }
+  .ph .cap b { color:var(--text); font-size:12px; }
+  .thumbs { display:flex; gap:10px; flex-wrap:wrap; }
+  .thumbs img { width:150px; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--border); cursor:pointer; background:#EEF1F5; }
+  #lightbox img { max-width:100%; max-height:75vh; display:block; margin:0 auto; border-radius:10px; }
+  /* ---- login ---- */
+  #loginView { display:flex; min-height:100vh; align-items:center; justify-content:center; padding:20px;
+               background:radial-gradient(1200px 600px at 10% 0%,#DCE6FF 0%,transparent 60%),radial-gradient(900px 500px at 100% 100%,#E1F5F3 0%,transparent 55%),var(--bg); }
+  #loginBox { background:#fff; border:1px solid var(--border); border-radius:20px; padding:40px; width:390px; box-shadow:0 20px 50px rgba(15,23,42,.08); }
+  #loginBox .logo { width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--brand2),var(--brand)); color:#fff; display:grid; place-items:center; font-weight:800; font-size:20px; margin-bottom:16px; }
+  #loginBox h1 { font-size:22px; margin-bottom:6px; font-weight:750; letter-spacing:-0.5px; }
+  #loginBox p { color:var(--muted); font-size:13.5px; margin-bottom:22px; }
   #loginBox input { width:100%; padding:12px 14px; margin-bottom:12px; border:1px solid var(--border); border-radius:12px; font-size:14px; }
-  #loginBox input:focus { outline:none; border-color:var(--accent); }
+  #loginBox input:focus { outline:none; border-color:var(--brand); }
   #loginBox button { width:100%; padding:13px; border-radius:12px; }
   .err { color:var(--red); font-size:13px; margin-top:8px; }
   .muted { color:var(--muted); }
+  .empty { padding:26px; text-align:center; color:var(--muted); }
+  .setsec { border-top:1px solid var(--border); padding-top:18px; margin-top:6px; }
 </style>
 </head>
 <body>
 
 <div id="loginView">
   <div id="loginBox">
-    <h1>Salesman Tracker</h1>
-    <p>Admin dashboard — sign in</p>
+    <div class="logo">B</div>
+    <h1>BNE Sales</h1>
+    <p>Sign in to the management dashboard</p>
     <div id="emailLogin">
       <input id="email" type="email" placeholder="Email" autocomplete="username">
       <input id="password" type="password" placeholder="Password" autocomplete="current-password">
       <button class="btn" onclick="login()">Sign in</button>
-      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('wa');return false" style="color:var(--blue);font-size:13px">Sign in with WhatsApp instead</a></p>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('wa');return false" style="font-size:13px">Sign in with WhatsApp OTP instead</a></p>
     </div>
     <div id="waLogin" style="display:none">
       <input id="waMobile" type="tel" placeholder="Mobile number (10 digits)" maxlength="10">
@@ -102,56 +170,102 @@
         <input id="waCode" type="text" placeholder="Enter OTP" inputmode="numeric">
       </div>
       <button class="btn" id="waBtn" onclick="waAuth()">Send OTP</button>
-      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('email');return false" style="color:var(--blue);font-size:13px">Sign in with email instead</a></p>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('email');return false" style="font-size:13px">Sign in with email instead</a></p>
     </div>
     <div id="loginErr" class="err"></div>
+  </div>
+</div>
+
+<div id="noAccess" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
+  <div class="panel" style="max-width:420px;text-align:center">
+    <h2 style="justify-content:center">Use the mobile app</h2>
+    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, coordinators and tele-callers. Sales users should use the BNE Sales app on their phone.</p>
+    <button class="btn" onclick="logout()">Sign out</button>
   </div>
 </div>
 
 <div id="appView" class="shell" style="display:none">
   <div id="scrim" onclick="toggleSidebar(false)"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="logo"></span> Salesman Tracker</div>
+    <div class="brand"><span class="logo">B</span> BNE Sales</div>
+    <div class="me" id="meBox"></div>
     <nav>
-      <button data-v="overview" class="active" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
+      <button data-v="overview" data-roles="admin,manager" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
 
-      <div class="navlabel">Field</div>
-      <button data-v="visits" onclick="show('visits')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Visits</span></button>
-      <button data-v="mapv" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Live map</span></button>
-      <button data-v="attendance" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
+      <div class="navlabel" data-roles="admin,manager,coordinator,telecaller">Leads</div>
+      <button data-v="leads" data-roles="admin,manager,coordinator,telecaller" onclick="show('leads')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Leads</span><span class="badge" id="leadBadge" style="display:none"></span></button>
 
-      <div class="navlabel">Sales</div>
-      <button data-v="customers" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
-      <button data-v="orders" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Orders</span></button>
-      <button data-v="followups" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
-      <button data-v="reqs" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
+      <div class="navlabel" data-roles="admin,manager,coordinator,telecaller">Field</div>
+      <button data-v="visits" data-roles="admin,manager" onclick="show('visits')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Visits &amp; check-ins</span></button>
+      <button data-v="photos" data-roles="admin,manager,coordinator,telecaller" onclick="show('photos')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Photos &amp; cards</span></button>
+      <button data-v="mapv" data-roles="admin,manager" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Map &amp; routes</span></button>
+      <button data-v="attendance" data-roles="admin,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
 
-      <div class="navlabel">Insights</div>
-      <button data-v="reports" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports</span></button>
+      <div class="navlabel" data-roles="admin,manager">Sales</div>
+      <button data-v="customers" data-roles="admin,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
+      <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Orders &amp; quotes</span></button>
+      <button data-v="followups" data-roles="admin,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
+      <button data-v="reqs" data-roles="admin,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
+
+      <div class="navlabel" data-roles="admin,manager">Insights</div>
+      <button data-v="reports" data-roles="admin,manager" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports &amp; targets</span></button>
 
       <div class="navlabel">Team</div>
-      <button data-v="team" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
-      <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Team chat</span></button>
+      <button data-v="team" data-roles="admin,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
+      <button data-v="chat" data-roles="admin,manager,coordinator,telecaller" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Team chat</span></button>
+      <button data-v="settings" data-roles="admin" onclick="show('settings')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
+      <button onclick="logout()" style="margin-top:14px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Log out</span></button>
     </nav>
   </aside>
   <div class="content">
     <div class="topbar">
       <button class="hamb" onclick="toggleSidebar()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <h2 id="pageTitle">Overview</h2>
-      <button id="logoutBtn" onclick="logout()">Logout</button>
+      <button class="btn" id="topAddLead" onclick="openLeadForm()" style="display:none">+ New lead</button>
     </div>
   <main>
-    <div id="overview" class="view active">
+    <!-- ================= OVERVIEW ================= -->
+    <div id="overview" class="view">
       <div class="cards" id="statCards"></div>
-      <div class="panel"><h2>Flagged visits (last 7 days)</h2><div id="flagged"></div></div>
-      <div class="panel"><h2>Today by sales person</h2><div id="todayByUser"></div></div>
+      <div class="panel"><h2>Today's field activity <span class="sub">real check-ins per salesperson</span></h2><div id="todayByUser"></div></div>
+      <div class="grid2">
+        <div class="panel"><h2>Leads needing attention <span class="sub" id="staleHint"></span></h2><div id="staleLeads"></div></div>
+        <div class="panel"><h2>Flagged visits <span class="sub">last 7 days</span></h2><div id="flagged"></div></div>
+      </div>
     </div>
 
-    <div id="visits" class="view">
+    <!-- ================= LEADS ================= -->
+    <div id="leads" class="view">
+      <div class="cards" id="leadCards"></div>
       <div class="panel">
         <div class="toolbar">
+          <input id="lSearch" placeholder="Search name, company, mobile…" oninput="renderLeads()" style="min-width:220px">
+          <select id="lStatus" onchange="renderLeads()"><option value="">All statuses</option><option value="open">Open (not converted/dropped)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">Converted</option><option value="dropped">Dropped</option><option value="stale">⚠ Untouched</option><option value="unassigned">Unassigned</option></select>
+          <select id="lRep" onchange="renderLeads()"></select>
+          <select id="lType" onchange="renderLeads()"></select>
+          <select id="lSource" onchange="renderLeads()"></select>
+          <span style="flex:1"></span>
+          <button class="btn sec" onclick="exportCsv('leads')">Export CSV</button>
+          <button class="btn" onclick="openLeadForm()">+ New lead</button>
+        </div>
+        <div id="leadsTbl"></div>
+      </div>
+    </div>
+
+    <!-- ================= VISITS ================= -->
+    <div id="visits" class="view">
+      <div class="panel">
+        <h2>Daily field activity <span class="sub">who actually visited, how long, and any red flags</span></h2>
+        <div class="toolbar"><input type="date" id="dayPick" onchange="loadDaySummary()"> <button class="btn sec" onclick="loadDaySummary()">Refresh</button></div>
+        <div id="daySummary"></div>
+      </div>
+      <div class="panel">
+        <h2>All visits</h2>
+        <div class="toolbar">
           <input type="date" id="vFrom"> <input type="date" id="vTo">
-          <select id="vStatus"><option value="">All statuses</option><option>planned</option><option>verified</option><option>completed</option><option>missed</option><option>unverified</option></select>
+          <select id="vRep"></select>
+          <select id="vStatus"><option value="">All statuses</option><option value="checked_in">Checked in (live)</option><option>completed</option><option>verified</option><option>planned</option><option>missed</option><option>unverified</option></select>
+          <select id="vFlag"><option value="">Any flags</option><option value="flagged">Flagged only</option></select>
           <button class="btn" onclick="loadVisits()">Filter</button>
           <button class="btn sec" onclick="exportCsv('visits')">Export CSV</button>
         </div>
@@ -159,12 +273,26 @@
       </div>
     </div>
 
+    <!-- ================= PHOTOS ================= -->
+    <div id="photos" class="view">
+      <div class="panel">
+        <div class="toolbar">
+          <input type="date" id="phFrom"> <input type="date" id="phTo">
+          <select id="phKind"><option value="">All types</option><option value="card">Visiting cards</option><option value="site">Site photos</option><option value="machine">Machine</option><option value="drawing">Drawings</option><option value="other">Other</option></select>
+          <select id="phRep"></select>
+          <button class="btn" onclick="loadPhotos()">Show</button>
+        </div>
+        <div id="photoGrid"></div>
+      </div>
+    </div>
+
+    <!-- ================= MAP ================= -->
     <div id="mapv" class="view">
       <div class="panel">
         <div class="toolbar">
           <input type="date" id="mFrom"> <input type="date" id="mTo">
           <button class="btn" onclick="loadMap()">Show visits</button>
-          <span class="muted">Blue = verified · Red = flagged</span>
+          <span class="muted">● Blue = clean check-in · ● Red = flagged</span>
           <span style="border-left:1px solid var(--border);height:20px;margin:0 4px"></span>
           <select id="routeUser"></select> <input type="date" id="routeDate">
           <button class="btn sec" onclick="loadRoute()">Show route</button>
@@ -173,6 +301,7 @@
       </div>
     </div>
 
+    <!-- ================= CUSTOMERS ================= -->
     <div id="customers" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -183,16 +312,10 @@
       </div>
     </div>
 
+    <!-- ================= ORDERS ================= -->
     <div id="orders" class="view">
       <div class="cards" id="orderStats"></div>
       <div class="panel" id="approvalsPanel" style="display:none"><h2>⚠ Quote discounts awaiting approval</h2><div id="approvalsTbl"></div></div>
-      <div class="panel"><h2>Order types (visible to all sales users)</h2>
-        <div class="toolbar">
-          <input id="newCat" placeholder="New order type (e.g. VRF)">
-          <button class="btn" onclick="addCategory()">Add type</button>
-        </div>
-        <div id="catList"></div>
-      </div>
       <div class="panel"><h2>Product catalog &amp; price list</h2>
         <div class="toolbar">
           <input id="pName" placeholder="Product name">
@@ -213,10 +336,11 @@
       </div>
     </div>
 
+    <!-- ================= CHAT ================= -->
     <div id="chat" class="view">
       <div class="panel">
         <h2>Team chat</h2>
-        <div id="chatBox" style="height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:6px"></div>
+        <div id="chatBox" style="height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:12px;background:#FBFCFE;display:flex;flex-direction:column;gap:6px"></div>
         <div class="toolbar" style="margin-top:10px">
           <input id="chatInput" placeholder="Message the team…" style="flex:1" onkeydown="if(event.key==='Enter')sendChat()">
           <button class="btn" onclick="sendChat()">Send</button>
@@ -224,17 +348,19 @@
       </div>
     </div>
 
+    <!-- ================= REPORTS ================= -->
     <div id="reports" class="view">
       <div class="cards" id="repCards"></div>
       <div class="panel"><h2>Insights</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px">
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Target vs Achieved (this month)</h3><canvas id="chTarget" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Achievement %</h3><canvas id="chPct" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Orders pipeline</h3><canvas id="chFunnel" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Win / Loss</h3><canvas id="chWin" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Revenue won (last 6 months)</h3><canvas id="chRev" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Orders by category</h3><canvas id="chCat" height="200"></canvas></div>
-          <div><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Visits by status</h3><canvas id="chVisits" height="200"></canvas></div>
+          <div><h3 class="ch">Target vs Achieved (this month)</h3><canvas id="chTarget" height="200"></canvas></div>
+          <div><h3 class="ch">Achievement %</h3><canvas id="chPct" height="200"></canvas></div>
+          <div><h3 class="ch">Leads by status</h3><canvas id="chLeads" height="200"></canvas></div>
+          <div><h3 class="ch">Leads by source</h3><canvas id="chSource" height="200"></canvas></div>
+          <div><h3 class="ch">Orders pipeline</h3><canvas id="chFunnel" height="200"></canvas></div>
+          <div><h3 class="ch">Win / Loss</h3><canvas id="chWin" height="200"></canvas></div>
+          <div><h3 class="ch">Revenue won (last 6 months)</h3><canvas id="chRev" height="200"></canvas></div>
+          <div><h3 class="ch">Orders by category</h3><canvas id="chCat" height="200"></canvas></div>
         </div>
       </div>
       <div class="panel"><h2>Per-salesperson performance</h2><div id="perRepTbl"></div></div>
@@ -244,6 +370,7 @@
       </div>
     </div>
 
+    <!-- ================= FOLLOW-UPS / REQS / ATTENDANCE ================= -->
     <div id="followups" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -253,7 +380,6 @@
         <div id="fuTbl"></div>
       </div>
     </div>
-
     <div id="reqs" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -263,7 +389,6 @@
         <div id="reqTbl"></div>
       </div>
     </div>
-
     <div id="attendance" class="view">
       <div class="panel">
         <div class="toolbar">
@@ -275,24 +400,151 @@
       </div>
     </div>
 
+    <!-- ================= TEAM ================= -->
     <div id="team" class="view">
       <div class="panel">
-        <h2>Add salesperson</h2>
+        <h2>Add team member</h2>
         <div class="toolbar">
           <input id="spName" placeholder="Full name">
           <input id="spMobile" placeholder="Mobile (10 digits)" maxlength="10" inputmode="numeric">
           <input id="spEmail" placeholder="Email (optional)">
-          <select id="spRole"><option value="sales">Sales</option><option value="quote">Quote team</option><option value="manager">Manager</option></select>
+          <select id="spRole"><option value="sales">Sales</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="manager">Manager</option></select>
           <input id="spTerritory" placeholder="Territory (optional)">
           <button class="btn" onclick="addInvite()">Add &amp; invite</button>
         </div>
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
+        <p class="hint">Sales and quote users log in on the mobile app. Coordinators, tele-callers and managers can also log in here with WhatsApp OTP.</p>
       </div>
       <div class="panel"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
-      <div class="panel"><h2>Sales team</h2><div id="teamTbl"></div>
-      <p class="muted" style="margin-top:10px">Salespeople appear here after their first mobile login. Name, role and territory from an invite are applied automatically on that first login.</p></div>
+      <div class="panel"><h2>Team</h2><div id="teamTbl"></div>
+      <p class="muted" style="margin-top:10px">People appear here after their first login. Name, role and territory from an invite are applied automatically.</p></div>
+    </div>
+
+    <!-- ================= SETTINGS ================= -->
+    <div id="settings" class="view">
+      <div class="panel">
+        <h2>Machine categories <span class="sub">used for leads, quotes and orders</span></h2>
+        <div class="toolbar"><input id="newCat" placeholder="New category (e.g. VRF, Chiller)"> <button class="btn" onclick="addCategory()">Add category</button></div>
+        <div id="catList"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h2>Lead setup</h2>
+          <div class="field" style="margin-bottom:12px"><label>Contact types (rename or switch off)</label><div id="setTypes"></div></div>
+          <div class="field" style="margin-bottom:12px"><label>Lead sources — one per line</label><textarea id="setSources"></textarea></div>
+          <div class="field" style="margin-bottom:12px"><label>Drop reasons — one per line</label><textarea id="setDrop"></textarea></div>
+          <div class="field" style="margin-bottom:12px"><label>Lost reasons — one per line</label><textarea id="setLost"></textarea></div>
+          <button class="btn" onclick="saveLeadSetup()">Save lead setup</button> <span id="msgLeadSetup"></span>
+        </div>
+        <div>
+          <div class="panel">
+            <h2>Lead assignment</h2>
+            <div class="field" style="margin-bottom:12px"><label>How should new leads be assigned?</label>
+              <select id="setAssignMode" onchange="renderTerritoryMap()">
+                <option value="manual">Manual — coordinator picks the salesperson</option>
+                <option value="territory">Auto by territory</option>
+                <option value="round_robin">Auto round-robin (fewest open leads)</option>
+              </select>
+              <p class="hint">Leads created by a salesperson are always assigned to themselves.</p></div>
+            <div id="terrWrap" style="margin-bottom:12px"></div>
+            <div class="field" style="margin-bottom:12px"><label>Alert if a new lead is untouched for (hours)</label><input id="setStaleH" type="number" min="1"></div>
+            <button class="btn" onclick="saveAssignment()">Save assignment</button> <span id="msgAssign"></span>
+          </div>
+          <div class="panel">
+            <h2>Duty hours</h2>
+            <div class="field" style="margin-bottom:12px"><label>Mode</label>
+              <select id="setDutyMode"><option value="start_end">Rep taps Start Day / End Day</option><option value="fixed">Fixed working hours</option></select></div>
+            <div class="formgrid" style="margin-bottom:12px">
+              <div class="field"><label>Start time</label><input id="setDutyStart" type="time"></div>
+              <div class="field"><label>End time</label><input id="setDutyEnd" type="time"></div>
+              <div class="field full"><label>Working days</label><div id="setDays" style="display:flex;gap:12px;flex-wrap:wrap"></div></div>
+              <div class="field"><label>Auto end-day if rep forgets</label><input id="setAutoEnd" type="time"></div>
+            </div>
+            <button class="btn" onclick="saveDuty()">Save duty hours</button> <span id="msgDuty"></span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Check-in rules</h2>
+        <div class="formgrid">
+          <label class="switch"><input type="checkbox" id="setPhotoReq"> Site photo is mandatory before check-out</label>
+          <label class="switch"><input type="checkbox" id="setCamOnly"> Camera only for check-in photos (no gallery uploads)</label>
+          <div class="field"><label>Flag check-in if farther than (metres) from saved location</label><input id="setDist" type="number" min="50"></div>
+          <div class="field"><label>Flag visits shorter than (minutes)</label><input id="setMinMin" type="number" min="0"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" onclick="saveCheckin()">Save check-in rules</button> <span id="msgCheckin"></span></div>
+      </div>
+      <p class="hint">Every change is recorded in the audit log with who changed it and when. Tracking, fuel and incentive settings arrive with Phases 3 and 4.</p>
     </div>
   </main>
+  </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div class="modal-bg" id="leadFormBg" onclick="if(event.target===this)closeModal('leadFormBg')">
+  <div class="modal">
+    <div class="mh"><h3 id="leadFormTitle">New lead</h3><button class="xbtn" onclick="closeModal('leadFormBg')">×</button></div>
+    <div class="mb">
+      <input type="hidden" id="lfId">
+      <div class="formgrid">
+        <div class="field"><label>Contact name *</label><input id="lfName"></div>
+        <div class="field"><label>Company / firm</label><input id="lfCompany"></div>
+        <div class="field"><label>Mobile</label><input id="lfMobile" inputmode="tel" onblur="checkDup()"><div id="lfDup"></div></div>
+        <div class="field"><label>Email</label><input id="lfEmail" type="email"></div>
+        <div class="field"><label>Contact type</label><select id="lfType"></select></div>
+        <div class="field"><label>Lead source</label><select id="lfSource"></select></div>
+        <div class="field"><label>Machine category</label><select id="lfCat"></select></div>
+        <div class="field"><label>Approx. value (₹)</label><input id="lfValue" inputmode="decimal"></div>
+        <div class="field"><label>City</label><input id="lfCity"></div>
+        <div class="field"><label>Territory</label><input id="lfTerritory" list="terrList"><datalist id="terrList"></datalist></div>
+        <div class="field full"><label>Address</label><input id="lfAddress"></div>
+        <div class="field full"><label>Requirement</label><textarea id="lfReq" placeholder="What does the customer need? Capacity, site, timeline…"></textarea></div>
+        <div class="field"><label>Assign to salesperson</label><select id="lfAssign"></select><p class="hint" id="lfAssignHint"></p></div>
+        <div class="field"><label>Next follow-up</label><input id="lfNext" type="date"></div>
+        <div class="field full" id="lfCardWrap"><label>Visiting card (front / back)</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><input type="file" id="lfCardF" accept="image/*"> <input type="file" id="lfCardB" accept="image/*"></div></div>
+      </div>
+      <div class="err" id="lfErr"></div>
+    </div>
+    <div class="mf"><button class="btn sec" onclick="closeModal('leadFormBg')">Cancel</button><button class="btn" id="lfSave" onclick="saveLead()">Save lead</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="leadViewBg" onclick="if(event.target===this)closeModal('leadViewBg')">
+  <div class="modal" style="max-width:900px">
+    <div class="mh"><h3 id="lvTitle">Lead</h3><span id="lvChip"></span><button class="btn sec sm" onclick="editLead()">Edit</button><button class="xbtn" onclick="closeModal('leadViewBg')">×</button></div>
+    <div class="mb">
+      <div class="grid2">
+        <div>
+          <div class="kv" id="lvKv"></div>
+          <div style="margin-top:18px">
+            <h4 style="font-size:13px;margin-bottom:8px">Update</h4>
+            <div class="toolbar" style="margin-bottom:8px">
+              <select id="lvStatus" onchange="lvStatusChanged()"><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">Converted</option><option value="dropped">Dropped</option></select>
+              <select id="lvDrop" style="display:none"></select>
+              <select id="lvAssign"></select>
+              <button class="btn sm" onclick="saveLeadUpdate()">Save</button>
+            </div>
+            <div class="toolbar"><input id="lvNote" placeholder="Add a note or call summary…" style="flex:1" onkeydown="if(event.key==='Enter')addLeadNote()"><button class="btn sec sm" onclick="addLeadNote()">Add note</button></div>
+            <div id="lvMsg"></div>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:13px;margin-bottom:8px">Visiting card &amp; photos</h4>
+          <div class="thumbs" id="lvPhotos"></div>
+          <div style="margin-top:8px"><input type="file" id="lvUpload" accept="image/*"> <select id="lvUpKind"><option value="card_front">Card front</option><option value="card_back">Card back</option><option value="site">Site</option><option value="drawing">Drawing</option><option value="other">Other</option></select> <button class="btn sec sm" onclick="uploadLeadPhoto()">Upload</button></div>
+          <h4 style="font-size:13px;margin:18px 0 8px">Activity</h4>
+          <div class="timeline" id="lvTimeline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="lightboxBg" onclick="if(event.target===this)closeModal('lightboxBg')">
+  <div class="modal" style="max-width:1000px">
+    <div class="mh"><h3 id="lbTitle">Photo</h3><a id="lbMap" target="_blank" class="btn sec sm" style="text-decoration:none">Open location</a><button class="xbtn" onclick="closeModal('lightboxBg')">×</button></div>
+    <div class="mb" id="lightbox"></div>
   </div>
 </div>
 
@@ -301,48 +553,101 @@ const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [] };
+let ME = null;           // my users row
+let SETTINGS = {};       // app_settings by key
+let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [], leads: [] };
 let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
+const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'Converted', dropped:'Dropped' };
+const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
+const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO', payment:'Payment', other:'Other' };
+
 function ensureGmaps() {
   if (gmapsReady) return gmapsReady;
   gmapsReady = new Promise((resolve, reject) => {
     const ready = () => window.google && window.google.maps && window.google.maps.Map;
-    const waitReady = () => {
-      let n = 0;
-      const t = setInterval(() => {
-        if (ready()) { clearInterval(t); resolve(); }
-        else if (++n > 100) { clearInterval(t); reject(new Error('maps load timeout')); }
-      }, 100);
-    };
+    const waitReady = () => { let n = 0; const t = setInterval(() => { if (ready()) { clearInterval(t); resolve(); } else if (++n > 100) { clearInterval(t); reject(new Error('maps load timeout')); } }, 100); };
     if (ready()) return resolve();
     const s = document.createElement('script');
     s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY;
-    s.async = true; s.defer = true;
-    s.onload = waitReady;      // wait until google.maps.Map is actually defined
-    s.onerror = reject;
+    s.async = true; s.defer = true; s.onload = waitReady; s.onerror = reject;
     document.head.appendChild(s);
   });
   return gmapsReady;
 }
 
+// ---------- helpers ----------
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDT = s => s ? new Date(s).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+const fmtT = s => s ? new Date(s).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) : '—';
+const ago = s => { if (!s) return '—'; const m = Math.round((Date.now() - new Date(s)) / 60000);
+  if (m < 60) return m + ' min ago'; const h = Math.round(m / 60); if (h < 48) return h + ' h ago'; return Math.round(h / 24) + ' days ago'; };
+const rs = n => '₹' + Number(n||0).toLocaleString('en-IN');
+const _rupees = n => 'Rs. ' + Number(n||0).toLocaleString('en-IN');
+const uname = id => { const u = cache.users.find(u => u.id === id); return u ? (u.name || u.mobile) : '—'; };
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const daysAgoStr = n => { const d = new Date(Date.now() - n*864e5); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const isStaff = () => ME && ['admin','manager','coordinator','telecaller'].includes(ME.role);
+const isManager = () => ME && ['admin','manager'].includes(ME.role);
+function chip(s, label) { return `<span class="chip ${esc(s)}">${esc(label || STATUS_LABEL[s] || String(s||'').replace(/_/g,' '))}</span>`; }
+function flagsHtml(fl) { return (fl||[]).map(f => `<span class="flag ${f==='location_saved'?'info':''}">${esc(FLAG_LABEL[f]||f)}</span>`).join('') || '<span class="muted">—</span>'; }
+function realFlags(fl) { return (fl||[]).filter(f => f !== 'location_saved'); }
+function tbl(headers, rows, rowAttrs) {
+  if (!rows.length) return '<div class="empty">Nothing here yet.</div>';
+  return '<div style="overflow-x:auto"><table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') +
+    '</tr></thead><tbody>' + rows.map((r,i)=>'<tr' + (rowAttrs ? ' ' + rowAttrs(i) : '') + '>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('') +
+    '</tbody></table></div>';
+}
+function kpi(n, l, tone, icon, onclick) {
+  return `<div class="card t-${tone} ${onclick?'click':''}" ${onclick?`onclick="${onclick}"`:''}><div class="ico">${icon}</div><div><div class="num">${n}</div><div class="lbl">${l}</div></div></div>`;
+}
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function flash(id, text, ok = true) { const el = document.getElementById(id); if (!el) return; el.innerHTML = `<span class="${ok?'okmsg':'err'}">${esc(text)}</span>`; if (ok) setTimeout(() => { if (el) el.innerHTML = ''; }, 3000); }
+function opts(list, sel, blank) { return (blank ? `<option value="">${blank}</option>` : '') + list.map(o => `<option value="${esc(o.v)}" ${o.v===sel?'selected':''}>${esc(o.l)}</option>`).join(''); }
+const salesReps = () => cache.users.filter(u => u.role === 'sales' && u.active);
+const repOpts = (sel, blank) => opts(salesReps().map(u => ({ v: u.id, l: u.name || u.mobile })), sel, blank);
+
+// signed URLs for private photos
+const _urlCache = {};
+async function signedUrls(paths) {
+  const need = [...new Set(paths.filter(p => p && !_urlCache[p]))];
+  if (need.length) {
+    const { data } = await db.storage.from('media').createSignedUrls(need, 3600);
+    (data || []).forEach(d => { if (d.signedUrl && d.path) _urlCache[d.path] = d.signedUrl; });
+  }
+  return paths.map(p => _urlCache[p] || '');
+}
+async function compressImage(file, maxDim = 1600, quality = 0.82) {
+  try {
+    const img = await createImageBitmap(file);
+    const s = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(b => r(b || file), 'image/jpeg', quality));
+  } catch (_) { return file; }
+}
+async function uploadMedia(file, entityType, entityId, kind, caption) {
+  const blob = await compressImage(file);
+  const path = `${ME.id}/${entityType}/${entityId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await db.storage.from('media').upload(path, blob, { contentType: 'image/jpeg' });
+  if (error) throw error;
+  const { error: e2 } = await db.from('media').insert({ entity_type: entityType, entity_id: entityId, kind, storage_path: path, caption: caption || null });
+  if (e2) throw e2;
+}
+
 // ---------- auth ----------
 async function login() {
-  const { error } = await db.auth.signInWithPassword({
-    email: document.getElementById('email').value.trim(),
-    password: document.getElementById('password').value,
-  });
+  const { error } = await db.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
   if (error) { document.getElementById('loginErr').textContent = error.message; return; }
   init();
 }
 async function logout() { await db.auth.signOut(); location.reload(); }
-
 function toggleLogin(mode) {
   document.getElementById('emailLogin').style.display = mode === 'email' ? 'block' : 'none';
   document.getElementById('waLogin').style.display = mode === 'wa' ? 'block' : 'none';
   document.getElementById('loginErr').textContent = '';
 }
-
 let _waSent = false;
 async function waAuth() {
   const err = document.getElementById('loginErr'); err.textContent = '';
@@ -353,9 +658,7 @@ async function waAuth() {
     const { error } = await db.auth.signInWithOtp({ phone });
     btn.disabled = false;
     if (error) { err.textContent = error.message; btn.textContent = 'Send OTP'; return; }
-    _waSent = true;
-    document.getElementById('waCodeWrap').style.display = 'block';
-    btn.textContent = 'Verify & sign in';
+    _waSent = true; document.getElementById('waCodeWrap').style.display = 'block'; btn.textContent = 'Verify & sign in';
   } else {
     btn.disabled = true; btn.textContent = 'Verifying…';
     const { error } = await db.auth.verifyOtp({ phone, token: document.getElementById('waCode').value.trim(), type: 'sms' });
@@ -368,283 +671,550 @@ async function waAuth() {
 async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) return;
+  const { data: me } = await db.from('users').select('*').eq('id', session.user.id).maybeSingle();
+  ME = me;
   document.getElementById('loginView').style.display = 'none';
+  if (!ME || !ME.active || !isStaff()) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
-  const today = new Date().toISOString().slice(0,10);
-  const weekAgo = new Date(Date.now()-6*864e5).toISOString().slice(0,10);
-  for (const id of ['vFrom','mFrom','aFrom']) document.getElementById(id).value = weekAgo;
-  for (const id of ['vTo','mTo','aTo']) document.getElementById(id).value = today;
-  await Promise.all([loadUsers(), loadInvites(), loadOverview(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadCategories(), loadFollowUps()]);
+  document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
+  // role-based navigation
+  document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
+  document.getElementById('topAddLead').style.display = '';
+  const today = todayStr(), weekAgo = daysAgoStr(6);
+  for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
+  for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
+  await Promise.all([loadUsers(), loadSettings(), loadCategories()]);
+  fillFilters();
+  await loadLeads();
+  subscribeLeads();
+  if (isManager()) {
+    show('overview');
+    Promise.all([loadInvites(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadFollowUps()]).then(loadOverview);
+  } else {
+    show('leads');
+  }
 }
 
 function toggleSidebar(open) {
   const sb = document.getElementById('sidebar'), sc = document.getElementById('scrim');
-  if (!sb) return;
   const willOpen = (open === undefined) ? !sb.classList.contains('open') : open;
-  sb.classList.toggle('open', willOpen);
-  sc.classList.toggle('show', willOpen);
+  sb.classList.toggle('open', willOpen); sc.classList.toggle('show', willOpen);
 }
 function show(v) {
   document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
   document.getElementById(v).classList.add('active');
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
-  const btn = document.querySelector('nav button[data-v="' + v + '"]');
+  const btn = document.querySelector('nav button[data-v="' + v + '"] span');
   if (btn) document.getElementById('pageTitle').textContent = btn.textContent.trim();
   toggleSidebar(false);
+  if (v === 'overview') loadOverview();
+  if (v === 'leads') renderLeads();
+  if (v === 'visits') { loadDaySummary(); loadVisits(); }
+  if (v === 'photos') loadPhotos();
   if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); loadMap(); } }, 60); }
   if (v === 'chat') loadChat();
-  if (v === 'orders') { loadOrders(); loadCategories().then(loadProducts); }
+  if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'team') { loadUsers(); loadInvites(); }
   if (v === 'followups') loadFollowUps();
   if (v === 'reports') loadReports();
+  if (v === 'settings') renderSettings();
 }
 
-// ---------- salesperson invites ----------
-const APK_URL = 'https://github.com/manubne/salesman-tracker/releases/download/latest/app-release.apk';
+// ---------- settings ----------
+async function loadSettings() {
+  const { data } = await db.from('app_settings').select('*');
+  SETTINGS = {}; (data || []).forEach(r => SETTINGS[r.key] = r.value);
+}
+const S = (k, d) => (SETTINGS[k] !== undefined ? SETTINGS[k] : d);
+const contactTypes = (all) => (S('lead_setup', {}).contact_types || []).filter(t => all || t.enabled !== false);
+const typeLabel = k => (contactTypes(true).find(t => t.key === k) || {}).label || String(k||'').replace(/_/g,' ');
+function fillFilters() {
+  document.getElementById('lRep').innerHTML = '<option value="">All salespeople</option>' + repOpts('', null);
+  document.getElementById('lType').innerHTML = '<option value="">All contact types</option>' + contactTypes(true).map(t => `<option value="${t.key}">${esc(t.label)}</option>`).join('');
+  document.getElementById('lSource').innerHTML = '<option value="">All sources</option>' + (S('lead_setup', {}).sources || []).map(s => `<option>${esc(s)}</option>`).join('');
+  for (const id of ['vRep','phRep']) document.getElementById(id).innerHTML = '<option value="">All salespeople</option>' + repOpts('', null);
+  const terr = [...new Set(cache.users.map(u => u.territory).filter(Boolean))];
+  document.getElementById('terrList').innerHTML = terr.map(t => `<option value="${esc(t)}">`).join('');
+}
+async function saveSetting(key, value, msgId) {
+  const { error } = await db.from('app_settings').upsert({ key, value });
+  if (error) { flash(msgId, error.message, false); return false; }
+  SETTINGS[key] = value; flash(msgId, 'Saved ✓'); fillFilters(); return true;
+}
+function renderSettings() {
+  loadCategories();
+  const ls = S('lead_setup', {});
+  document.getElementById('setTypes').innerHTML = (ls.contact_types || []).map((t, i) =>
+    `<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><input type="checkbox" id="ctOn${i}" ${t.enabled === false ? '' : 'checked'} style="width:18px;height:18px;accent-color:var(--brand)"><input class="inp" id="ctLbl${i}" value="${esc(t.label)}" style="flex:1"><span class="muted" style="font-size:11px">${esc(t.key)}</span></div>`).join('');
+  document.getElementById('setSources').value = (ls.sources || []).join('\n');
+  document.getElementById('setDrop').value = (ls.drop_reasons || []).join('\n');
+  document.getElementById('setLost').value = (ls.lost_reasons || []).join('\n');
+  const la = S('lead_assignment', {});
+  document.getElementById('setAssignMode').value = la.mode || 'manual';
+  document.getElementById('setStaleH').value = la.untouched_alert_hours || 24;
+  renderTerritoryMap();
+  const dh = S('duty_hours', {});
+  document.getElementById('setDutyMode').value = dh.mode || 'start_end';
+  document.getElementById('setDutyStart').value = dh.start || '09:30';
+  document.getElementById('setDutyEnd').value = dh.end || '19:00';
+  document.getElementById('setAutoEnd').value = dh.auto_end_time || '21:00';
+  const days = dh.working_days || [1,2,3,4,5,6];
+  document.getElementById('setDays').innerHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) =>
+    `<label class="switch" style="padding:0"><input type="checkbox" id="day${i}" ${days.includes(i)?'checked':''}> ${d}</label>`).join('');
+  const cr = S('checkin_rules', {});
+  document.getElementById('setPhotoReq').checked = !!cr.photo_mandatory;
+  document.getElementById('setCamOnly').checked = cr.camera_only !== false;
+  document.getElementById('setDist').value = cr.distance_flag_m || 300;
+  document.getElementById('setMinMin').value = cr.min_visit_minutes ?? 5;
+}
+function renderTerritoryMap() {
+  const wrap = document.getElementById('terrWrap');
+  if (document.getElementById('setAssignMode').value !== 'territory') { wrap.innerHTML = ''; return; }
+  const tm = (S('lead_assignment', {}).territory_map) || {};
+  const terrs = [...new Set([...Object.keys(tm), ...cache.users.map(u => u.territory).filter(Boolean)])];
+  wrap.innerHTML = '<div class="field"><label>Territory → salesperson</label></div>' +
+    '<div id="terrRows">' + terrs.map(t => terrRow(t, tm[t])).join('') + '</div>' +
+    '<button class="btn sec sm" onclick="document.getElementById(\'terrRows\').insertAdjacentHTML(\'beforeend\', terrRow(\'\', \'\'))">+ Add territory</button>' +
+    '<p class="hint">If a territory has no mapping, the rep whose profile territory matches (with fewest open leads) gets it.</p>';
+}
+function terrRow(t, uid) { return `<div class="trow" style="display:flex;gap:8px;margin-bottom:6px"><input class="inp tname" value="${esc(t)}" placeholder="Territory" style="flex:1"><select class="inp tuser" style="flex:1">${repOpts(uid, '— auto —')}</select></div>`; }
+async function saveLeadSetup() {
+  const ls = S('lead_setup', {});
+  const types = (ls.contact_types || []).map((t, i) => ({ key: t.key, label: document.getElementById('ctLbl' + i).value.trim() || t.label, enabled: document.getElementById('ctOn' + i).checked }));
+  const lines = id => document.getElementById(id).value.split('\n').map(s => s.trim()).filter(Boolean);
+  await saveSetting('lead_setup', { ...ls, contact_types: types, sources: lines('setSources'), drop_reasons: lines('setDrop'), lost_reasons: lines('setLost') }, 'msgLeadSetup');
+}
+async function saveAssignment() {
+  const tm = {};
+  document.querySelectorAll('#terrRows .trow').forEach(r => { const t = r.querySelector('.tname').value.trim(); const u = r.querySelector('.tuser').value; if (t && u) tm[t] = u; });
+  const mode = document.getElementById('setAssignMode').value;
+  await saveSetting('lead_assignment', { mode, untouched_alert_hours: parseInt(document.getElementById('setStaleH').value) || 24,
+    territory_map: mode === 'territory' ? tm : ((S('lead_assignment', {}).territory_map) || {}) }, 'msgAssign');
+}
+async function saveDuty() {
+  const days = []; for (let i = 0; i < 7; i++) if (document.getElementById('day' + i).checked) days.push(i);
+  await saveSetting('duty_hours', { mode: document.getElementById('setDutyMode').value, start: document.getElementById('setDutyStart').value,
+    end: document.getElementById('setDutyEnd').value, working_days: days, auto_end_time: document.getElementById('setAutoEnd').value }, 'msgDuty');
+}
+async function saveCheckin() {
+  await saveSetting('checkin_rules', { photo_mandatory: document.getElementById('setPhotoReq').checked, camera_only: document.getElementById('setCamOnly').checked,
+    distance_flag_m: parseInt(document.getElementById('setDist').value) || 300, min_visit_minutes: parseInt(document.getElementById('setMinMin').value) || 0 }, 'msgCheckin');
+}
 
+// ---------- categories (machine categories) ----------
+let _cats = [];
+async function loadCategories() {
+  const { data } = await db.from('order_categories').select('*').order('name');
+  _cats = data || [];
+  const el = document.getElementById('catList'); if (!el) return;
+  if (!_cats.length) { el.innerHTML = '<div class="empty">No categories yet. Add one above.</div>'; return; }
+  const quoteUsers = cache.users.filter(u => ['quote','manager','admin'].includes(u.role) && u.active);
+  el.innerHTML = tbl(['Category','Active','Quote prepared by'],
+    _cats.map(c => [
+      `<input class="inp" value="${esc(c.name)}" onchange="renameCategory('${c.id}', this.value)" style="min-width:200px">`,
+      `<input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleCategory('${c.id}', this.checked)" style="width:18px;height:18px;accent-color:var(--brand)">`,
+      `<select class="inp" onchange="setCatQuoteUser('${c.id}', this.value)">${opts(quoteUsers.map(u => ({ v: u.id, l: (u.name || u.mobile) + ' (' + u.role + ')' })), c.quote_user_id, '— unassigned —')}</select>`]));
+}
+async function renameCategory(id, name) { if (!name.trim()) return; const { error } = await db.from('order_categories').update({ name: name.trim() }).eq('id', id); if (error) alert(error.message); else loadCategories(); }
+async function toggleCategory(id, active) { const { error } = await db.from('order_categories').update({ active }).eq('id', id); if (error) alert(error.message); }
+async function setCatQuoteUser(catId, userId) { const { error } = await db.from('order_categories').update({ quote_user_id: userId || null }).eq('id', catId); if (error) alert(error.message); }
+async function addCategory() {
+  const el = document.getElementById('newCat'); const name = el.value.trim(); if (!name) return;
+  const { error } = await db.from('order_categories').insert({ name }); if (error) { alert(error.message); return; }
+  el.value = ''; loadCategories();
+}
+const catName = id => (_cats.find(c => c.id === id) || {}).name || '—';
+
+// ---------- leads ----------
+async function loadLeads() {
+  const { data, error } = await db.from('leads').select('*').order('created_at', { ascending: false }).limit(2000);
+  if (error) console.warn(error);
+  cache.leads = data || [];
+  renderLeadBadge();
+  if (document.getElementById('leads').classList.contains('active')) renderLeads();
+}
+let _leadSub = null, _leadTimer = null;
+function subscribeLeads() {
+  if (_leadSub) return;
+  _leadSub = db.channel('leads-web').on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+    clearTimeout(_leadTimer); _leadTimer = setTimeout(loadLeads, 600);
+  }).subscribe();
+}
+const staleHours = () => (S('lead_assignment', {}).untouched_alert_hours) || 24;
+const isStale = l => l.status === 'new' && (Date.now() - new Date(l.last_activity_at || l.created_at)) > staleHours() * 36e5;
+const isOpen = l => !['converted','dropped'].includes(l.status);
+function renderLeadBadge() {
+  const n = cache.leads.filter(isStale).length;
+  const b = document.getElementById('leadBadge'); b.style.display = n ? '' : 'none'; b.textContent = n;
+}
+function filteredLeads() {
+  const q = (document.getElementById('lSearch').value || '').toLowerCase();
+  const st = document.getElementById('lStatus').value, rep = document.getElementById('lRep').value;
+  const ty = document.getElementById('lType').value, src = document.getElementById('lSource').value;
+  return cache.leads.filter(l =>
+    (!q || [l.name, l.company, l.mobile, l.city, l.email].join(' ').toLowerCase().includes(q)) &&
+    (!st || (st === 'open' ? isOpen(l) : st === 'stale' ? isStale(l) : st === 'unassigned' ? !l.assigned_to : l.status === st)) &&
+    (!rep || l.assigned_to === rep) && (!ty || l.contact_type === ty) && (!src || l.source === src));
+}
+function renderLeads() {
+  const L = cache.leads, mStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const today0 = new Date(); today0.setHours(0,0,0,0);
+  const pipe = L.filter(isOpen).reduce((s, l) => s + Number(l.est_value || 0), 0);
+  document.getElementById('leadCards').innerHTML =
+    kpi(L.filter(l => new Date(l.created_at) >= today0).length, 'New leads today', 'blue', '＋', "setLeadFilter('')") +
+    kpi(L.filter(isOpen).length, 'Open leads', 'purple', '◎', "setLeadFilter('open')") +
+    kpi(L.filter(isStale).length, `Untouched > ${staleHours()} h`, 'red', '⚠', "setLeadFilter('stale')") +
+    kpi(L.filter(l => !l.assigned_to && isOpen(l)).length, 'Unassigned', 'orange', '?', "setLeadFilter('unassigned')") +
+    kpi(L.filter(l => l.status === 'converted' && new Date(l.updated_at) >= mStart).length, 'Converted this month', 'green', '✓', "setLeadFilter('converted')") +
+    kpi(rs(pipe), 'Open lead value', 'teal', '₹');
+  const rows = filteredLeads();
+  document.getElementById('leadsTbl').innerHTML = tbl(
+    ['Created','Lead','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
+    rows.map(l => [fmtDT(l.created_at),
+      `<b>${esc(l.name)}</b>${l.company ? '<br><span class="muted">' + esc(l.company) + '</span>' : ''}`,
+      esc(l.mobile) || '—', esc(typeLabel(l.contact_type)), esc(l.source) || '—', esc(catName(l.category_id)),
+      l.est_value ? rs(l.est_value) : '—',
+      l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>',
+      chip(l.status), isStale(l) ? `<span class="stale">${ago(l.last_activity_at)}</span>` : ago(l.last_activity_at)]),
+    i => `class="rowlink" onclick="openLead('${rows[i].id}')"`);
+}
+function setLeadFilter(v) { document.getElementById('lStatus').value = v; show('leads'); }
+
+// lead form
+function fillLeadFormSelects(l) {
+  document.getElementById('lfType').innerHTML = contactTypes(false).map(t => `<option value="${t.key}" ${l && l.contact_type === t.key ? 'selected' : ''}>${esc(t.label)}</option>`).join('');
+  document.getElementById('lfSource').innerHTML = '<option value="">—</option>' + (S('lead_setup', {}).sources || []).map(s => `<option ${l && l.source === s ? 'selected' : ''}>${esc(s)}</option>`).join('');
+  document.getElementById('lfCat').innerHTML = '<option value="">—</option>' + _cats.filter(c => c.active || (l && l.category_id === c.id)).map(c => `<option value="${c.id}" ${l && l.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  const mode = S('lead_assignment', {}).mode || 'manual';
+  document.getElementById('lfAssign').innerHTML = repOpts(l ? l.assigned_to : '', mode === 'manual' ? '— choose salesperson —' : '— auto-assign (' + (mode === 'territory' ? 'by territory' : 'round-robin') + ') —');
+  document.getElementById('lfAssignHint').textContent = mode === 'manual' && !l ? 'Leave blank to keep it unassigned for now.' : '';
+}
+function openLeadForm(l) {
+  document.getElementById('leadFormTitle').textContent = l ? 'Edit lead' : 'New lead';
+  document.getElementById('lfId').value = l ? l.id : '';
+  const set = (id, v) => document.getElementById(id).value = v ?? '';
+  set('lfName', l?.name); set('lfCompany', l?.company); set('lfMobile', l?.mobile); set('lfEmail', l?.email);
+  set('lfValue', l?.est_value); set('lfCity', l?.city); set('lfTerritory', l?.territory); set('lfAddress', l?.address);
+  set('lfReq', l?.requirement); set('lfNext', l?.next_follow_up);
+  document.getElementById('lfCardF').value = ''; document.getElementById('lfCardB').value = '';
+  document.getElementById('lfCardWrap').style.display = l ? 'none' : '';
+  document.getElementById('lfDup').innerHTML = ''; document.getElementById('lfErr').textContent = '';
+  fillLeadFormSelects(l);
+  openModal('leadFormBg');
+  setTimeout(() => document.getElementById('lfName').focus(), 50);
+}
+async function checkDup() {
+  const m = document.getElementById('lfMobile').value.replace(/\D/g, '');
+  const box = document.getElementById('lfDup'); box.innerHTML = '';
+  if (m.length < 10) return;
+  const { data } = await db.rpc('lead_duplicates', { p_mobile: m });
+  const self = document.getElementById('lfId').value;
+  const d = (data || []).filter(x => x.id !== self);
+  if (d.length) box.innerHTML = '<div class="warnbox">⚠ This mobile already exists: ' + d.map(x => `<b>${esc(x.name)}</b>${x.company ? ' (' + esc(x.company) + ')' : ''} — ${esc(STATUS_LABEL[x.status] || x.status)}, with ${esc(x.assigned_name || 'nobody')}`).join('; ') + '</div>';
+}
+async function saveLead() {
+  const err = document.getElementById('lfErr'); err.textContent = '';
+  const v = id => document.getElementById(id).value.trim();
+  if (!v('lfName')) { err.textContent = 'Contact name is required.'; return; }
+  const row = { name: v('lfName'), company: v('lfCompany') || null, mobile: v('lfMobile') || null, email: v('lfEmail') || null,
+    contact_type: v('lfType') || 'customer', source: v('lfSource') || null, category_id: v('lfCat') || null,
+    est_value: parseFloat(v('lfValue')) || null, city: v('lfCity') || null, territory: v('lfTerritory') || null,
+    address: v('lfAddress') || null, requirement: v('lfReq') || null, next_follow_up: v('lfNext') || null };
+  const assign = v('lfAssign');
+  const id = v('lfId');
+  const btn = document.getElementById('lfSave'); btn.disabled = true;
+  try {
+    if (id) {
+      if (assign) row.assigned_to = assign;
+      const { error } = await db.from('leads').update(row).eq('id', id); if (error) throw error;
+    } else {
+      if (assign) row.assigned_to = assign;
+      const { data, error } = await db.from('leads').insert(row).select().single(); if (error) throw error;
+      const f = document.getElementById('lfCardF').files[0], b = document.getElementById('lfCardB').files[0];
+      if (f) await uploadMedia(f, 'lead', data.id, 'card_front');
+      if (b) await uploadMedia(b, 'lead', data.id, 'card_back');
+    }
+    closeModal('leadFormBg'); await loadLeads(); if (id) openLead(id);
+  } catch (e) { err.textContent = e.message || String(e); }
+  btn.disabled = false;
+}
+
+// lead view
+let _lv = null;
+async function openLead(id) {
+  const l = cache.leads.find(x => x.id === id); if (!l) return; _lv = l;
+  document.getElementById('lvTitle').textContent = l.name + (l.company ? ' · ' + l.company : '');
+  document.getElementById('lvChip').innerHTML = chip(l.status);
+  const kv = [['Mobile', l.mobile ? `<a href="tel:${esc(l.mobile)}">${esc(l.mobile)}</a> · <a href="https://wa.me/${esc(String(l.mobile).replace(/\D/g,'').replace(/^(\d{10})$/,'91$1'))}" target="_blank">WhatsApp</a>` : '—'],
+    ['Email', esc(l.email) || '—'], ['Contact type', esc(typeLabel(l.contact_type))], ['Source', esc(l.source) || '—'],
+    ['Category', esc(catName(l.category_id))], ['Approx. value', l.est_value ? rs(l.est_value) : '—'],
+    ['City / territory', [l.city, l.territory].filter(Boolean).map(esc).join(' · ') || '—'], ['Address', esc(l.address) || '—'],
+    ['Requirement', esc(l.requirement) || '—'], ['Assigned to', l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>'],
+    ['Created by', esc(uname(l.created_by)) + ' · ' + fmtDT(l.created_at)], ['Next follow-up', esc(l.next_follow_up) || '—'],
+    ['Site location', l.lat ? `<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}">View on map</a>` : '<span class="muted">Saved at first check-in</span>']];
+  if (l.drop_reason) kv.push(['Drop reason', esc(l.drop_reason)]);
+  document.getElementById('lvKv').innerHTML = kv.map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join('');
+  document.getElementById('lvStatus').value = l.status;
+  document.getElementById('lvDrop').innerHTML = (S('lead_setup', {}).drop_reasons || []).map(r => `<option ${l.drop_reason === r ? 'selected' : ''}>${esc(r)}</option>`).join('');
+  lvStatusChanged();
+  const as = document.getElementById('lvAssign');
+  as.innerHTML = repOpts(l.assigned_to, '— unassigned —'); as.disabled = !isStaff();
+  document.getElementById('lvNote').value = ''; document.getElementById('lvMsg').innerHTML = '';
+  openModal('leadViewBg');
+  loadLeadExtras(l.id);
+}
+function lvStatusChanged() { document.getElementById('lvDrop').style.display = document.getElementById('lvStatus').value === 'dropped' ? '' : 'none'; }
+function editLead() { closeModal('leadViewBg'); openLeadForm(_lv); }
+async function loadLeadExtras(id) {
+  const [{ data: ev }, { data: md }, { data: vs }] = await Promise.all([
+    db.from('lead_events').select('*').eq('lead_id', id).order('at', { ascending: false }).limit(100),
+    db.from('media').select('*').eq('entity_type', 'lead').eq('entity_id', id).order('created_at'),
+    db.from('visits').select('id').eq('lead_id', id)]);
+  let photos = md || [];
+  const vids = (vs || []).map(v => v.id);
+  if (vids.length) { const { data: vm } = await db.from('media').select('*').eq('entity_type', 'visit').in('entity_id', vids); photos = photos.concat(vm || []); }
+  const urls = await signedUrls(photos.map(p => p.storage_path));
+  document.getElementById('lvPhotos').innerHTML = photos.length ? photos.map((p, i) =>
+    `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: p.kind, at: p.created_at, by: p.uploaded_by, lat: p.lat, lng: p.lng })})'><div class="muted" style="font-size:11px">${esc(KIND_LABEL[p.kind] || p.kind)}</div></div>`).join('')
+    : '<span class="muted">No photos yet. Visiting cards and site photos from the app appear here.</span>';
+  const icon = { created:'Created', assigned:'Assigned to', status:'Status', note:'Note', call:'Call', visit:'Visit' };
+  document.getElementById('lvTimeline').innerHTML = (ev || []).length ? ev.map(e =>
+    `<div class="ev"><b>${esc(icon[e.kind] || e.kind)}</b> ${esc((e.note || '').replace(/_/g,' '))}<small>${esc(uname(e.user_id))} · ${fmtDT(e.at)}</small></div>`).join('')
+    : '<span class="muted">No activity yet.</span>';
+}
+async function saveLeadUpdate() {
+  const st = document.getElementById('lvStatus').value, upd = { status: st };
+  upd.drop_reason = st === 'dropped' ? document.getElementById('lvDrop').value : null;
+  const a = document.getElementById('lvAssign').value;
+  if (isStaff() && a !== (_lv.assigned_to || '')) upd.assigned_to = a || null;
+  const { error } = await db.from('leads').update(upd).eq('id', _lv.id);
+  if (error) { flash('lvMsg', error.message, false); return; }
+  flash('lvMsg', 'Updated ✓'); await loadLeads(); openLead(_lv.id);
+}
+async function addLeadNote() {
+  const t = document.getElementById('lvNote').value.trim(); if (!t) return;
+  const { error } = await db.from('lead_events').insert({ lead_id: _lv.id, user_id: ME.id, kind: 'note', note: t });
+  if (error) { flash('lvMsg', error.message, false); return; }
+  await db.from('leads').update({ notes: _lv.notes }).eq('id', _lv.id);  // touch last_activity_at
+  document.getElementById('lvNote').value = ''; loadLeadExtras(_lv.id); loadLeads();
+}
+async function uploadLeadPhoto() {
+  const f = document.getElementById('lvUpload').files[0]; if (!f) return;
+  try { await uploadMedia(f, 'lead', _lv.id, document.getElementById('lvUpKind').value); document.getElementById('lvUpload').value = ''; loadLeadExtras(_lv.id); }
+  catch (e) { flash('lvMsg', e.message, false); }
+}
+function openPhoto(p) {
+  document.getElementById('lbTitle').textContent = (KIND_LABEL[p.k] || p.k) + ' · ' + uname(p.by) + ' · ' + fmtDT(p.at);
+  document.getElementById('lightbox').innerHTML = `<img src="${p.u}">`;
+  const m = document.getElementById('lbMap');
+  if (p.lat) { m.style.display = ''; m.href = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`; } else m.style.display = 'none';
+  openModal('lightboxBg');
+}
+
+// ---------- photos gallery ----------
+async function loadPhotos() {
+  const from = document.getElementById('phFrom').value, to = document.getElementById('phTo').value;
+  const kind = document.getElementById('phKind').value, rep = document.getElementById('phRep').value;
+  let q = db.from('media').select('*').gte('created_at', from + 'T00:00:00').lte('created_at', to + 'T23:59:59').order('created_at', { ascending: false }).limit(300);
+  if (kind === 'card') q = q.in('kind', ['card_front','card_back']); else if (kind) q = q.eq('kind', kind);
+  if (rep) q = q.eq('uploaded_by', rep);
+  const { data } = await q; const rows = data || [];
+  const urls = await signedUrls(rows.map(r => r.storage_path));
+  const leadName = id => { const l = cache.leads.find(x => x.id === id); return l ? l.name : ''; };
+  document.getElementById('photoGrid').innerHTML = rows.length ? '<div class="pgrid">' + rows.map((r, i) =>
+    `<div class="ph" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: r.kind, at: r.created_at, by: r.uploaded_by, lat: r.lat, lng: r.lng })})'><img class="img" src="${urls[i]}" loading="lazy">
+     <div class="cap"><b>${esc(KIND_LABEL[r.kind] || r.kind)}</b>${r.entity_type === 'lead' && leadName(r.entity_id) ? ' · ' + esc(leadName(r.entity_id)) : ''}<br>${esc(uname(r.uploaded_by))} · ${fmtDT(r.created_at)}</div></div>`).join('') + '</div>'
+    : '<div class="empty">No photos in this range.</div>';
+}
+
+// ---------- team / invites ----------
+const APK_URL = 'https://github.com/manubne/salesman-tracker/releases/download/latest/app-release.apk';
 async function addInvite() {
   const m = document.getElementById('inviteMsg'); m.style.color = 'var(--red)'; m.textContent = '';
-  const name = document.getElementById('spName').value.trim();
-  const mob = document.getElementById('spMobile').value.replace(/\D/g, '');
-  const email = document.getElementById('spEmail').value.trim();
-  const role = document.getElementById('spRole').value;
-  const territory = document.getElementById('spTerritory').value.trim();
+  const name = document.getElementById('spName').value.trim(), mob = document.getElementById('spMobile').value.replace(/\D/g, '');
+  const email = document.getElementById('spEmail').value.trim(), role = document.getElementById('spRole').value, territory = document.getElementById('spTerritory').value.trim();
   if (!name) { m.textContent = 'Enter a name.'; return; }
   if (mob.length !== 10) { m.textContent = 'Enter a valid 10-digit mobile.'; return; }
-  const { error } = await db.from('salesperson_invites').upsert(
-    { mobile: '91' + mob, name, email: email || null, role, territory: territory || null, status: 'pending' },
-    { onConflict: 'mobile' });
+  const { error } = await db.from('salesperson_invites').upsert({ mobile: '91' + mob, name, email: email || null, role, territory: territory || null, status: 'pending' }, { onConflict: 'mobile' });
   if (error) { m.textContent = error.message; return; }
   m.style.color = 'var(--green)';
   const nm = JSON.stringify(name).replace(/"/g,'&quot;');
-  let links = '<a href="#" onclick="waInvite(\'' + mob + '\',' + nm + ');return false" style="color:var(--accent);font-weight:600">Send WhatsApp invite →</a>';
-  if (email) links += ' &nbsp;·&nbsp; <a href="#" onclick="emailInvite(' + JSON.stringify(email).replace(/"/g,'&quot;') + ',' + nm + ',\'' + mob + '\');return false" style="color:var(--accent);font-weight:600">Email invite →</a>';
+  let links = '<a href="#" onclick="waInvite(\'' + mob + '\',' + nm + ',\'' + role + '\');return false" style="font-weight:650">Send WhatsApp invite →</a>';
+  if (email) links += ' &nbsp;·&nbsp; <a href="#" onclick="emailInvite(' + JSON.stringify(email).replace(/"/g,'&quot;') + ',' + nm + ',\'' + mob + '\');return false" style="font-weight:650">Email invite →</a>';
   m.innerHTML = 'Added ' + esc(name) + '. ' + links;
   ['spName','spMobile','spEmail','spTerritory'].forEach(id => document.getElementById(id).value = '');
   loadInvites();
 }
 async function emailInvite(email, name, mobile) {
-  const html = `<p>Hi ${name},</p><p>You have been added to <b>BNE Salesman Tracker</b>.</p>
-    <ol><li>Install the app: <a href="${APK_URL}">${APK_URL}</a></li>
-    <li>Open it and log in with your mobile <b>${mobile}</b> — an OTP will arrive on WhatsApp.</li></ol>
-    <p>Welcome aboard!</p>`;
-  const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Salesman Tracker', html } });
+  const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNE Sales</b>.</p><ol><li>Install the app: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it and log in with your mobile <b>${esc(mobile)}</b> — an OTP will arrive on WhatsApp.</li></ol><p>Welcome aboard!</p>`;
+  const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Sales', html } });
   if (error || (data && data.error)) { alert('Email failed: ' + (error?.message || data.error)); return; }
   alert('Invite email sent to ' + email);
 }
-
-function waInvite(mob, name) {
-  const text = 'Hi ' + name + ', you have been added to BNE Salesman Tracker.\n\n1) Install the app: ' + APK_URL +
-    '\n2) Open it and log in with your mobile ' + mob + ' — an OTP will arrive on WhatsApp.\n\nWelcome aboard!';
-  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent(text), '_blank');
+function waInvite(mob, name, role) {
+  const dash = location.origin + location.pathname;
+  const how = ['coordinator','telecaller','manager'].includes(role)
+    ? 'Open the dashboard: ' + dash + ' and sign in with WhatsApp OTP on mobile ' + mob + '.'
+    : '1) Install the app: ' + APK_URL + '\n2) Open it and log in with your mobile ' + mob + ' — an OTP will arrive on WhatsApp.';
+  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent('Hi ' + name + ', you have been added to BNE Sales.\n\n' + how + '\n\nWelcome aboard!'), '_blank');
 }
-
 async function loadInvites() {
   const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
-  const rows = data || [];
-  document.getElementById('invitesTbl').innerHTML = tbl(
-    ['Name','Mobile','Role','Territory','Status','Action'],
-    rows.map(i => [
-      esc(i.name) || '<span class="muted">(no name)</span>', esc(i.mobile), esc(i.role), esc(i.territory) || '—',
-      '<span class="chip ' + (i.status === 'accepted' ? 'completed' : 'planned') + '">' + i.status + '</span>',
-      i.status === 'accepted' ? '<span class="muted">joined</span>'
-        : '<a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="color:var(--accent);font-weight:600">WhatsApp</a>'
-    ]));
+  document.getElementById('invitesTbl').innerHTML = tbl(['Name','Mobile','Role','Territory','Status','Action'],
+    (data || []).map(i => [esc(i.name) || '<span class="muted">(no name)</span>', esc(i.mobile), esc(i.role), esc(i.territory) || '—', chip(i.status),
+      i.status === 'accepted' ? '<span class="muted">joined</span>' : '<a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ',\'' + i.role + '\');return false" style="font-weight:650">WhatsApp</a>']));
 }
-
-const uname = id => (cache.users.find(u => u.id === id)?.name) || (cache.users.find(u => u.id === id)?.mobile) || '—';
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const fmtDT = s => s ? new Date(s).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
-
-// ---------- data ----------
 async function loadUsers() {
   const { data } = await db.from('users').select('*').order('name');
   cache.users = data || [];
-  document.getElementById('teamTbl').innerHTML = tbl(
-    ['Name','Mobile','Role','Territory','Active'],
-    cache.users.map(u => [esc(u.name)||'<span class="muted">(no name)</span>', esc(u.mobile), u.role, esc(u.territory)||'—', u.active?'✔':'✖']));
+  const el = document.getElementById('teamTbl'); if (!el) return;
+  const roles = ['sales','coordinator','telecaller','quote','manager','admin'];
+  const canEdit = ME && ME.role === 'admin';
+  el.innerHTML = tbl(['Name','Mobile','Role','Territory','Active'],
+    cache.users.map(u => [esc(u.name) || '<span class="muted">(no name)</span>', esc(u.mobile),
+      canEdit && u.id !== ME.id ? `<select class="inp" onchange="setUser('${u.id}',{role:this.value})">${roles.map(r => `<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select>` : esc(u.role),
+      canEdit ? `<input class="inp" value="${esc(u.territory)}" onchange="setUser('${u.id}',{territory:this.value||null})" style="width:130px">` : (esc(u.territory) || '—'),
+      canEdit && u.id !== ME.id ? `<input type="checkbox" ${u.active?'checked':''} onchange="setUser('${u.id}',{active:this.checked})" style="width:18px;height:18px;accent-color:var(--brand)">` : (u.active ? '✔' : '✖')]));
 }
+async function setUser(id, patch) { const { error } = await db.from('users').update(patch).eq('id', id); if (error) alert(error.message); else loadUsers(); }
 
+// ---------- overview ----------
 async function loadOverview() {
+  if (!isManager()) return;
   const start = new Date(); start.setHours(0,0,0,0);
-  const { data: tv } = await db.from('visits').select('id,status,user_id')
-    .gte('scheduled_at', start.toISOString());
-  const { data: att } = await db.from('attendance').select('user_id,day_start_at')
-    .eq('date', new Date().toISOString().slice(0,10)).not('day_start_at','is',null);
-  const { data: reqs } = await db.from('requirements').select('id').gte('created_at', start.toISOString());
-  const v = tv || [];
-  const stat = (n,l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+  const [{ data: att }, { data: summ }] = await Promise.all([
+    db.from('attendance').select('user_id').eq('date', todayStr()).not('day_start_at','is',null),
+    db.rpc('visit_day_summary', { p_day: todayStr() })]);
+  const S2 = summ || [];
+  const checkins = S2.reduce((s, r) => s + r.checkins, 0), flagged = S2.reduce((s, r) => s + r.flagged, 0);
+  const orders = cache.orders || [], mStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  const pipeline = orders.filter(o => !['won','lost'].includes(o.stage)).reduce((s, o) => s + Number(o.quote_total || 0), 0);
+  const wonM = orders.filter(o => o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
   document.getElementById('statCards').innerHTML =
-    stat((att||[]).length, 'On duty today') +
-    stat(v.length, 'Visits planned') +
-    stat(v.filter(x=>x.status==='verified'||x.status==='completed').length, 'Verified') +
-    stat(v.filter(x=>x.status==='completed').length, 'Completed') +
-    stat(v.filter(x=>x.status==='missed').length, 'Missed') +
-    stat((reqs||[]).length, 'New requirements');
-
-  const { data: fl } = await db.from('visits')
-    .select('*, customers(name,company)')
-    .neq('flags','{}').gte('scheduled_at', new Date(Date.now()-7*864e5).toISOString())
-    .order('scheduled_at',{ascending:false}).limit(20);
-  document.getElementById('flagged').innerHTML = (fl||[]).length ? tbl(
-    ['When','Sales person','Customer','Status','Flags','Distance'],
-    fl.map(x => [fmtDT(x.verified_at||x.scheduled_at), esc(uname(x.user_id)), esc(x.customers?.name),
-      chip(x.status), (x.flags||[]).map(f=>`<span class="flag">${f}</span>`).join(''),
-      x.distance_from_pin_m ? Math.round(x.distance_from_pin_m)+' m' : '—'])) :
-    '<p class="muted">No flagged visits. Good sign.</p>';
-
-  const byUser = {};
-  v.forEach(x => { byUser[x.user_id] = byUser[x.user_id] || {p:0,ver:0,c:0};
-    byUser[x.user_id].p++;
-    if (x.status==='verified'||x.status==='completed') byUser[x.user_id].ver++;
-    if (x.status==='completed') byUser[x.user_id].c++; });
-  document.getElementById('todayByUser').innerHTML = Object.keys(byUser).length ? tbl(
-    ['Sales person','Planned','Verified','Completed'],
-    Object.entries(byUser).map(([id,s]) => [esc(uname(id)), s.p, s.ver, s.c])) :
-    '<p class="muted">No visits planned today.</p>';
+    kpi(cache.leads.filter(l => new Date(l.created_at) >= start).length, 'Leads today', 'blue', '＋', "setLeadFilter('')") +
+    kpi(cache.leads.filter(isStale).length, 'Untouched leads', 'red', '⚠', "setLeadFilter('stale')") +
+    kpi(checkins, 'Check-ins today', 'teal', '📍', "show('visits')") +
+    kpi((att || []).length, 'On duty today', 'purple', '👤', "show('attendance')") +
+    kpi(rs(pipeline), 'Open quote pipeline', 'orange', '₹', "show('orders')") +
+    kpi(rs(wonM), 'Won this month', 'green', '✓', "show('reports')");
+  document.getElementById('todayByUser').innerHTML = daySummaryTable(S2);
+  const stale = cache.leads.filter(isStale).slice(0, 8);
+  document.getElementById('staleHint').textContent = `new & untouched > ${staleHours()} h`;
+  document.getElementById('staleLeads').innerHTML = stale.length ? tbl(['Lead','Assigned','Waiting'],
+    stale.map(l => [`<b>${esc(l.name)}</b>${l.company ? ' <span class="muted">' + esc(l.company) + '</span>' : ''}`, l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>', `<span class="stale">${ago(l.last_activity_at)}</span>`]),
+    i => `class="rowlink" onclick="openLead('${stale[i].id}')"`) : '<div class="empty">All leads are being worked on 👍</div>';
+  const { data: fl } = await db.from('visits').select('*, customers(name,company), leads(name,company)')
+    .neq('flags','{}').gte('scheduled_at', new Date(Date.now()-7*864e5).toISOString()).order('scheduled_at',{ascending:false}).limit(40);
+  const fr = (fl || []).filter(x => realFlags(x.flags).length).slice(0, 10);
+  document.getElementById('flagged').innerHTML = fr.length ? tbl(['When','Salesperson','Place','Flags'],
+    fr.map(x => [fmtDT(x.checkin_at || x.verified_at || x.scheduled_at), esc(uname(x.user_id)), esc(placeName(x)), flagsHtml(realFlags(x.flags))]))
+    : '<div class="empty">No flagged visits. Good sign.</div>';
+}
+function daySummaryTable(rows) {
+  const r = rows.filter(x => x.checkins > 0 || x.open_now);
+  if (!r.length) return '<div class="empty">No check-ins recorded for this day yet.</div>';
+  return tbl(['Salesperson','Check-ins','Completed','Flagged','Time at sites','First check-in','Last check-out','Now'],
+    r.map(x => [`<b>${esc(x.rep)}</b>`, x.checkins, x.completed, x.flagged ? `<span class="flag">${x.flagged}</span>` : '0',
+      Math.floor(x.total_min / 60) + 'h ' + (x.total_min % 60) + 'm', fmtT(x.first_in), fmtT(x.last_out),
+      x.open_now ? '<span class="chip live">At a site</span>' : '<span class="muted">—</span>']));
+}
+async function loadDaySummary() {
+  const { data, error } = await db.rpc('visit_day_summary', { p_day: document.getElementById('dayPick').value });
+  document.getElementById('daySummary').innerHTML = error ? `<div class="err">${esc(error.message)}</div>` : daySummaryTable(data || []);
 }
 
+// ---------- visits ----------
+const placeName = x => x.customers?.name ? x.customers.name + (x.customers.company ? ' (' + x.customers.company + ')' : '') : (x.leads?.name ? x.leads.name + (x.leads.company ? ' (' + x.leads.company + ')' : '') + ' · lead' : '—');
 async function loadVisits() {
-  let q = db.from('visits').select('*, customers(name,company,mobile)')
+  let q = db.from('visits').select('*, customers(name,company,mobile), leads(name,company)')
     .gte('scheduled_at', document.getElementById('vFrom').value + 'T00:00:00')
     .lte('scheduled_at', document.getElementById('vTo').value + 'T23:59:59')
     .order('scheduled_at', {ascending:false}).limit(500);
-  const st = document.getElementById('vStatus').value;
-  if (st) q = q.eq('status', st);
+  const st = document.getElementById('vStatus').value, rep = document.getElementById('vRep').value;
+  if (st) q = q.eq('status', st); if (rep) q = q.eq('user_id', rep);
   const { data } = await q;
-  cache.visits = data || [];
+  let rows = data || [];
+  if (document.getElementById('vFlag').value) rows = rows.filter(x => realFlags(x.flags).length);
+  cache.visits = rows;
+  const ids = rows.map(r => r.id);
+  let pc = {};
+  if (ids.length) { const { data: md } = await db.from('media').select('entity_id').eq('entity_type','visit').in('entity_id', ids.slice(0, 300)); (md || []).forEach(m => pc[m.entity_id] = (pc[m.entity_id] || 0) + 1); }
   document.getElementById('visitsTbl').innerHTML = tbl(
-    ['Scheduled','Sales person','Customer','Purpose','Status','Verified at','Dist.','Flags','Notes'],
-    cache.visits.map(x => [fmtDT(x.scheduled_at), esc(uname(x.user_id)),
-      esc(x.customers?.name) + (x.customers?.company ? ' <span class="muted">('+esc(x.customers.company)+')</span>' : ''),
-      x.purpose, chip(x.status), fmtDT(x.verified_at),
-      x.distance_from_pin_m!=null ? Math.round(x.distance_from_pin_m)+' m' : '—',
-      (x.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || '—', esc(x.notes)||'—']));
+    ['Check-in','Salesperson','Place','Type','Purpose','Status','Duration','Distance','Flags','Photos','Outcome / notes'],
+    rows.map(x => [fmtDT(x.checkin_at || x.verified_at || x.scheduled_at), esc(uname(x.user_id)), esc(placeName(x)),
+      esc(x.contact_type ? typeLabel(x.contact_type) : '—'), esc((x.purpose || '').replace(/_/g,' ')),
+      x.status === 'checked_in' ? '<span class="chip live">At site now</span>' : chip(x.status),
+      x.duration_min != null ? x.duration_min + ' min' : '—',
+      x.distance_from_pin_m != null ? Math.round(x.distance_from_pin_m) + ' m' : '—',
+      flagsHtml(x.flags), pc[x.id] ? `<a href="#" onclick="showVisitPhotos('${x.id}');return false">${pc[x.id]} 📷</a>` : '—',
+      esc([x.outcome, x.notes].filter(Boolean).join(' — ')) || '—']));
+}
+async function showVisitPhotos(vid) {
+  const { data } = await db.from('media').select('*').eq('entity_type','visit').eq('entity_id', vid);
+  const urls = await signedUrls((data || []).map(d => d.storage_path));
+  document.getElementById('lbTitle').textContent = 'Visit photos';
+  document.getElementById('lbMap').style.display = 'none';
+  document.getElementById('lightbox').innerHTML = '<div class="pgrid">' + (data || []).map((d, i) => `<div class="ph"><a href="${urls[i]}" target="_blank"><img class="img" src="${urls[i]}"></a><div class="cap"><b>${esc(KIND_LABEL[d.kind] || d.kind)}</b> · ${fmtDT(d.created_at)}${d.caption ? '<br>' + esc(d.caption) : ''}</div></div>`).join('') + '</div>';
+  openModal('lightboxBg');
 }
 
-async function loadCustomers() {
-  const { data } = await db.from('customers').select('*').order('name').limit(1000);
-  cache.customers = data || [];
-  renderCustomers();
-}
+// ---------- customers / requirements / attendance ----------
+async function loadCustomers() { const { data } = await db.from('customers').select('*').order('name').limit(1000); cache.customers = data || []; renderCustomers(); }
 function renderCustomers() {
   const s = (document.getElementById('cSearch').value || '').toLowerCase();
   const rows = cache.customers.filter(c => !s || (c.name+' '+(c.company||'')+' '+c.mobile).toLowerCase().includes(s));
-  document.getElementById('custTbl').innerHTML = tbl(
-    ['Name','Company','Type','Mobile','Verified','Territory','Owner','Location pin'],
-    rows.map(c => [esc(c.name), esc(c.company)||'—', c.type, esc(c.mobile),
-      c.mobile_verified_at ? '✔' : '<span class="flag">no</span>', esc(c.territory)||'—', esc(uname(c.owner_user_id)),
-      c.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" style="color:var(--accent)">view</a>` : '—']));
+  document.getElementById('custTbl').innerHTML = tbl(['Name','Company','Type','Mobile','Verified','Territory','Owner','Location'],
+    rows.map(c => [esc(c.name), esc(c.company)||'—', esc(typeLabel(c.type)), esc(c.mobile), c.mobile_verified_at ? '✔' : '<span class="flag">no</span>', esc(c.territory)||'—', esc(uname(c.owner_user_id)),
+      c.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank">view</a>` : '—']));
 }
-
-async function loadReqs() {
-  const { data } = await db.from('requirements').select('*, customers(name,company)').order('created_at',{ascending:false}).limit(500);
-  cache.requirements = data || [];
-  renderReqs();
-}
+async function loadReqs() { const { data } = await db.from('requirements').select('*, customers(name,company)').order('created_at',{ascending:false}).limit(500); cache.requirements = data || []; renderReqs(); }
 function renderReqs() {
   const st = document.getElementById('rStatus').value;
-  const rows = cache.requirements.filter(r => !st || r.status === st);
-  document.getElementById('reqTbl').innerHTML = tbl(
-    ['Created','Customer','Product','Qty','Expected ₹','Status','Follow-up','By'],
-    rows.map(r => [fmtDT(r.created_at), esc(r.customers?.name), esc(r.product), esc(r.quantity)||'—',
-      r.expected_value ? Number(r.expected_value).toLocaleString('en-IN') : '—',
-      chip(r.status), r.follow_up_date||'—', esc(uname(r.created_by))]));
+  document.getElementById('reqTbl').innerHTML = tbl(['Created','Customer','Product','Qty','Expected ₹','Status','Follow-up','By'],
+    cache.requirements.filter(r => !st || r.status === st).map(r => [fmtDT(r.created_at), esc(r.customers?.name), esc(r.product), esc(r.quantity)||'—',
+      r.expected_value ? Number(r.expected_value).toLocaleString('en-IN') : '—', chip(r.status), r.follow_up_date||'—', esc(uname(r.created_by))]));
 }
-
 async function loadAttendance() {
-  const { data } = await db.from('attendance').select('*')
-    .gte('date', document.getElementById('aFrom').value)
-    .lte('date', document.getElementById('aTo').value)
-    .order('date',{ascending:false}).limit(500);
+  const { data } = await db.from('attendance').select('*').gte('date', document.getElementById('aFrom').value).lte('date', document.getElementById('aTo').value).order('date',{ascending:false}).limit(500);
   cache.attendance = data || [];
-  document.getElementById('attTbl').innerHTML = tbl(
-    ['Date','Sales person','Day start','Day end','Hours'],
-    cache.attendance.map(a => {
-      const h = a.day_start_at && a.day_end_at ? ((new Date(a.day_end_at)-new Date(a.day_start_at))/36e5).toFixed(1) : '—';
-      return [a.date, esc(uname(a.user_id)), fmtDT(a.day_start_at), fmtDT(a.day_end_at), h];
-    }));
+  document.getElementById('attTbl').innerHTML = tbl(['Date','Salesperson','Day start','Day end','Hours'],
+    cache.attendance.map(a => [a.date, esc(uname(a.user_id)), fmtDT(a.day_start_at), fmtDT(a.day_end_at),
+      a.day_start_at && a.day_end_at ? ((new Date(a.day_end_at)-new Date(a.day_start_at))/36e5).toFixed(1) : '—']));
 }
 
 // ---------- orders ----------
-let _cats = [];
-async function loadCategories() {
-  const { data } = await db.from('order_categories').select('*').order('name');
-  _cats = data || [];
-  if (!_cats.length) { document.getElementById('catList').innerHTML = '<p class="muted">No order types yet. Add one above.</p>'; return; }
-  const quoteUsers = cache.users.filter(u => ['quote','manager','admin'].includes(u.role) && u.active);
-  const optsFor = (sel) => '<option value="">— unassigned —</option>' + quoteUsers.map(u =>
-    `<option value="${u.id}" ${u.id===sel?'selected':''}>${esc(u.name)||esc(u.mobile)} (${u.role})</option>`).join('');
-  document.getElementById('catList').innerHTML = tbl(
-    ['Order type','Assigned quote user'],
-    _cats.map(c => [
-      esc(c.name) + (c.active ? '' : ' <span class="muted">(off)</span>'),
-      `<select onchange="setCatQuoteUser('${c.id}', this.value)" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px">${optsFor(c.quote_user_id)}</select>`
-    ]));
-}
-async function setCatQuoteUser(catId, userId) {
-  const { error } = await db.from('order_categories').update({ quote_user_id: userId || null }).eq('id', catId);
-  if (error) alert(error.message); else loadCategories();
-}
-
-// ---------- product catalog ----------
 async function loadProducts() {
-  // fill category dropdown for the add form
   const sel = document.getElementById('pCat');
-  if (sel) sel.innerHTML = '<option value="">— category —</option>' +
-    (_cats || []).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if (sel) sel.innerHTML = '<option value="">— category —</option>' + (_cats || []).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   const { data } = await db.from('products').select('*, order_categories(name)').order('name');
   cache.products = data || [];
-  document.getElementById('prodTbl').innerHTML = tbl(
-    ['Product','Model','Category','Unit price','Active'],
-    cache.products.map(p => [esc(p.name), esc(p.model)||'—', esc(p.order_categories?.name)||'—',
-      'Rs. ' + Number(p.unit_price||0).toLocaleString('en-IN'),
-      p.active ? '✔' : `<a href="#" onclick="toggleProduct('${p.id}',true);return false" style="color:var(--accent)">enable</a>`]));
+  document.getElementById('prodTbl').innerHTML = tbl(['Product','Model','Category','Unit price','Active'],
+    cache.products.map(p => [esc(p.name), esc(p.model)||'—', esc(p.order_categories?.name)||'—', 'Rs. ' + Number(p.unit_price||0).toLocaleString('en-IN'),
+      p.active ? '✔' : `<a href="#" onclick="toggleProduct('${p.id}',true);return false">enable</a>`]));
 }
 async function addProduct() {
-  const name = document.getElementById('pName').value.trim();
-  const model = document.getElementById('pModel').value.trim();
-  const cat = document.getElementById('pCat').value;
-  const price = parseFloat(document.getElementById('pPrice').value) || 0;
+  const name = document.getElementById('pName').value.trim(), model = document.getElementById('pModel').value.trim();
+  const cat = document.getElementById('pCat').value, price = parseFloat(document.getElementById('pPrice').value) || 0;
   if (!name) { alert('Enter a product name'); return; }
   const { error } = await db.from('products').insert({ name, model: model || null, category_id: cat || null, unit_price: price });
   if (error) { alert(error.message); return; }
-  ['pName','pModel','pPrice'].forEach(id => document.getElementById(id).value = '');
-  loadProducts();
+  ['pName','pModel','pPrice'].forEach(id => document.getElementById(id).value = ''); loadProducts();
 }
-async function toggleProduct(id, active) {
-  await db.from('products').update({ active }).eq('id', id);
-  loadProducts();
-}
-async function addCategory() {
-  const el = document.getElementById('newCat');
-  const name = el.value.trim();
-  if (!name) return;
-  const { error } = await db.from('order_categories').insert({ name });
-  if (error) { alert(error.message); return; }
-  el.value = '';
-  loadCategories();
-}
+async function toggleProduct(id, active) { await db.from('products').update({ active }).eq('id', id); loadProducts(); }
 async function loadOrders() {
-  const { data } = await db.from('orders')
-    .select('*, customers(name,company), order_categories(name)')
-    .order('created_at', { ascending: false }).limit(500);
+  const { data } = await db.from('orders').select('*, customers(name,company), order_categories(name)').order('created_at', { ascending: false }).limit(500);
   cache.orders = data || [];
-  const stg = (s) => cache.orders.filter(o => o.stage === s).length;
-  const card = (n,l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
+  const stg = s => cache.orders.filter(o => o.stage === s).length;
   document.getElementById('orderStats').innerHTML =
-    card(cache.orders.length,'Total orders') + card(stg('draft'),'Draft') + card(stg('need_quote'),'Need quote') +
-    card(stg('quoted'),'Quoted') + card(stg('won'),'Won') + card(stg('lost'),'Lost');
-  renderOrders();
-  renderApprovals();
+    kpi(cache.orders.length,'Total orders','blue','#') + kpi(stg('draft'),'Draft','orange','✎') + kpi(stg('need_quote'),'Need quote','purple','?') +
+    kpi(stg('quoted'),'Quoted','teal','₹') + kpi(stg('won'),'Won','green','✓') + kpi(stg('lost'),'Lost','red','✕');
+  renderOrders(); renderApprovals();
 }
 function renderOrders() {
   const st = document.getElementById('oStage').value;
-  const rows = (cache.orders||[]).filter(o => !st || o.stage === st);
-  document.getElementById('ordersTbl').innerHTML = tbl(
-    ['Created','Customer','Type','Sq ft','Visit','Stage','Sales person','Quote assigned'],
-    rows.map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
-      o.sqft ?? '—', o.visit_status, chip(o.stage), esc(uname(o.created_by)),
+  document.getElementById('ordersTbl').innerHTML = tbl(['Created','Customer','Type','Sq ft','Visit','Stage','Quote ₹','Salesperson','Quote assigned'],
+    (cache.orders||[]).filter(o => !st || o.stage === st).map(o => [fmtDT(o.created_at), esc(o.customers?.name), esc(o.order_categories?.name)||'—',
+      o.sqft ?? '—', esc(o.visit_status), chip(o.stage), o.quote_total ? _rupees(o.quote_total) : '—', esc(uname(o.created_by)),
       o.quote_assigned_to ? esc(uname(o.quote_assigned_to)) : '<span class="muted">—</span>']));
 }
 function renderApprovals() {
@@ -652,274 +1222,169 @@ function renderApprovals() {
   const panel = document.getElementById('approvalsPanel');
   if (!pend.length) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
-  document.getElementById('approvalsTbl').innerHTML = tbl(
-    ['Customer','Type','Discount','Quote total','Sales person','Action'],
-    pend.map(o => [esc(o.customers?.name), esc(o.order_categories?.name)||'—',
-      (o.discount_pct||0) + '%', 'Rs. ' + Number(o.quote_total||0).toLocaleString('en-IN'),
-      esc(uname(o.created_by)),
-      `<button class="btn" onclick="approveOrder('${o.id}')">Approve</button>`]));
+  document.getElementById('approvalsTbl').innerHTML = tbl(['Customer','Type','Discount','Quote total','Salesperson','Action'],
+    pend.map(o => [esc(o.customers?.name), esc(o.order_categories?.name)||'—', (o.discount_pct||0) + '%', _rupees(o.quote_total), esc(uname(o.created_by)),
+      `<button class="btn sm" onclick="approveOrder('${o.id}')">Approve</button>`]));
 }
 async function approveOrder(id) {
-  const { data: { user } } = await db.auth.getUser();
-  const { error } = await db.from('orders').update({ needs_approval: false, approved_by: user.id, approved_at: new Date().toISOString() }).eq('id', id);
-  if (error) { alert(error.message); return; }
-  loadOrders();
+  const { error } = await db.from('orders').update({ needs_approval: false, approved_by: ME.id, approved_at: new Date().toISOString() }).eq('id', id);
+  if (error) { alert(error.message); return; } loadOrders();
 }
 
 // ---------- follow-ups ----------
-async function loadFollowUps() {
-  const { data } = await db.from('follow_ups')
-    .select('*, customers(name,company)')
-    .order('due_date', { ascending: true }).limit(1000);
-  cache.followUps = data || [];
-  renderFollowUps();
-}
+async function loadFollowUps() { const { data } = await db.from('follow_ups').select('*, customers(name,company)').order('due_date', { ascending: true }).limit(1000); cache.followUps = data || []; renderFollowUps(); }
 function renderFollowUps() {
-  const f = document.getElementById('fuFilter').value;
-  const today = new Date().toISOString().slice(0,10);
+  const f = document.getElementById('fuFilter').value, today = todayStr();
   let rows = cache.followUps || [];
-  if (f === 'open') rows = rows.filter(x => !x.done);
-  else if (f === 'overdue') rows = rows.filter(x => !x.done && x.due_date < today);
-  document.getElementById('fuTbl').innerHTML = tbl(
-    ['Customer','Note','Due','Owner','Status'],
-    rows.map(x => [
-      esc(x.customers?.name) || '—', esc(x.note) || '—', esc(x.due_date),
-      esc(uname(x.user_id)),
-      x.done ? '<span class="chip completed">done</span>'
-             : (x.due_date < today ? '<span class="chip missed">overdue</span>' : '<span class="chip planned">open</span>')
-    ]));
+  if (f === 'open') rows = rows.filter(x => !x.done); else if (f === 'overdue') rows = rows.filter(x => !x.done && x.due_date < today);
+  document.getElementById('fuTbl').innerHTML = tbl(['Customer','Note','Due','Owner','Status'],
+    rows.map(x => [esc(x.customers?.name) || '—', esc(x.note) || '—', esc(x.due_date), esc(uname(x.user_id)),
+      x.done ? chip('done') : (x.due_date < today ? chip('overdue') : chip('open'))]));
 }
 
 // ---------- reports & targets ----------
-const _rupees = n => 'Rs. ' + Number(n||0).toLocaleString('en-IN');
 async function loadReports() {
   await loadTargets();
-  const orders = cache.orders || [], visits = cache.visits || [], users = (cache.users||[]).filter(u=>u.role!=='admin');
+  const orders = cache.orders || [], visits = cache.visits || [], users = salesReps();
   const won = orders.filter(o => o.stage === 'won'), lost = orders.filter(o => o.stage === 'lost');
   const revenue = won.reduce((s, o) => s + Number(o.quote_total || 0), 0);
   const winRate = (won.length + lost.length) ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
-  const card = (n, l) => `<div class="card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`;
   document.getElementById('repCards').innerHTML =
-    card(orders.length, 'Orders') + card(orders.filter(o=>o.stage==='need_quote').length, 'Need quote') +
-    card(won.length, 'Won') + card(winRate + '%', 'Win rate') + card(_rupees(revenue), 'Revenue won');
-  const rows = users.map(u => {
-    const uo = orders.filter(o => o.created_by === u.id);
-    const uw = uo.filter(o => o.stage === 'won');
-    return [esc(u.name) || esc(u.mobile), visits.filter(v => v.user_id === u.id).length,
-      uo.length, uw.length, _rupees(uw.reduce((s, o) => s + Number(o.quote_total || 0), 0))];
-  });
-  document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Visits','Orders','Won','Revenue won'], rows);
-  renderTargets();
-  renderCharts();
+    kpi(cache.leads.length, 'Leads (all time)', 'blue', '◎') + kpi(cache.leads.filter(l => l.status === 'converted').length, 'Leads converted', 'teal', '✓') +
+    kpi(orders.length, 'Orders', 'purple', '#') + kpi(won.length, 'Won', 'green', '✓') + kpi(winRate + '%', 'Win rate', 'orange', '%') + kpi(_rupees(revenue), 'Revenue won', 'green', '₹');
+  document.getElementById('perRepTbl').innerHTML = tbl(['Rep','Leads','Converted','Visits (range)','Orders','Won','Revenue won'],
+    users.map(u => { const uo = orders.filter(o => o.created_by === u.id), uw = uo.filter(o => o.stage === 'won'), ul = cache.leads.filter(l => l.assigned_to === u.id);
+      return [esc(u.name) || esc(u.mobile), ul.length, ul.filter(l => l.status === 'converted').length, visits.filter(v => v.user_id === u.id).length, uo.length, uw.length, _rupees(uw.reduce((s, o) => s + Number(o.quote_total || 0), 0))]; }));
+  renderTargets(); renderCharts();
 }
-const _monthStr = () => new Date().toISOString().slice(0,7) + '-01';
-async function loadTargets() {
-  const { data } = await db.from('sales_targets').select('*').eq('month', _monthStr());
-  cache.targets = data || [];
-}
+const _monthStr = () => todayStr().slice(0,7) + '-01';
+async function loadTargets() { const { data } = await db.from('sales_targets').select('*').eq('month', _monthStr()); cache.targets = data || []; }
 function renderTargets() {
-  document.getElementById('tgtMonthLabel').textContent =
-    new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-  const now = new Date(); const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const users = (cache.users||[]).filter(u=>u.role!=='admin');
-  const rows = users.map(u => {
-    const t = (cache.targets||[]).find(x => x.user_id === u.id);
-    const target = t ? Number(t.target_amount) : 0;
-    const achieved = (cache.orders||[]).filter(o => o.created_by === u.id && o.stage === 'won'
-        && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
-    const pct = target ? Math.round(achieved / target * 100) : 0;
-    return [
-      esc(u.name) || esc(u.mobile),
-      `<input id="tg_${u.id}" value="${target || ''}" placeholder="0" inputmode="numeric" style="width:120px;padding:6px 8px;border:1px solid var(--border);border-radius:8px"> <button class="btn sec" onclick="saveTarget('${u.id}')">Save</button>`,
-      _rupees(achieved),
-      target ? `${pct}%` : '—'
-    ];
-  });
-  document.getElementById('targetsTbl').innerHTML = tbl(['Rep','Target (this month)','Achieved','%'], rows);
+  document.getElementById('tgtMonthLabel').textContent = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('targetsTbl').innerHTML = tbl(['Rep','Target (this month)','Achieved','%'],
+    salesReps().map(u => {
+      const t = (cache.targets||[]).find(x => x.user_id === u.id), target = t ? Number(t.target_amount) : 0;
+      const achieved = (cache.orders||[]).filter(o => o.created_by === u.id && o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + Number(o.quote_total || 0), 0);
+      return [esc(u.name) || esc(u.mobile),
+        `<input id="tg_${u.id}" class="inp" value="${target || ''}" placeholder="0" inputmode="numeric" style="width:120px"> <button class="btn sec sm" onclick="saveTarget('${u.id}')">Save</button>`,
+        _rupees(achieved), target ? Math.round(achieved / target * 100) + '%' : '—'];
+    }));
 }
 async function saveTarget(userId) {
   const amount = parseFloat(document.getElementById('tg_' + userId).value) || 0;
-  const { error } = await db.from('sales_targets').upsert(
-    { user_id: userId, month: _monthStr(), target_amount: amount }, { onConflict: 'user_id,month' });
-  if (error) { alert(error.message); return; }
-  loadReports();
+  const { error } = await db.from('sales_targets').upsert({ user_id: userId, month: _monthStr(), target_amount: amount }, { onConflict: 'user_id,month' });
+  if (error) { alert(error.message); return; } loadReports();
 }
-
-// ---------- charts ----------
 let _charts = {};
-function mkChart(id, cfg) {
-  if (typeof Chart === 'undefined') return;
-  if (_charts[id]) _charts[id].destroy();
-  const el = document.getElementById(id); if (!el) return;
-  _charts[id] = new Chart(el, cfg);
-}
+function mkChart(id, cfg) { if (typeof Chart === 'undefined') return; if (_charts[id]) _charts[id].destroy(); const el = document.getElementById(id); if (!el) return; _charts[id] = new Chart(el, cfg); }
 const _barOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } });
 const _pieOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } } });
-const _pal = n => { const c = ['#1F3A5F','#2E5C8A','#1a7f37','#9a6a00','#b23b3b','#6b7a8d','#7c5cbf','#0891b2']; return Array.from({length:n}, (_,i)=>c[i%c.length]); };
+const _pal = n => { const c = ['#2F5BEA','#0D9488','#16A34A','#D97706','#DC2626','#7C3AED','#5B8DEF','#64748B']; return Array.from({length:n}, (_,i)=>c[i%c.length]); };
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
-  const users = (cache.users||[]).filter(u => u.role !== 'admin');
-  const orders = cache.orders||[], visits = cache.visits||[];
+  const users = salesReps(), orders = cache.orders||[];
   const now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const nameOf = u => u.name || u.mobile || '—';
-  const labels = users.map(nameOf);
+  const labels = users.map(u => u.name || u.mobile || '—');
   const targets = users.map(u => { const t=(cache.targets||[]).find(x=>x.user_id===u.id); return t?Number(t.target_amount):0; });
   const achieved = users.map(u => orders.filter(o => o.created_by===u.id && o.stage==='won' && o.won_at && new Date(o.won_at)>=mStart).reduce((s,o)=>s+Number(o.quote_total||0),0));
-  mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#c9d3df'},{label:'Achieved',data:achieved,backgroundColor:'#1F3A5F'}] }, options:_barOpt() });
+  mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#C7D4FB'},{label:'Achieved',data:achieved,backgroundColor:'#2F5BEA'}] }, options:_barOpt() });
   const pct = users.map((u,i)=> targets[i]? Math.round(achieved[i]/targets[i]*100):0);
-  mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#1a7f37':'#1F3A5F')}] }, options:_barOpt() });
+  mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#16A34A':'#2F5BEA')}] }, options:_barOpt() });
+  const ls = Object.keys(STATUS_LABEL);
+  mkChart('chLeads', { type:'bar', data:{ labels:ls.map(s=>STATUS_LABEL[s]), datasets:[{label:'Leads',data:ls.map(s=>cache.leads.filter(l=>l.status===s).length),backgroundColor:_pal(ls.length)}] }, options:{ ..._barOpt(), plugins:{ legend:{ display:false } } } });
+  const srcMap = {}; cache.leads.forEach(l => { const n = l.source || 'Unknown'; srcMap[n] = (srcMap[n]||0)+1; });
+  mkChart('chSource', { type:'doughnut', data:{ labels:Object.keys(srcMap), datasets:[{data:Object.values(srcMap),backgroundColor:_pal(Object.keys(srcMap).length)}] }, options:_pieOpt() });
   const stages = ['draft','need_quote','quoted','won','lost'];
-  mkChart('chFunnel', { type:'bar', data:{ labels:stages.map(s=>s.replace('_',' ')), datasets:[{label:'Orders',data:stages.map(s=>orders.filter(o=>o.stage===s).length),backgroundColor:'#1F3A5F'}] }, options:_barOpt() });
-  mkChart('chWin', { type:'doughnut', data:{ labels:['Won','Lost'], datasets:[{data:[orders.filter(o=>o.stage==='won').length,orders.filter(o=>o.stage==='lost').length],backgroundColor:['#1a7f37','#b23b3b']}] }, options:_pieOpt() });
+  mkChart('chFunnel', { type:'bar', data:{ labels:stages.map(s=>s.replace('_',' ')), datasets:[{label:'Orders',data:stages.map(s=>orders.filter(o=>o.stage===s).length),backgroundColor:'#2F5BEA'}] }, options:_barOpt() });
+  mkChart('chWin', { type:'doughnut', data:{ labels:['Won','Lost'], datasets:[{data:[orders.filter(o=>o.stage==='won').length,orders.filter(o=>o.stage==='lost').length],backgroundColor:['#16A34A','#DC2626']}] }, options:_pieOpt() });
   const mo = []; for (let i=5;i>=0;i--) mo.push(new Date(now.getFullYear(), now.getMonth()-i, 1));
   const rev = mo.map(d => { const s=new Date(d.getFullYear(),d.getMonth(),1), e=new Date(d.getFullYear(),d.getMonth()+1,1); return orders.filter(o=>o.stage==='won'&&o.won_at&&new Date(o.won_at)>=s&&new Date(o.won_at)<e).reduce((a,o)=>a+Number(o.quote_total||0),0); });
-  mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#1F3A5F',backgroundColor:'rgba(31,58,95,.12)',fill:true,tension:.3}] }, options:_barOpt() });
+  mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#2F5BEA',backgroundColor:'rgba(47,91,234,.12)',fill:true,tension:.3}] }, options:_barOpt() });
   const catMap = {}; orders.forEach(o => { const n=o.order_categories?.name||'—'; catMap[n]=(catMap[n]||0)+1; });
   mkChart('chCat', { type:'doughnut', data:{ labels:Object.keys(catMap), datasets:[{data:Object.values(catMap),backgroundColor:_pal(Object.keys(catMap).length)}] }, options:_pieOpt() });
-  const vMap = {}; visits.forEach(v => { vMap[v.status]=(vMap[v.status]||0)+1; });
-  mkChart('chVisits', { type:'doughnut', data:{ labels:Object.keys(vMap), datasets:[{data:Object.values(vMap),backgroundColor:_pal(Object.keys(vMap).length)}] }, options:_pieOpt() });
 }
 
 // ---------- map ----------
 async function initMap() {
   const el = document.getElementById('map');
-  if (GMAPS_KEY.indexOf('__') === 0) {
-    el.innerHTML = '<p class="muted" style="padding:40px;text-align:center">Google Maps key not configured yet.</p>';
-    return;
-  }
-  try {
-    await ensureGmaps();
-  } catch (e) {
-    el.innerHTML = '<p class="muted" style="padding:40px;text-align:center">Could not load Google Maps.</p>';
-    return;
-  }
-  map = new google.maps.Map(el, {
-    center: { lat: 22.97, lng: 78.65 }, zoom: 5,
-    mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
-    styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
-  });
+  try { await ensureGmaps(); } catch (e) { el.innerHTML = '<div class="empty">Could not load Google Maps.</div>'; return; }
+  map = new google.maps.Map(el, { center: { lat: 22.97, lng: 78.65 }, zoom: 5, mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+    styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }] });
   infoWin = new google.maps.InfoWindow();
 }
 async function loadMap() {
   if (!map) return;
-  const { data } = await db.from('visits').select('*, customers(name,company)')
-    .in('status',['verified','completed'])
-    .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00')
-    .lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
+  const { data } = await db.from('visits').select('*, customers(name,company), leads(name,company)')
+    .in('status',['verified','completed','checked_in'])
+    .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00').lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
     .not('verified_lat','is',null).limit(1000);
   markers.forEach(m => m.setMap(null)); markers = [];
-  const bounds = new google.maps.LatLngBounds();
-  let n = 0;
+  const bounds = new google.maps.LatLngBounds(); let n = 0;
   (data||[]).forEach(v => {
-    const flagged = (v.flags||[]).length > 0;
-    const pos = { lat: v.verified_lat, lng: v.verified_lng };
-    const m = new google.maps.Marker({
-      position: pos, map,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE, scale: 7,
-        fillColor: flagged ? '#b23b3b' : '#1F3A5F', fillOpacity: .85,
-        strokeColor: '#fff', strokeWeight: 1.5
-      }
-    });
-    m.addListener('click', () => {
-      infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(v.customers?.name)}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.verified_at)}<br>` +
-        ((v.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('') || 'clean') + '</div>');
-      infoWin.open(map, m);
-    });
+    const flagged = realFlags(v.flags).length > 0, pos = { lat: v.verified_lat, lng: v.verified_lng };
+    const m = new google.maps.Marker({ position: pos, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: flagged ? '#DC2626' : '#2F5BEA', fillOpacity: .9, strokeColor: '#fff', strokeWeight: 1.5 } });
+    m.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.checkin_at || v.verified_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>` + (realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : 'clean') + '</div>'); infoWin.open(map, m); });
     markers.push(m); bounds.extend(pos); n++;
   });
   if (n) map.fitBounds(bounds, 40);
 }
-
-// ---------- team chat ----------
-let _chatSub = false, _me = null;
-async function loadChat() {
-  if (!_me) { const { data: { user } } = await db.auth.getUser(); _me = user?.id; }
-  const { data } = await db.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
-  const box = document.getElementById('chatBox');
-  box.innerHTML = (data || []).map(chatBubble).join('');
-  box.scrollTop = box.scrollHeight;
-  if (!_chatSub) {
-    _chatSub = true;
-    db.channel('team-chat-web').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
-      box.insertAdjacentHTML('beforeend', chatBubble(p.new)); box.scrollTop = box.scrollHeight;
-    }).subscribe();
-  }
-}
-function chatBubble(m) {
-  const mine = m.sender_id === _me;
-  const t = m.created_at ? new Date(m.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-  return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:70%;background:${mine ? 'var(--accent)' : '#f3f3ef'};color:${mine ? '#fff' : 'var(--text)'};padding:8px 12px;border-radius:12px">
-    ${mine ? '' : `<div style="font-size:11px;font-weight:600;color:var(--accent)">${esc(m.sender_name || 'Someone')}</div>`}
-    <div>${esc(m.body)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${t}</div></div>`;
-}
-async function sendChat() {
-  const el = document.getElementById('chatInput'); const t = el.value.trim(); if (!t) return;
-  el.value = '';
-  const { error } = await db.from('messages').insert({ sender_id: _me, body: t });
-  if (error) alert(error.message);
-}
-
-// ---------- rep route (live tracking trail) ----------
 let _routeLayer = [];
-function fillRouteUsers() {
-  const sel = document.getElementById('routeUser'); if (!sel) return;
-  sel.innerHTML = '<option value="">— salesperson —</option>' +
-    (cache.users || []).filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${esc(u.name) || esc(u.mobile)}</option>`).join('');
-  document.getElementById('routeDate').value = new Date().toISOString().slice(0, 10);
-}
+function fillRouteUsers() { document.getElementById('routeUser').innerHTML = repOpts('', '— salesperson —'); document.getElementById('routeDate').value = todayStr(); }
 async function loadRoute() {
-  if (!map) { await initMap(); }
-  if (!map) return;
-  const uid = document.getElementById('routeUser').value;
-  const d = document.getElementById('routeDate').value;
+  if (!map) await initMap(); if (!map) return;
+  const uid = document.getElementById('routeUser').value, d = document.getElementById('routeDate').value;
   if (!uid || !d) { alert('Pick a salesperson and date'); return; }
   _routeLayer.forEach(x => x.setMap(null)); _routeLayer = [];
-  const { data } = await db.from('location_pings').select('*')
-    .eq('user_id', uid).gte('at', d + 'T00:00:00').lte('at', d + 'T23:59:59').order('at');
+  const { data } = await db.from('location_pings').select('*').eq('user_id', uid).gte('at', d + 'T00:00:00').lte('at', d + 'T23:59:59').order('at');
   const pts = (data || []).map(p => ({ lat: p.lat, lng: p.lng }));
   if (!pts.length) { alert('No location trail for that day.'); return; }
-  const line = new google.maps.Polyline({ path: pts, strokeColor: '#1F3A5F', strokeOpacity: .9, strokeWeight: 3, map });
-  _routeLayer.push(line);
-  const start = new google.maps.Marker({ position: pts[0], map, label: 'S' });
-  const end = new google.maps.Marker({ position: pts[pts.length - 1], map, label: 'E' });
-  _routeLayer.push(start, end);
+  _routeLayer.push(new google.maps.Polyline({ path: pts, strokeColor: '#2F5BEA', strokeOpacity: .9, strokeWeight: 3, map }));
+  _routeLayer.push(new google.maps.Marker({ position: pts[0], map, label: 'S' }), new google.maps.Marker({ position: pts[pts.length - 1], map, label: 'E' }));
   const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend(p)); map.fitBounds(b, 40);
 }
 
-// ---------- helpers ----------
-function chip(s) { return `<span class="chip ${s}">${s}</span>`; }
-function tbl(headers, rows) {
-  if (!rows.length) return '<p class="muted">No data.</p>';
-  return '<div style="overflow-x:auto"><table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') +
-    '</tr></thead><tbody>' + rows.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('') +
-    '</tbody></table></div>';
+// ---------- team chat ----------
+let _chatSub = false;
+async function loadChat() {
+  const { data } = await db.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
+  const box = document.getElementById('chatBox'); box.innerHTML = (data || []).map(chatBubble).join(''); box.scrollTop = box.scrollHeight;
+  if (!_chatSub) { _chatSub = true;
+    db.channel('team-chat-web').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { box.insertAdjacentHTML('beforeend', chatBubble(p.new)); box.scrollTop = box.scrollHeight; }).subscribe(); }
 }
+function chatBubble(m) {
+  const mine = m.sender_id === ME.id;
+  return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:70%;background:${mine ? 'linear-gradient(135deg,#2F5BEA,#5B8DEF)' : '#fff'};border:${mine ? 'none' : '1px solid var(--border)'};color:${mine ? '#fff' : 'var(--text)'};padding:8px 12px;border-radius:12px">
+    ${mine ? '' : `<div style="font-size:11px;font-weight:700;color:var(--brand)">${esc(m.sender_name || 'Someone')}</div>`}<div>${esc(m.body)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${fmtDT(m.created_at)}</div></div>`;
+}
+async function sendChat() { const el = document.getElementById('chatInput'); const t = el.value.trim(); if (!t) return; el.value = ''; const { error } = await db.from('messages').insert({ sender_id: ME.id, body: t }); if (error) alert(error.message); }
+
+// ---------- CSV export ----------
 function exportCsv(kind) {
   const flat = {
-    visits: v => ({ scheduled: v.scheduled_at, sales_person: uname(v.user_id), customer: v.customers?.name,
-      company: v.customers?.company, purpose: v.purpose, status: v.status, verified_at: v.verified_at,
-      lat: v.verified_lat, lng: v.verified_lng, distance_m: v.distance_from_pin_m, flags: (v.flags||[]).join('|'), notes: v.notes }),
-    customers: c => ({ name: c.name, company: c.company, type: c.type, mobile: c.mobile,
-      verified: !!c.mobile_verified_at, territory: c.territory, owner: uname(c.owner_user_id), lat: c.lat, lng: c.lng }),
-    requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity,
-      expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
-    attendance: a => ({ date: a.date, sales_person: uname(a.user_id), day_start: a.day_start_at, day_end: a.day_end_at }),
-    orders: o => ({ created: o.created_at, customer: o.customers?.name, company: o.customers?.company, type: o.order_categories?.name,
-      sqft: o.sqft, visit_status: o.visit_status, stage: o.stage, sales_person: uname(o.created_by) }),
+    leads: l => ({ created: l.created_at, name: l.name, company: l.company, mobile: l.mobile, email: l.email, type: typeLabel(l.contact_type), source: l.source,
+      category: catName(l.category_id), value: l.est_value, city: l.city, territory: l.territory, status: l.status, drop_reason: l.drop_reason,
+      assigned_to: l.assigned_to ? uname(l.assigned_to) : '', last_activity: l.last_activity_at, requirement: l.requirement }),
+    visits: v => ({ checkin: v.checkin_at || v.scheduled_at, checkout: v.checkout_at, salesperson: uname(v.user_id), place: placeName(v), type: v.contact_type,
+      purpose: v.purpose, status: v.status, duration_min: v.duration_min, lat: v.verified_lat, lng: v.verified_lng, distance_m: v.distance_from_pin_m,
+      flags: (v.flags||[]).join('|'), outcome: v.outcome, notes: v.notes }),
+    customers: c => ({ name: c.name, company: c.company, type: c.type, mobile: c.mobile, verified: !!c.mobile_verified_at, territory: c.territory, owner: uname(c.owner_user_id), lat: c.lat, lng: c.lng }),
+    requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity, expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
+    attendance: a => ({ date: a.date, salesperson: uname(a.user_id), day_start: a.day_start_at, day_end: a.day_end_at }),
+    orders: o => ({ created: o.created_at, customer: o.customers?.name, company: o.customers?.company, type: o.order_categories?.name, sqft: o.sqft, visit_status: o.visit_status, stage: o.stage, quote_total: o.quote_total, salesperson: uname(o.created_by) }),
   }[kind];
-  const rows = cache[kind].map(flat);
+  const src = kind === 'leads' ? filteredLeads() : cache[kind];
+  const rows = (src || []).map(flat);
   if (!rows.length) return alert('No data to export');
   const keys = Object.keys(rows[0]);
   const csv = [keys.join(','), ...rows.map(r => keys.map(k => `"${String(r[k] ?? '').replace(/"/g,'""')}"`).join(','))].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  a.download = `${kind}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `${kind}_${todayStr()}.csv`; a.click();
 }
 
 document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-init(); // auto-login if session exists
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show')); });
+init();
 </script>
+<style>.ch { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; font-weight:700; }</style>
 </body>
 </html>
