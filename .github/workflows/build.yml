@@ -42,7 +42,7 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.WAKE_LOCK"/>' $M
-          sed -i 's#</application>#        <service android:name="id.flutter.flutter_background_service.BackgroundService" android:foregroundServiceType="location" android:exported="false" tools:replace="android:foregroundServiceType"/>\n    </application>#' $M
+          sed -i 's#</application>#        <service android:name="id.flutter.flutter_background_service.BackgroundService" android:foregroundServiceType="location" tools:replace="android:foregroundServiceType"/>\n    </application>#' $M
           sed -i 's#</application>#        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"/>\n    </application>#' $M
           sed -i 's#</head>#  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"></script>\n</head>#' web/index.html
           echo "--- manifest ---"; cat $M
