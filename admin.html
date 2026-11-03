@@ -74,6 +74,41 @@
   tbody tr:hover td { background:#F8FAFE; }
   tr.rowlink { cursor:pointer; }
   /* ---- chips ---- */
+  .dd { position:relative; } .ddm { display:none; position:absolute; right:0; top:110%; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.1); z-index:6; min-width:170px; }
+  .ddm.show { display:block; } .ddm a { display:block; padding:9px 12px; font-size:13px; cursor:pointer; } .ddm a:hover { background:#F4F6FA; }
+  .avatar { display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:#fff; font-weight:700; flex:none; }
+  .chatwrap { display:grid; grid-template-columns:300px 1fr; gap:0; border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; height:calc(100vh - 150px); min-height:520px; }
+  .chatside { border-right:1px solid var(--border); display:flex; flex-direction:column; min-width:0; }
+  .chatrow { display:flex; gap:10px; padding:10px 12px; cursor:pointer; border-bottom:1px solid #F1F3F8; align-items:center; }
+  .chatrow:hover { background:#F7F9FD; } .chatrow.on { background:#E8EEFE; }
+  .chatrow .badge { background:var(--brand); color:#fff; font-size:11px; font-weight:700; border-radius:10px; padding:1px 7px; }
+  .chatmain { display:flex; flex-direction:column; min-width:0; }
+  #chatHead { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); }
+  #chatBox { flex:1; overflow-y:auto; padding:12px 14px; background:#FBFCFE; display:flex; flex-direction:column; gap:2px; }
+  .chatday { text-align:center; font-size:11.5px; color:var(--muted); margin:10px 0 4px; font-weight:600; }
+  .chatmsg { display:flex; gap:8px; align-items:flex-end; margin-top:8px; max-width:78%; }
+  .chatmsg.cont { margin-top:2px; } .chatmsg.mine { align-self:flex-end; flex-direction:row-reverse; }
+  .chatmsg .bubble { position:relative; background:#fff; border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:7px 11px 5px; font-size:14px; line-height:1.35; word-break:break-word; }
+  .chatmsg.mine .bubble { background:var(--brand); color:#fff; border:none; border-radius:14px 14px 4px 14px; }
+  .chatmsg .bubble.mention { border-color:#F59E0B; box-shadow:0 0 0 1px #F59E0B inset; }
+  .chatmsg .who { font-size:11.5px; font-weight:700; color:var(--brand); margin-bottom:2px; }
+  .chatmsg .meta { font-size:10.5px; opacity:.6; margin-top:3px; }
+  .chatmsg .replyq { font-size:12px; border-left:3px solid var(--brand); background:rgba(0,0,0,.06); padding:4px 8px; border-radius:6px; margin-bottom:5px; }
+  .chatmsg.mine .replyq { border-left-color:#fff; background:rgba(255,255,255,.18); }
+  .chatmsg .acts { display:none; position:absolute; top:-26px; right:4px; background:#fff; border:1px solid var(--border); border-radius:20px; padding:2px 6px; box-shadow:0 4px 12px rgba(0,0,0,.08); white-space:nowrap; }
+  .chatmsg .acts span { cursor:pointer; padding:0 4px; font-size:15px; color:var(--text); }
+  .chatmsg:hover .acts { display:inline-block; }
+  .reacts { display:flex; gap:4px; flex-wrap:wrap; margin:2px 0 0 38px; } .reacts.mine { margin:2px 38px 0 0; justify-content:flex-end; }
+  .reacts span { font-size:12px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:1px 7px; cursor:pointer; }
+  .reacts span.me { background:#E8EEFE; border-color:var(--brand); }
+  .mentiontag { color:var(--brand); font-weight:700; background:#E8EEFE; border-radius:4px; padding:0 3px; } .chatmsg.mine .mentiontag { color:#fff; background:rgba(255,255,255,.2); }
+  .chatmsg.mine .bubble a { color:#fff; }
+  #chatComposer { border-top:1px solid var(--border); padding:8px 10px; position:relative; }
+  #chatComposer textarea { width:100%; resize:none; border:none; background:#F4F6FA; border-radius:18px; padding:10px 14px; font:inherit; font-size:14px; min-height:40px; max-height:140px; }
+  #mentionBox { position:absolute; bottom:100%; left:10px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.1); z-index:5; min-width:220px; }
+  #mentionBox div { display:flex; gap:8px; align-items:center; padding:7px 10px; cursor:pointer; } #mentionBox div:hover { background:#F4F6FA; }
+  .chatq { font-size:12.5px; background:#F4F6FA; border-left:3px solid var(--brand); padding:5px 8px; border-radius:6px; margin-bottom:6px; }
+  .pickrow { display:flex; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid #F1F3F8; cursor:pointer; }
   .chip { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:650; white-space:nowrap; text-transform:capitalize; }
   .chip.planned, .chip.visit_scheduled, .chip.draft, .chip.open { background:#FEF3E2; color:var(--orange); }
   .chip.verified, .chip.new, .chip.need_quote { background:#E8EEFE; color:var(--brand); }
@@ -215,35 +250,35 @@
     <div class="brand"><span class="logo">B</span> BNE Sales</div>
     <div class="me" id="meBox"></div>
     <nav>
-      <button data-v="overview" data-roles="admin,manager" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
+      <button data-v="overview" data-roles="admin,head,manager" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
 
-      <div class="navlabel" data-roles="admin,manager,coordinator,telecaller">Leads</div>
-      <button data-v="leads" data-roles="admin,manager,coordinator,telecaller" onclick="show('leads')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Leads</span><span class="badge" id="leadBadge" style="display:none"></span></button>
+      <div class="navlabel" data-roles="admin,head,manager,coordinator,telecaller">Leads</div>
+      <button data-v="leads" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('leads')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Leads</span><span class="badge" id="leadBadge" style="display:none"></span></button>
 
-      <div class="navlabel" data-roles="admin,manager,coordinator,telecaller">Field</div>
-      <button data-v="visits" data-roles="admin,manager" onclick="show('visits')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Visits &amp; check-ins</span></button>
-      <button data-v="photos" data-roles="admin,manager,coordinator,telecaller" onclick="show('photos')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Photos &amp; cards</span></button>
-      <button data-v="mapv" data-roles="admin,manager" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Live map &amp; routes</span></button>
-      <button data-v="travel" data-roles="admin,manager" onclick="show('travel')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M8 22v-6h8v6"/><circle cx="12" cy="10" r="2"/></svg><span>Travel &amp; fuel</span><span class="badge" id="claimBadge" style="display:none"></span></button>
-      <button data-v="attendance" data-roles="admin,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
+      <div class="navlabel" data-roles="admin,head,manager,coordinator,telecaller">Field</div>
+      <button data-v="visits" data-roles="admin,head,manager" onclick="show('visits')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Visits &amp; check-ins</span></button>
+      <button data-v="photos" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('photos')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Photos &amp; cards</span></button>
+      <button data-v="mapv" data-roles="admin,head,manager" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Live map &amp; routes</span></button>
+      <button data-v="travel" data-roles="admin,head,manager" onclick="show('travel')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M8 22v-6h8v6"/><circle cx="12" cy="10" r="2"/></svg><span>Travel &amp; fuel</span><span class="badge" id="claimBadge" style="display:none"></span></button>
+      <button data-v="attendance" data-roles="admin,head,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
 
-      <div class="navlabel" data-roles="admin,manager">Sales</div>
-      <button data-v="pipeline" data-roles="admin,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
-      <button data-v="billing" data-roles="admin,manager" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
-      <button data-v="payments" data-roles="admin,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
-      <button data-v="customers" data-roles="admin,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
-      <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
-      <button data-v="followups" data-roles="admin,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
-      <button data-v="reqs" data-roles="admin,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
+      <div class="navlabel" data-roles="admin,head,manager">Sales</div>
+      <button data-v="pipeline" data-roles="admin,head,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
+      <button data-v="billing" data-roles="admin,head,manager" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
+      <button data-v="payments" data-roles="admin,head,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
+      <button data-v="customers" data-roles="admin,head,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
+      <button data-v="orders" data-roles="admin,head,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
+      <button data-v="followups" data-roles="admin,head,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
+      <button data-v="reqs" data-roles="admin,head,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
 
-      <div class="navlabel" data-roles="admin,manager">Insights</div>
-      <button data-v="reports" data-roles="admin,manager" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports &amp; targets</span></button>
-      <button data-v="incentives" data-roles="admin,manager" onclick="show('incentives')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89L17 22l-5-3-5 3 1.52-9.11"/></svg><span>Incentives &amp; scorecards</span></button>
+      <div class="navlabel" data-roles="admin,head,manager">Insights</div>
+      <button data-v="reports" data-roles="admin,head,manager" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports &amp; targets</span></button>
+      <button data-v="incentives" data-roles="admin,head,manager" onclick="show('incentives')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89L17 22l-5-3-5 3 1.52-9.11"/></svg><span>Incentives &amp; scorecards</span></button>
 
       <div class="navlabel">Team</div>
-      <button data-v="team" data-roles="admin,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
-      <button data-v="chat" data-roles="admin,manager,coordinator,telecaller" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Team chat</span></button>
-      <button data-v="settings" data-roles="admin" onclick="show('settings')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
+      <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
+      <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
+      <button data-v="settings" data-roles="admin,head,head" onclick="show('settings')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
       <button onclick="logout()" style="margin-top:14px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Log out</span></button>
     </nav>
   </aside>
@@ -251,6 +286,7 @@
     <div class="topbar">
       <button class="hamb" onclick="toggleSidebar()" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <h2 id="pageTitle">Overview</h2>
+      <select id="branchFilter" onchange="setBranchFilter(this.value)" style="display:none;max-width:200px" title="Show one branch"></select>
       <button class="btn" id="topAddLead" onclick="openLeadForm()" style="display:none">+ New lead</button>
     </div>
   <main>
@@ -463,12 +499,28 @@
 
     <!-- ================= CHAT ================= -->
     <div id="chat" class="view">
-      <div class="panel">
-        <h2>Team chat</h2>
-        <div id="chatBox" style="height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:12px;background:#FBFCFE;display:flex;flex-direction:column;gap:6px"></div>
-        <div class="toolbar" style="margin-top:10px">
-          <input id="chatInput" placeholder="Message the team…" style="flex:1" onkeydown="if(event.key==='Enter')sendChat()">
-          <button class="btn" onclick="sendChat()">Send</button>
+      <div class="chatwrap">
+        <div class="chatside">
+          <div style="padding:10px 10px 6px;border-bottom:1px solid var(--border)">
+            <div class="toolbar" style="margin:0 0 6px"><input id="chatSearch" placeholder="Search chats" oninput="renderChatInbox()" style="flex:1;min-width:0">
+              <div class="dd"><button class="btn sm" onclick="this.nextElementSibling.classList.toggle('show')">+ New</button>
+                <div class="ddm"><a onclick="chatNew('dm')">Message someone</a><a onclick="chatNew('group')">New group</a><a onclick="chatNew('channel')">New channel</a><a onclick="chatNew('browse')">Browse channels</a></div></div></div>
+            <div class="seg" style="width:100%"><button class="active" onclick="chatFilter('',this)">All</button><button onclick="chatFilter('unread',this)">Unread</button><button onclick="chatFilter('dm',this)">Direct</button><button onclick="chatFilter('ch',this)">Channels</button></div>
+          </div>
+          <div id="chatList" style="flex:1;overflow-y:auto"></div>
+        </div>
+        <div class="chatmain">
+          <div id="chatHead"></div>
+          <div id="chatBox"></div>
+          <div id="chatComposer" style="display:none">
+            <div id="mentionBox" style="display:none"></div>
+            <div id="chatExtra"></div>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <label class="btn sec sm" style="cursor:pointer" title="Attach files">📎<input type="file" multiple style="display:none" onchange="chatPickFiles(this)"></label>
+              <textarea id="chatInput" rows="1" placeholder="Message · @ to mention · Enter to send, Shift+Enter for a new line" onkeydown="chatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+              <button class="btn" onclick="sendChat()">Send</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -515,7 +567,7 @@
         <h2>Scorecard <span class="sub">activity and results for the month — ranked by won value</span></h2>
         <div id="scoreTbl"></div>
       </div>
-      <div class="panel" data-roles="admin,manager">
+      <div class="panel" data-roles="admin,head,manager">
         <h2 style="display:flex">Incentive plans <span class="sub" style="flex:1">the newest active plan that has started applies; a plan for specific people overrides the general one</span>
           <button class="btn sm" id="newPlanBtn" onclick="openPlan()">+ New plan</button></h2>
         <div id="planTbl"></div>
@@ -554,22 +606,29 @@
 
     <!-- ================= TEAM ================= -->
     <div id="team" class="view">
-      <div class="panel">
+      <div class="panel" data-roles="admin,head">
+        <h2>Branches <span class="sub">each person belongs to one branch; branch managers see only their branch(es)</span></h2>
+        <div class="toolbar"><input id="newBranch" placeholder="Branch name (e.g. Bangalore)"> <input id="newBranchCode" placeholder="Code (e.g. BLR)" style="max-width:120px"> <button class="btn" onclick="addBranch()">Add branch</button></div>
+        <div id="branchTbl"></div>
+      </div>
+      <div class="panel" data-roles="admin,head">
         <h2>Add team member</h2>
         <div class="toolbar">
           <input id="spName" placeholder="Full name">
           <input id="spMobile" placeholder="Mobile (10 digits)" maxlength="10" inputmode="numeric">
           <input id="spEmail" placeholder="Email (optional)">
-          <select id="spRole"><option value="sales">Sales</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="manager">Manager</option></select>
+          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option></select>
           <input id="spTerritory" placeholder="Territory (optional)">
           <button class="btn" onclick="addInvite()">Add &amp; invite</button>
         </div>
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
-        <p class="hint">Sales and quote users log in on the mobile app. Coordinators, tele-callers and managers can also log in here with WhatsApp OTP.</p>
+        <p class="hint">Everyone uses the mobile app. Managers, heads and admins also get the Team section in the app and can sign in to this dashboard.</p>
       </div>
-      <div class="panel"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
-      <div class="panel"><h2>Team</h2><div id="teamTbl"></div>
-      <p class="muted" style="margin-top:10px">People appear here after their first login. Name, role and territory from an invite are applied automatically.</p></div>
+      <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
+      <div class="panel"><h2>People &amp; access <span class="sub">role decides what they can do; branch decides what they can see</span></h2>
+        <div class="toolbar"><input id="teamSearch" placeholder="Search people…" oninput="loadUsers(true)"></div>
+        <div id="teamTbl"></div>
+        <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
     <!-- ================= SETTINGS ================= -->
@@ -700,6 +759,16 @@
 </div>
 
 <!-- ================= MODALS ================= -->
+<div class="modal-bg" id="pickBg">
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><h3 id="pickTitle">Pick people</h3><button class="xbtn" onclick="window._pickRes&&window._pickRes(null)">×</button></div>
+    <div class="mb"><input id="pickSearch" placeholder="Search people…" style="width:100%;margin-bottom:8px"><div id="pickList" style="max-height:50vh;overflow-y:auto"></div>
+      <div style="margin-top:10px;text-align:right"><button class="btn" id="pickDone">Done</button></div></div>
+  </div>
+</div>
+<div class="modal-bg" id="htmlBg" onclick="if(event.target===this)closeModal('htmlBg')">
+  <div class="modal" style="max-width:520px"><div class="mb" id="htmlBody"></div></div>
+</div>
 <div class="modal-bg" id="payViewBg" onclick="if(event.target===this)closeModal('payViewBg')">
   <div class="modal" style="max-width:900px">
     <div class="mh"><h3 id="pvTitle">Payment</h3><span id="pvChip"></span><button class="xbtn" onclick="closeModal('payViewBg')">×</button></div>
@@ -763,7 +832,7 @@
             </div>
             <div class="toolbar"><input id="lvNote" placeholder="Add a note or call summary…" style="flex:1" onkeydown="if(event.key==='Enter')addLeadNote()"><button class="btn sec sm" onclick="addLeadNote()">Add note</button></div>
             <div id="lvMsg"></div>
-            <div style="display:flex;align-items:center;margin:18px 0 6px"><h4 style="font-size:13px;flex:1">Deals</h4><button class="btn sm" onclick="openOppForm(null,{lead_id:_lv.id})" data-roles="admin,manager">+ Create deal</button></div>
+            <div style="display:flex;align-items:center;margin:18px 0 6px"><h4 style="font-size:13px;flex:1">Deals</h4><button class="btn sm" onclick="openOppForm(null,{lead_id:_lv.id})" data-roles="admin,head,manager">+ Create deal</button></div>
             <div id="lvDeals"></div>
           </div>
         </div>
@@ -1081,8 +1150,9 @@ const _rupees = n => 'Rs. ' + Number(n||0).toLocaleString('en-IN');
 const uname = id => { const u = cache.users.find(u => u.id === id); return u ? (u.name || u.mobile) : '—'; };
 const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
 const daysAgoStr = n => { const d = new Date(Date.now() - n*864e5); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-const isStaff = () => ME && ['admin','manager','coordinator','telecaller'].includes(ME.role);
-const isManager = () => ME && ['admin','manager'].includes(ME.role);
+const isStaff = () => ME && ['admin','head','manager','coordinator','telecaller'].includes(ME.role);
+const isOwner = () => ME && ['admin','head'].includes(ME.role);
+const isManager = () => ME && ['admin','head','manager'].includes(ME.role);
 function chip(s, label) { return `<span class="chip ${esc(s)}">${esc(label || STATUS_LABEL[s] || String(s||'').replace(/_/g,' '))}</span>`; }
 function flagsHtml(fl) { return (fl||[]).map(f => `<span class="flag ${f==='location_saved'?'info':''}">${esc(FLAG_LABEL[f]||f)}</span>`).join('') || '<span class="muted">—</span>'; }
 function realFlags(fl) { return (fl||[]).filter(f => f !== 'location_saved'); }
@@ -1099,7 +1169,7 @@ function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function flash(id, text, ok = true) { const el = document.getElementById(id); if (!el) return; el.innerHTML = `<span class="${ok?'okmsg':'err'}">${esc(text)}</span>`; if (ok) setTimeout(() => { if (el) el.innerHTML = ''; }, 3000); }
 function opts(list, sel, blank) { return (blank ? `<option value="">${blank}</option>` : '') + list.map(o => `<option value="${esc(o.v)}" ${o.v===sel?'selected':''}>${esc(o.l)}</option>`).join(''); }
-const salesReps = () => cache.users.filter(u => u.role === 'sales' && u.active);
+const salesReps = () => cache.users.filter(u => u.role === 'sales' && u.active && inBranch(u.id));
 const repOpts = (sel, blank) => opts(salesReps().map(u => ({ v: u.id, l: u.name || u.mobile })), sel, blank);
 
 // signed URLs for private photos
@@ -1179,7 +1249,10 @@ async function init() {
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
+  try { BRANCH = localStorage.getItem('bne_branch') || ''; } catch (_) {}
   await Promise.all([loadUsers(), loadSettings(), loadCategories()]);
+  await loadBranches();
+  loadChat();
   fillFilters();
   await loadLeads();
   subscribeLeads();
@@ -1215,10 +1288,10 @@ function show(v) {
   if (v === 'incentives') loadIncentives();
   if (v === 'billing') loadBilling();
   if (v === 'payments') loadPayments();
-  if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'pipeline') loadPipeline();
   if (v === 'team') { loadUsers(); loadInvites(); }
+  if (v === 'chat') { loadChat(); }
   if (v === 'followups') loadFollowUps();
   if (v === 'reports') loadReports();
   if (v === 'settings') renderSettings();
@@ -1365,7 +1438,7 @@ function filteredLeads() {
     (!rep || l.assigned_to === rep) && (!ty || l.contact_type === ty) && (!src || l.source === src));
 }
 function renderLeads() {
-  const L = cache.leads, mStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const L = cache.leads.filter(l => inBranch(l.assigned_to || l.created_by)), mStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const today0 = new Date(); today0.setHours(0,0,0,0);
   const pipe = L.filter(isOpen).reduce((s, l) => s + Number(l.est_value || 0), 0);
   document.getElementById('leadCards').innerHTML =
@@ -1737,18 +1810,29 @@ async function loadInvites() {
     (data || []).map(i => [esc(i.name) || '<span class="muted">(no name)</span>', esc(i.mobile), esc(i.role), esc(i.territory) || '—', chip(i.status),
       i.status === 'accepted' ? '<span class="muted">joined</span>' : '<a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ',\'' + i.role + '\');return false" style="font-weight:650">WhatsApp</a>']));
 }
-async function loadUsers() {
-  const { data } = await db.from('users').select('*').order('name');
-  cache.users = data || [];
+async function loadUsers(onlyRender) {
+  if (!onlyRender) {
+    const [{ data }, _b] = await Promise.all([db.from('users').select('*').order('name'), loadBranches()]);
+    cache.users = data || [];
+    if (isOwner()) await loadMgrBranches();
+  }
   const el = document.getElementById('teamTbl'); if (!el) return;
-  const roles = ['sales','coordinator','telecaller','quote','manager','admin'];
-  const canEdit = ME && ME.role === 'admin';
-  el.innerHTML = tbl(['Name','Mobile','Role','Territory','Vehicle','Own rate ₹/km','Active'],
-    cache.users.map(u => [canEdit ? `<input class="inp" value="${esc(u.name)}" placeholder="add name" onchange="setUser('${u.id}',{name:this.value.trim()})" style="width:150px">` : (esc(u.name) || '<span class="muted">(no name)</span>'), esc(u.mobile),
-      canEdit && u.id !== ME.id ? `<select class="inp" onchange="setUser('${u.id}',{role:this.value})">${roles.map(r => `<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select>` : esc(u.role),
-      canEdit ? `<input class="inp" value="${esc(u.territory)}" onchange="setUser('${u.id}',{territory:this.value||null})" style="width:130px">` : (esc(u.territory) || '—'),
+  renderAccess();
+  const roles = ['sales', 'manager', 'head', 'admin', 'coordinator', 'telecaller', 'quote'];
+  const canEdit = isOwner();
+  const q = (document.getElementById('teamSearch')?.value || '').toLowerCase();
+  const rows = cache.users.filter(u => (!BRANCH || u.branch_id === BRANCH || (_mgrBranches[u.id] || []).includes(BRANCH)) && (!q || `${u.name || ''} ${u.mobile || ''} ${u.role} ${branchName(u.branch_id)}`.toLowerCase().includes(q)));
+  const bOpts = sel => `<option value="">— no branch —</option>` + _branches.filter(b => b.active !== false || b.id === sel).map(b => `<option value="${b.id}" ${b.id === sel ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+  el.innerHTML = tbl(['', 'Name', 'Mobile', 'Role', 'Branch', 'Also manages', 'Territory', 'Vehicle', 'Own rate ₹/km', 'Active'],
+    rows.map(u => [avatarHtml(u, 30),
+      canEdit ? `<input class="inp" value="${esc(u.name)}" placeholder="add name" onchange="setUser('${u.id}',{name:this.value.trim()})" style="width:150px"><div class="muted" style="font-size:11px">${esc([u.designation, u.email].filter(Boolean).join(' · '))}</div>` : `${esc(u.name) || '<span class="muted">(no name)</span>'}<div class="muted" style="font-size:11px">${esc(u.designation || '')}</div>`,
+      esc(u.mobile),
+      canEdit && u.id !== ME.id ? `<select class="inp" onchange="setUser('${u.id}',{role:this.value})" title="${esc(ROLE_HELP[u.role] || '')}">${roles.map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLE_LABEL[r]}</option>`).join('')}</select>` : esc(ROLE_LABEL[u.role] || u.role),
+      canEdit ? `<select class="inp" onchange="setUser('${u.id}',{branch_id:this.value||null})">${bOpts(u.branch_id)}</select>` : (esc(branchName(u.branch_id)) || '<span class="muted">—</span>'),
+      u.role === 'manager' ? (canEdit ? `<select class="inp" multiple size="2" onchange="setMgrBranches('${u.id}',this)" title="Ctrl/Cmd-click to pick several">${_branches.filter(b => b.active !== false && b.id !== u.branch_id).map(b => `<option value="${b.id}" ${(_mgrBranches[u.id] || []).includes(b.id) ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>` : esc((_mgrBranches[u.id] || []).map(branchName).join(', ') || '—')) : '<span class="muted">—</span>',
+      canEdit ? `<input class="inp" value="${esc(u.territory)}" onchange="setUser('${u.id}',{territory:this.value||null})" style="width:110px">` : (esc(u.territory) || '—'),
       canEdit ? `<select class="inp" onchange="setUser('${u.id}',{vehicle_type:this.value||null})"><option value="">default</option>${['bike','car','none'].map(v => `<option ${u.vehicle_type===v?'selected':''}>${v}</option>`).join('')}</select>` : (esc(u.vehicle_type) || 'default'),
-      canEdit ? `<input class="inp" value="${u.fuel_rate ?? ''}" placeholder="default" inputmode="decimal" onchange="setUser('${u.id}',{fuel_rate:this.value===''?null:Number(this.value)})" style="width:90px">` : (u.fuel_rate ?? 'default'),
+      canEdit ? `<input class="inp" value="${u.fuel_rate ?? ''}" placeholder="default" inputmode="decimal" onchange="setUser('${u.id}',{fuel_rate:this.value===''?null:Number(this.value)})" style="width:80px">` : (u.fuel_rate ?? 'default'),
       canEdit && u.id !== ME.id ? `<input type="checkbox" ${u.active?'checked':''} onchange="setUser('${u.id}',{active:this.checked})" style="width:18px;height:18px;accent-color:var(--brand)">` : (u.active ? '✔' : '✖')]));
 }
 async function setUser(id, patch) { const { error } = await db.from('users').update(patch).eq('id', id); if (error) alert(error.message); else loadUsers(); }
@@ -1808,7 +1892,7 @@ async function loadVisits() {
   const st = document.getElementById('vStatus').value, rep = document.getElementById('vRep').value;
   if (st) q = q.eq('status', st); if (rep) q = q.eq('user_id', rep);
   const { data } = await q;
-  let rows = data || [];
+  let rows = (data || []).filter(x => inBranch(x.user_id));
   if (document.getElementById('vFlag').value) rows = rows.filter(x => realFlags(x.flags).length);
   cache.visits = rows;
   const ids = rows.map(r => r.id);
@@ -1939,7 +2023,7 @@ function fillPipeFilters() {
 }
 function pipeFiltered() {
   const q = (document.getElementById('pSearch').value || '').toLowerCase(), rep = document.getElementById('pRep').value, cat = document.getElementById('pCatF').value;
-  return (cache.orders || []).filter(o => (!rep || ownerOf(o) === rep) && (!cat || o.category_id === cat) &&
+  return (cache.orders || []).filter(o => inBranch(ownerOf(o)) && (!rep || ownerOf(o) === rep) && (!cat || o.category_id === cat) &&
     (!q || `${o.title || ''} ${partyName(o)} ${o.po_number || ''} ${o.quote_number || ''}`.toLowerCase().includes(q)));
 }
 function setPipeMode(m) {
@@ -1977,7 +2061,7 @@ function renderPipeline() {
       <div class="kbody">${list.map(o => {
         const d = daysIn(o), isStuck = OPEN_STAGES.includes(o.stage) && d >= stuckDays();
         const close = o.expected_close ? new Date(o.expected_close) : null, late = close && OPEN_STAGES.includes(o.stage) && close < new Date(todayStr());
-        return `<div class="kcard" draggable="${o.stage !== 'won' || ME.role === 'admin'}" ondragstart="_dragId='${o.id}'" onclick="openOpp('${o.id}')">
+        return `<div class="kcard" draggable="${o.stage !== 'won' || isOwner()}" ondragstart="_dragId='${o.id}'" onclick="openOpp('${o.id}')">
           <div class="kt">${esc(party(o).name || '—')}</div>
           <div class="ks">${esc(o.title || o.order_categories?.name || 'Deal')}</div>
           <div class="kv2"><b>${oppVal(o) ? rsShort(oppVal(o)) : '—'}</b>${OPEN_STAGES.includes(o.stage) ? `<span class="muted">${o.probability ?? 0}%</span>` : ''}</div>
@@ -2121,7 +2205,7 @@ async function openOpp(id) {
     if (isManager()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
       <label class="muted" style="font-size:12px">Chance %</label><input id="ovProb" class="inp" type="number" min="0" max="100" value="${o.probability ?? ''}" style="width:80px">
       <button class="btn sm sec" onclick="saveOppMeta()">Save</button></div>`;
-  } else if (ME.role === 'admin') {
+  } else if (isOwner()) {
     act += `<button class="btn sm sec" onclick="if(confirm('Reopen this deal and move it back to Negotiation?'))moveStage(_ov.id,'negotiation')">Reopen deal</button>`;
   }
   document.getElementById('ovActions').innerHTML = act;
@@ -2369,7 +2453,7 @@ async function loadIncentives() {
   renderIncentives(); renderPlans(); renderScorecard();
 }
 function renderIncentives() {
-  const rows = _inc;
+  const rows = _inc.filter(r => inBranch(r.user_id));
   const est = rows.reduce((a, r) => a + Number(r.total || 0), 0), won = rows.reduce((a, r) => a + Number(r.won_value || 0), 0);
   const withT = rows.filter(r => r.achievement_pct != null);
   const avgAch = withT.length ? withT.reduce((a, r) => a + Number(r.achievement_pct), 0) / withT.length : null;
@@ -2383,7 +2467,7 @@ function renderIncentives() {
   const noPlan = rows.filter(r => !r.plan_id).length;
   document.getElementById('incPlanHint').innerHTML = !_plans.length ? '<span class="stale">No incentive plan yet — create one below.</span>'
     : noPlan ? `<span class="stale">${noPlan} salesperson(s) have no plan for this month.</span>` : '';
-  const isAdm = ME.role === 'admin' || ME.role === 'manager';
+  const isAdm = isManager();
   document.getElementById('incTbl').innerHTML = tbl(['Salesperson', 'Target', 'Won', 'Achievement', 'Slab', 'Slab incentive', 'Category bonus', 'New-customer bonus', 'Total', 'Statement'],
     rows.map(r => {
       const st = _payouts.find(x => x.user_id === r.user_id);
@@ -2442,7 +2526,7 @@ async function adjustInc(id) {
   loadIncentives();
 }
 function renderScorecard() {
-  const rows = [..._score].sort((a, b) => Number(b.won_value) - Number(a.won_value));
+  const rows = _score.filter(r => inBranch(r.user_id)).sort((a, b) => Number(b.won_value) - Number(a.won_value));
   const medal = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
   document.getElementById('scoreTbl').innerHTML = tbl(['#', 'Salesperson', 'Days on duty', 'Check-ins', 'Places', 'Avg visit', 'Flagged', 'Leads', '→ Pipeline', 'Deals', 'Open pipeline', 'Won', 'Win rate', 'Achievement', 'Km'],
     rows.map((r, i) => [medal(i), `<b>${esc(r.name || '—')}</b>`, r.days_on_duty, r.checkins, r.places_visited, r.avg_visit_min != null ? r.avg_visit_min + ' min' : '—',
@@ -2458,7 +2542,7 @@ function slabText(p) {
   return (p.slabs || []).map(s => `${p.slab_basis === 'value' ? rsShort(s.from) : s.from + u}${s.to != null ? '–' + (p.slab_basis === 'value' ? rsShort(s.to) : s.to + u) : '+'}: ${s.pct || 0}%${s.fixed ? ' + ' + rs(s.fixed) : ''}`).join(' · ');
 }
 function renderPlans() {
-  const canEdit = ME.role === 'admin';
+  const canEdit = isOwner();
   document.getElementById('newPlanBtn').style.display = canEdit ? '' : 'none';
   document.getElementById('planTbl').innerHTML = _plans.length ? tbl(['Plan', 'From', 'Applies to', 'Slabs', 'Rules', 'Status', ''],
     _plans.map(p => [`<b>${esc(p.name)}</b>${p.notes ? '<br><span class="muted" style="font-size:11.5px">' + esc(p.notes) + '</span>' : ''}`,
@@ -2618,7 +2702,7 @@ function renderPayments() {
     kpi(_payOrders.length, `Won orders not fully paid · ${rs(outBal)} due`, 'red', '₹', "payTab('orders')") +
     kpi(_pay.filter(x => x.status === 'rejected').length, 'Rejected entries', 'purple', '✕', "payTab('entries');document.getElementById('payFilter').value='rejected';renderPayments()");
   if (_payTab === 'orders') {
-    const rows = _payOrders.filter(o => !q || `${payParty(o)} ${o.title || ''} ${o.po_number || ''} ${uname(o.owner_id)}`.toLowerCase().includes(q));
+    const rows = _payOrders.filter(o => inBranch(o.owner_id || o.created_by)).filter(o => !q || `${payParty(o)} ${o.title || ''} ${o.po_number || ''} ${uname(o.owner_id)}`.toLowerCase().includes(q));
     document.getElementById('payTbl').innerHTML = tbl(['Customer', 'PO', 'Salesperson', 'Won', 'Order value', 'Verified', 'Being checked', 'Balance', 'Collected'],
       rows.map(o => {
         const v = Number(o.order_value || 0), c = Number(o.collected_amount || 0), pct = v ? Math.min(100, Math.round(c / v * 100)) : 0;
@@ -2630,7 +2714,7 @@ function renderPayments() {
       }), i => `class="rowlink" onclick="openOpp('${rows[i].id}')"`);
     return;
   }
-  const rows = _pay.filter(x => (!f || x.status === f) &&
+  const rows = _pay.filter(x => inBranch(x.created_by) && (!f || x.status === f) &&
     (!q || `${x.ref_no} ${payParty(x.orders)} ${x.orders?.po_number || ''} ${x.utr || ''} ${x.payer_name || ''} ${uname(x.created_by)}`.toLowerCase().includes(q)));
   document.getElementById('payTbl').innerHTML = tbl(['#', 'Received', 'Customer / PO', 'Salesperson', 'Amount', 'Mode / UTR', 'Order progress', 'Status', ''],
     rows.map(x => {
@@ -2738,7 +2822,7 @@ async function loadBilling() {
 }
 function renderBilling() {
   const f = document.getElementById('brFilter').value, q = (document.getElementById('brSearch').value || '').toLowerCase();
-  const rows = _br.filter(x => (!f || (f === 'open' ? ['submitted', 'emailed', 'email_failed'].includes(x.status) : x.status === f)) &&
+  const rows = _br.filter(x => inBranch(x.sales_person_id) && (!f || (f === 'open' ? ['submitted', 'emailed', 'email_failed'].includes(x.status) : x.status === f)) &&
     (!q || `${x.ref_no} ${x.firm_name || ''} ${x.contact_name} ${x.orders?.po_number || ''} ${uname(x.sales_person_id)}`.toLowerCase().includes(q)));
   document.getElementById('brCards').innerHTML =
     kpi(_br.filter(x => ['submitted', 'emailed'].includes(x.status)).length, 'Waiting for accounts', 'orange', '⏳', "document.getElementById('brFilter').value='open';renderBilling()") +
@@ -2969,7 +3053,7 @@ async function loadLive() {
   if (!isManager()) return;
   const { data, error } = await db.rpc('live_reps');
   if (error) { document.getElementById('mapSide').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
-  const rows = (data || []).filter(r => r.role === 'sales' || r.at);
+  const rows = (data || []).filter(r => (r.role === 'sales' || r.at) && inBranch(r.user_id));
   const onDuty = rows.filter(r => r.day_start_at && !r.day_end_at);
   const fresh = onDuty.filter(r => minsAgo(r.at) != null && minsAgo(r.at) <= 20);
   const lowBat = onDuty.filter(r => r.battery != null && r.battery < 20);
@@ -3095,7 +3179,7 @@ async function loadTravel() {
   renderTravel(); loadClaimBadge();
 }
 function renderTravel() {
-  const rep = document.getElementById('tRep').value, rows = _travel.filter(t => !rep || t.user_id === rep);
+  const rep = document.getElementById('tRep').value, rows = _travel.filter(t => (!rep || t.user_id === rep) && inBranch(t.user_id));
   const f = S('fuel', {}), rates = f.rates || {};
   document.getElementById('rateWarn').innerHTML = (!Number(rates.bike) && !Number(rates.car)) ?
     `<div class="warnbox" style="margin:0 0 16px">Fuel rates are not set yet, so amounts show ₹0. Set ₹/km for bike and car in <a href="#" onclick="show('settings');return false">Settings → Travel &amp; fuel</a> (and per-rep overrides on the Team page), then click “Recalculate km”.</div>` : '';
@@ -3202,20 +3286,285 @@ async function saveTravelSettings() {
 }
 
 
-// ---------- team chat ----------
-let _chatSub = false;
+// ---------- branches & access ----------
+let BRANCH = '';           // dashboard-wide branch filter (admin / head only); '' = all
+let _branches = [];
+const branchName = id => (_branches.find(b => b.id === id) || {}).name || '';
+function inBranch(uid) {
+  if (!BRANCH || !uid) return true;
+  const u = cache.users.find(x => x.id === uid);
+  return !u || u.branch_id === BRANCH;
+}
+async function loadBranches() {
+  const { data } = await db.from('branches').select('*').order('name');
+  _branches = data || [];
+  const sel = document.getElementById('branchFilter');
+  if (sel) {
+    sel.innerHTML = '<option value="">All branches</option>' + _branches.filter(b => b.active !== false).map(b => `<option value="${b.id}" ${b.id === BRANCH ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+    sel.style.display = isOwner() && _branches.length ? '' : 'none';
+  }
+}
+function setBranchFilter(v) {
+  BRANCH = v;
+  try { localStorage.setItem('bne_branch', v); } catch (_) {}
+  fillFilters();
+  const cur = document.querySelector('.view.active')?.id;
+  if (cur) show(cur);
+}
+const ROLE_LABEL = { admin: 'Admin', head: 'Head', manager: 'Branch manager', sales: 'Salesperson', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team' };
+const ROLE_HELP = { admin: 'Full access incl. settings', head: 'Full access to all branches', manager: 'Only their branch(es)', sales: 'Own data only', coordinator: 'Lead desk — all leads', telecaller: 'Lead desk — all leads', quote: 'Quotations' };
+async function renderAccess() {
+  await loadBranches();
+  const el = document.getElementById('branchTbl'); if (!el) return;
+  const counts = {};
+  cache.users.forEach(u => { if (u.active) counts[u.branch_id || ''] = (counts[u.branch_id || ''] || 0) + 1; });
+  el.innerHTML = (_branches.length ? tbl(['Branch', 'Code', 'People', 'Active', ''], _branches.map(b => [
+    `<input class="inp" value="${esc(b.name)}" onchange="saveBranch('${b.id}',{name:this.value.trim()})" style="width:200px">`,
+    `<input class="inp" value="${esc(b.code || '')}" placeholder="e.g. BLR" onchange="saveBranch('${b.id}',{code:this.value.trim().toUpperCase()||null})" style="width:90px">`,
+    counts[b.id] || 0,
+    `<input type="checkbox" ${b.active !== false ? 'checked' : ''} onchange="saveBranch('${b.id}',{active:this.checked})" style="width:18px;height:18px;accent-color:var(--brand)">`,
+    `<button class="btn sec sm" onclick="setBranchFilter('${b.id}');show('team')">View people</button>`])) : '<div class="empty">No branches yet — add the first one above.</div>') +
+    ((counts[''] || 0) ? `<div class="warnbox" style="margin-top:10px">${counts['']} active people have no branch. Branch managers cannot see them until they are assigned.</div>` : '');
+}
+async function addBranch() {
+  const n = document.getElementById('newBranch').value.trim(), c = document.getElementById('newBranchCode').value.trim().toUpperCase();
+  if (!n) return;
+  const { error } = await db.from('branches').insert({ name: n, code: c || null });
+  if (error) { alert(error.message); return; }
+  document.getElementById('newBranch').value = ''; document.getElementById('newBranchCode').value = '';
+  await loadUsers();
+}
+async function saveBranch(id, patch) { const { error } = await db.from('branches').update(patch).eq('id', id); if (error) alert(error.message); else loadUsers(); }
+let _mgrBranches = {};   // user_id -> [branch_id]
+async function loadMgrBranches() {
+  const { data } = await db.from('manager_branches').select('*');
+  _mgrBranches = {};
+  (data || []).forEach(r => { (_mgrBranches[r.user_id] ||= []).push(r.branch_id); });
+}
+async function setMgrBranches(uid, sel) {
+  const ids = [...sel.selectedOptions].map(o => o.value).filter(Boolean);
+  await db.from('manager_branches').delete().eq('user_id', uid);
+  if (ids.length) { const { error } = await db.from('manager_branches').insert(ids.map(b => ({ user_id: uid, branch_id: b }))); if (error) alert(error.message); }
+  loadUsers();
+}
+const avatarHtml = (u, size = 28) => {
+  const n = ((u && (u.name || u.mobile)) || '?').trim(), init = n ? n[0].toUpperCase() : '?';
+  const cols = ['#2F5BEA', '#7C3AED', '#0D9488', '#D97706', '#DC2626', '#059669', '#DB2777'];
+  let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) & 0x7fffffff;
+  const id = 'av' + Math.random().toString(36).slice(2, 8);
+  if (u && u.avatar_path) signedUrls([u.avatar_path]).then(([url]) => { const el = document.getElementById(id); if (el && url) { el.style.backgroundImage = `url(${url})`; el.textContent = ''; } });
+  return `<span id="${id}" class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px;background:${cols[h % cols.length]} center/cover no-repeat">${esc(init)}</span>`;
+};
+
+// ---------- chat (channels, DMs, groups) ----------
+let _chatInbox = [], _chatPeople = {}, _chatCur = null, _chatMsgs = [], _chatMembers = {}, _chatRt = null, _chatReply = null, _chatEdit = null, _chatFiles = [], _chatMentions = {}, _chatFilter = '';
 async function loadChat() {
-  const { data } = await db.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
-  const box = document.getElementById('chatBox'); box.innerHTML = (data || []).map(chatBubble).join(''); box.scrollTop = box.scrollHeight;
-  if (!_chatSub) { _chatSub = true;
-    db.channel('team-chat-web').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { box.insertAdjacentHTML('beforeend', chatBubble(p.new)); box.scrollTop = box.scrollHeight; }).subscribe(); }
+  const [inbox, people] = await Promise.all([db.rpc('chat_inbox'), db.rpc('chat_people')]);
+  _chatInbox = inbox.data || []; _chatPeople = {}; (people.data || []).forEach(p => _chatPeople[p.id] = p);
+  renderChatInbox(); updateChatBadge();
+  if (!_chatRt) {
+    _chatRt = db.channel('chat-web')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, p => onChatInsert(p.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, p => onChatUpdate(p.new))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_reactions' }, p => onChatReaction(p))
+      .subscribe();
+  }
+  if (_chatCur) openChat(_chatCur.id, true);
 }
-function chatBubble(m) {
-  const mine = m.sender_id === ME.id;
-  return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:70%;background:${mine ? 'linear-gradient(135deg,#2F5BEA,#5B8DEF)' : '#fff'};border:${mine ? 'none' : '1px solid var(--border)'};color:${mine ? '#fff' : 'var(--text)'};padding:8px 12px;border-radius:12px">
-    ${mine ? '' : `<div style="font-size:11px;font-weight:700;color:var(--brand)">${esc(m.sender_name || 'Someone')}</div>`}<div>${esc(m.body)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${fmtDT(m.created_at)}</div></div>`;
+function updateChatBadge() {
+  const n = _chatInbox.filter(c => !c.muted).reduce((s, c) => s + (c.unread || 0) + (c.mentions || 0), 0);
+  const b = document.getElementById('chatBadge'); if (b) { b.style.display = n ? '' : 'none'; b.textContent = n > 99 ? '99+' : n; }
 }
-async function sendChat() { const el = document.getElementById('chatInput'); const t = el.value.trim(); if (!t) return; el.value = ''; const { error } = await db.from('messages').insert({ sender_id: ME.id, body: t }); if (error) alert(error.message); }
+const pName = id => { const p = id === ME.id ? ME : _chatPeople[id]; return p ? (p.name || p.mobile || 'User') : 'User'; };
+function renderChatInbox() {
+  const q = (document.getElementById('chatSearch')?.value || '').toLowerCase();
+  const el = document.getElementById('chatList'); if (!el) return;
+  const rows = _chatInbox.filter(c => (!_chatFilter || (_chatFilter === 'unread' ? (c.unread || c.mentions) : (_chatFilter === 'dm' ? c.kind === 'dm' : c.kind !== 'dm'))) && (!q || `${c.name || ''} ${c.last_body || ''}`.toLowerCase().includes(q)));
+  el.innerHTML = rows.map(c => {
+    const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
+    const bold = (c.unread || 0) + (c.mentions || 0) > 0;
+    return `<div class="chatrow ${_chatCur && _chatCur.id === c.id ? 'on' : ''}" onclick="openChat('${c.id}')">
+      ${c.kind === 'dm' ? avatarHtml(other, 36) : `<span class="avatar" style="width:36px;height:36px;background:${c.kind === 'group' ? '#EDE9FE' : '#E8EEFE'};color:${c.kind === 'group' ? '#7C3AED' : '#2F5BEA'}">${c.kind === 'group' ? '👥' : (c.is_private ? '🔒' : '#')}</span>`}
+      <div style="flex:1;min-width:0"><div style="display:flex;gap:6px"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? '' : 'font-weight:600'}">${esc(c.name || 'Chat')}</b><span class="muted" style="font-size:11px">${c.last_message_at ? ago(c.last_message_at) : ''}</span></div>
+      <div style="display:flex;gap:6px;align-items:center"><span class="muted" style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? 'color:var(--text);font-weight:600' : ''}">${c.muted ? '🔕 ' : ''}${c.last_body ? esc((c.last_user === ME.id ? 'You: ' : (c.kind === 'dm' ? '' : pName(c.last_user).split(' ')[0] + ': ')) + c.last_body) : 'No messages yet'}</span>
+      ${c.mentions ? `<span class="badge" style="background:var(--red)">@${c.mentions}</span>` : (c.unread ? `<span class="badge">${c.unread}</span>` : '')}</div></div></div>`;
+  }).join('') || '<div class="empty">No chats. Start one with “New”.</div>';
+}
+async function openChat(id, keep) {
+  _chatCur = _chatInbox.find(c => c.id === id) || _chatCur;
+  if (!keep) { _chatReply = null; _chatEdit = null; _chatFiles = []; _chatMentions = {}; document.getElementById('chatInput').value = ''; }
+  renderChatInbox();
+  const [{ data: msgs }, { data: mem }] = await Promise.all([
+    db.from('chat_messages').select('*, chat_attachments(*), chat_reactions(user_id, emoji), chat_mentions(user_id)').eq('channel_id', id).order('created_at', { ascending: false }).limit(80),
+    db.from('chat_members').select('*, users(id, name, mobile, role, designation, avatar_path)').eq('channel_id', id)]);
+  _chatMsgs = (msgs || []).reverse(); _chatMembers = {}; (mem || []).forEach(m => { _chatMembers[m.user_id] = { ...(m.users || {}), _role: m.role, _muted: m.muted }; });
+  renderChatRoom(); db.rpc('chat_mark_read', { p_channel: id }).then(() => { const c = _chatInbox.find(x => x.id === id); if (c) { c.unread = 0; c.mentions = 0; } renderChatInbox(); updateChatBadge(); });
+}
+function renderChatRoom() {
+  const c = _chatCur, head = document.getElementById('chatHead'), box = document.getElementById('chatBox'), comp = document.getElementById('chatComposer');
+  if (!c) { head.innerHTML = '<span class="muted">Pick a chat on the left, or start a new one.</span>'; box.innerHTML = ''; comp.style.display = 'none'; return; }
+  comp.style.display = c.archived ? 'none' : '';
+  const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
+  head.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">${c.kind === 'dm' ? avatarHtml(other, 34) : `<span class="avatar" style="width:34px;height:34px;background:#E8EEFE;color:#2F5BEA">${c.kind === 'group' ? '👥' : '#'}</span>`}
+    <div style="min-width:0"><b>${esc(c.name || 'Chat')}</b><div class="muted" style="font-size:12px">${c.kind === 'dm' ? esc([other?.designation, ROLE_LABEL[other?.role]].filter(Boolean).join(' · ')) : `${Object.keys(_chatMembers).length} members${c.description ? ' · ' + esc(c.description) : ''}`}</div></div></div>
+    <div class="toolbar" style="margin:0">
+      ${c.kind !== 'dm' ? `<button class="btn sec sm" onclick="chatAddPeople()">+ People</button>` : ''}
+      <button class="btn sec sm" onclick="chatMembersSheet()">Members</button>
+      <button class="btn sec sm" onclick="chatToggleMute()">${c.muted ? 'Unmute' : 'Mute'}</button>
+      ${c.kind !== 'dm' ? `<button class="btn sec sm" onclick="chatLeave()">Leave</button>` : ''}
+    </div>`;
+  let html = '', lastDay = '', lastUser = null, lastT = 0;
+  _chatMsgs.forEach(m => {
+    const t = new Date(m.created_at), day = t.toDateString();
+    if (day !== lastDay) { html += `<div class="chatday">${day === new Date().toDateString() ? 'Today' : t.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>`; lastDay = day; lastUser = null; }
+    if (m.system) { html += `<div class="chatday" style="font-weight:400">${esc(pName(m.user_id))} ${esc(m.body || '')}</div>`; lastUser = null; return; }
+    const cont = lastUser === m.user_id && (t - lastT) < 5 * 60000;
+    html += chatMsgHtml(m, cont); lastUser = m.user_id; lastT = t;
+  });
+  box.innerHTML = html || '<div class="empty">Say hello 👋</div>';
+  box.scrollTop = box.scrollHeight;
+  renderComposerExtras();
+}
+function chatMsgHtml(m, cont) {
+  const mine = m.user_id === ME.id, u = _chatMembers[m.user_id] || _chatPeople[m.user_id];
+  const reacts = {}; (m.chat_reactions || []).forEach(r => (reacts[r.emoji] ||= []).push(r.user_id));
+  const mentionsMe = (m.chat_mentions || []).some(x => x.user_id === ME.id);
+  const reply = m.reply_to ? _chatMsgs.find(x => x.id === m.reply_to) : null;
+  const body = m.deleted_at ? '<i class="muted">Message deleted</i>' : chatRich(m.body || '');
+  const atts = m.deleted_at ? '' : (m.chat_attachments || []).map(a => `<div class="chatatt" data-path="${esc(a.storage_path)}" data-mime="${esc(a.mime || '')}" data-name="${esc(a.name || 'file')}">${(a.mime || '').startsWith('image/') ? `<img alt="" style="max-width:260px;max-height:220px;border-radius:8px;display:block;cursor:zoom-in">` : `📎 <a href="#" onclick="return false">${esc(a.name || 'file')}</a> <span class="muted" style="font-size:11px">${fmtSize(a.size)}</span>`}</div>`).join('');
+  return `<div class="chatmsg ${mine ? 'mine' : ''} ${cont ? 'cont' : ''}" data-id="${m.id}">
+    ${mine ? '' : (cont ? '<span style="width:30px"></span>' : avatarHtml(u, 30))}
+    <div class="bubble ${mentionsMe ? 'mention' : ''}">
+      ${mine || cont ? '' : `<div class="who">${esc(pName(m.user_id))}</div>`}
+      ${reply ? `<div class="replyq"><b>${esc(reply.user_id === ME.id ? 'You' : pName(reply.user_id))}</b><br>${reply.deleted_at ? 'Message deleted' : esc(reply.body || '📎 attachment')}</div>` : ''}
+      ${atts}${body}
+      <div class="meta">${m.edited_at ? 'edited · ' : ''}${fmtT(m.created_at)}</div>
+      ${m.deleted_at ? '' : `<div class="acts">${['👍', '❤️', '😂', '🎉', '✅'].map(e => `<span onclick="chatReact('${m.id}','${e}')">${e}</span>`).join('')}<span onclick="chatSetReply('${m.id}')" title="Reply">↩</span>${mine ? `<span onclick="chatSetEdit('${m.id}')" title="Edit">✎</span>` : ''}${mine || isManager() ? `<span onclick="chatDelete('${m.id}')" title="Delete">🗑</span>` : ''}</div>`}
+    </div>
+    ${Object.keys(reacts).length ? `<div class="reacts ${mine ? 'mine' : ''}">${Object.entries(reacts).map(([e, us]) => `<span class="${us.includes(ME.id) ? 'me' : ''}" onclick="chatReact('${m.id}','${e}')" title="${esc(us.map(pName).join(', '))}">${e} ${us.length}</span>`).join('')}</div>` : ''}
+  </div>`;
+}
+function chatRich(t) {
+  return esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank">$1</a>').replace(/(^|\s)(@[A-Za-z][^\s@<]*(?:\s[A-Z][^\s@<]*)?)/g, '$1<span class="mentiontag">$2</span>').replace(/\n/g, '<br>');
+}
+const fmtSize = b => { b = Number(b || 0); return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : b > 1024 ? Math.round(b / 1024) + ' KB' : b + ' B'; };
+// resolve attachment URLs after render (signed, private bucket)
+new MutationObserver(() => {
+  document.querySelectorAll('.chatatt:not([data-done])').forEach(async el => {
+    el.dataset.done = 1;
+    const { data } = await db.storage.from('chat').createSignedUrl(el.dataset.path, 3600 * 4);
+    if (!data) return;
+    const img = el.querySelector('img'), a = el.querySelector('a');
+    if (img) { img.src = data.signedUrl; img.onclick = () => window.open(data.signedUrl, '_blank'); img.onload = () => { const box = document.getElementById('chatBox'); if (box && box.scrollHeight - box.scrollTop - box.clientHeight < 400) box.scrollTop = box.scrollHeight; }; }
+    if (a) { a.href = data.signedUrl; a.target = '_blank'; a.onclick = null; }
+  });
+}).observe(document.body, { childList: true, subtree: true });
+async function onChatInsert(rec) {
+  if (_chatCur && rec.channel_id === _chatCur.id) {
+    if (_chatMsgs.some(m => m.id === rec.id)) return;
+    const { data } = await db.from('chat_messages').select('*, chat_attachments(*), chat_reactions(user_id, emoji), chat_mentions(user_id)').eq('id', rec.id).maybeSingle();
+    if (data && !_chatMsgs.some(m => m.id === rec.id)) { _chatMsgs.push(data); renderChatRoom(); if (rec.user_id !== ME.id) db.rpc('chat_mark_read', { p_channel: rec.channel_id }); }
+  }
+  const { data: inbox } = await db.rpc('chat_inbox'); _chatInbox = inbox || [];
+  if (_chatCur) { const c = _chatInbox.find(x => x.id === _chatCur.id); if (c) { c.unread = 0; c.mentions = 0; } }
+  renderChatInbox(); updateChatBadge();
+}
+function onChatUpdate(rec) { const i = _chatMsgs.findIndex(m => m.id === rec.id); if (i >= 0) { _chatMsgs[i] = { ..._chatMsgs[i], ...rec, ...(rec.deleted_at ? { chat_attachments: [] } : {}) }; renderChatRoom(); } }
+function onChatReaction(p) {
+  const rec = p.eventType === 'DELETE' ? p.old : p.new; const i = _chatMsgs.findIndex(m => m.id === rec.message_id); if (i < 0) return;
+  const list = (_chatMsgs[i].chat_reactions || []).filter(r => !(r.user_id === rec.user_id && r.emoji === rec.emoji));
+  if (p.eventType !== 'DELETE') list.push({ user_id: rec.user_id, emoji: rec.emoji });
+  _chatMsgs[i] = { ..._chatMsgs[i], chat_reactions: list }; renderChatRoom();
+}
+async function chatReact(id, e) { const { error } = await db.rpc('chat_react', { p_id: id, p_emoji: e }); if (error) alert(error.message); }
+function chatSetReply(id) { _chatReply = _chatMsgs.find(m => m.id === id); _chatEdit = null; renderComposerExtras(); document.getElementById('chatInput').focus(); }
+function chatSetEdit(id) { _chatEdit = _chatMsgs.find(m => m.id === id); _chatReply = null; document.getElementById('chatInput').value = _chatEdit.body || ''; renderComposerExtras(); document.getElementById('chatInput').focus(); }
+function chatCancelExtra() { _chatReply = null; if (_chatEdit) document.getElementById('chatInput').value = ''; _chatEdit = null; renderComposerExtras(); }
+async function chatDelete(id) { if (!confirm('Delete this message?')) return; const { error } = await db.rpc('chat_delete', { p_id: id }); if (error) alert(error.message); }
+function renderComposerExtras() {
+  const el = document.getElementById('chatExtra'); if (!el) return;
+  let h = '';
+  if (_chatEdit) h += `<div class="chatq">✎ Editing message <a href="#" onclick="chatCancelExtra();return false">cancel</a></div>`;
+  else if (_chatReply) h += `<div class="chatq">↩ Replying to <b>${esc(_chatReply.user_id === ME.id ? 'you' : pName(_chatReply.user_id))}</b>: ${esc((_chatReply.body || '📎').slice(0, 80))} <a href="#" onclick="chatCancelExtra();return false">cancel</a></div>`;
+  if (_chatFiles.length) h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${_chatFiles.map((f, i) => `<span class="chip">${esc(f.name)} <a href="#" onclick="_chatFiles.splice(${i},1);renderComposerExtras();return false">×</a></span>`).join('')}</div>`;
+  el.innerHTML = h;
+}
+function chatPickFiles(input) { for (const f of input.files) { if (f.size > 25 * 1048576) { alert(f.name + ' is over 25 MB'); continue; } _chatFiles.push(f); } input.value = ''; renderComposerExtras(); }
+function chatKey(ev) {
+  const inp = ev.target;
+  if (ev.key === 'Enter' && !ev.shiftKey && !document.getElementById('mentionBox').style.display.replace('none', '')) { ev.preventDefault(); sendChat(); return; }
+  setTimeout(chatMentionHint, 0);
+}
+function chatMentionHint() {
+  const inp = document.getElementById('chatInput'), box = document.getElementById('mentionBox');
+  if (!_chatCur || _chatCur.kind === 'dm') { box.style.display = 'none'; return; }
+  const before = inp.value.slice(0, inp.selectionStart), m = before.match(/(?:^|\s)@([^\s@]*)$/);
+  if (!m) { box.style.display = 'none'; return; }
+  const q = m[1].toLowerCase();
+  const hits = Object.entries(_chatMembers).filter(([id, u]) => id !== ME.id && (u.name || u.mobile || '').toLowerCase().includes(q)).slice(0, 6);
+  if (!hits.length) { box.style.display = 'none'; return; }
+  box.style.display = ''; box.innerHTML = hits.map(([id, u]) => `<div onclick="chatInsertMention('${id}')">${avatarHtml(u, 22)} ${esc(u.name || u.mobile)} <span class="muted" style="font-size:11px">${esc(ROLE_LABEL[u.role] || '')}</span></div>`).join('');
+}
+function chatInsertMention(id) {
+  const inp = document.getElementById('chatInput'), u = _chatMembers[id], tag = '@' + (u.name || u.mobile);
+  const pos = inp.selectionStart, before = inp.value.slice(0, pos), after = inp.value.slice(pos), m = before.match(/(?:^|\s)@([^\s@]*)$/);
+  const start = m.index + (m[0].startsWith('@') ? 0 : 1);
+  _chatMentions[tag] = id;
+  inp.value = before.slice(0, start) + tag + ' ' + after; inp.selectionStart = inp.selectionEnd = start + tag.length + 1;
+  document.getElementById('mentionBox').style.display = 'none'; inp.focus();
+}
+async function sendChat() {
+  const inp = document.getElementById('chatInput'), text = inp.value.trim();
+  if (!_chatCur || (!text && !_chatFiles.length)) return;
+  if (_chatEdit) { const id = _chatEdit.id; _chatEdit = null; inp.value = ''; renderComposerExtras(); const { error } = await db.rpc('chat_edit', { p_id: id, p_body: text }); if (error) alert(error.message); return; }
+  const files = _chatFiles.slice(), reply = _chatReply?.id, mentions = Object.entries(_chatMentions).filter(([t]) => text.includes(t)).map(([, id]) => id);
+  inp.value = ''; _chatFiles = []; _chatReply = null; _chatMentions = {}; renderComposerExtras();
+  try {
+    const atts = [];
+    for (const f of files) {
+      const path = `${ME.id}/${Date.now()}_${f.name.replace(/[^A-Za-z0-9._-]/g, '_')}`;
+      const { error } = await db.storage.from('chat').upload(path, f, { contentType: f.type || 'application/octet-stream' });
+      if (error) throw error;
+      atts.push({ path, name: f.name, mime: f.type || 'application/octet-stream', size: f.size });
+    }
+    const { error } = await db.rpc('chat_send', { p_channel: _chatCur.id, p_body: text || null, p_reply_to: reply || null, p_attachments: atts, p_mentions: mentions });
+    if (error) throw error;
+  } catch (e) { alert(e.message || e); inp.value = text; _chatFiles = files; renderComposerExtras(); }
+}
+async function chatNew(kind) {
+  try {
+    if (kind === 'dm') { const ids = await pickPeople(true); if (!ids) return; const { data, error } = await db.rpc('chat_create_dm', { p_other: ids[0] }); if (error) throw error; await loadChat(); openChat(data.id); }
+    else if (kind === 'group') { const ids = await pickPeople(false); if (!ids || !ids.length) return; const name = prompt('Group name (optional):', '') ; const { data, error } = await db.rpc('chat_create_group', { p_name: name || null, p_members: ids }); if (error) throw error; await loadChat(); openChat(data.id); }
+    else if (kind === 'channel') { const name = prompt('Channel name:'); if (!name) return; const priv = confirm('Make it private (invite-only)? OK = private, Cancel = open to everyone'); const { data, error } = await db.rpc('chat_create_channel', { p_name: name, p_private: priv, p_members: [] }); if (error) throw error; await loadChat(); openChat(data.id); }
+    else { const { data } = await db.rpc('chat_discover'); const list = data || []; if (!list.length) { alert('No other public channels to join.'); return; }
+      const pick = prompt('Public channels:\n' + list.map((c, i) => `${i + 1}. ${c.name} (${c.member_count})`).join('\n') + '\n\nEnter a number to join:'); const c = list[Number(pick) - 1]; if (!c) return;
+      const { error } = await db.rpc('chat_join', { p_channel: c.id }); if (error) throw error; await loadChat(); openChat(c.id); }
+  } catch (e) { alert(e.message || e); }
+}
+function pickPeople(single) {
+  return new Promise(res => {
+    const people = Object.values(_chatPeople).filter(p => !_chatCur || !_chatMembers[p.id] || single);
+    const bg = document.getElementById('pickBg'); const box = document.getElementById('pickList');
+    document.getElementById('pickTitle').textContent = single ? 'Message someone' : 'Pick people';
+    document.getElementById('pickDone').style.display = single ? 'none' : '';
+    const render = q => { box.innerHTML = people.filter(p => !q || `${p.name || ''} ${p.mobile || ''} ${p.designation || ''}`.toLowerCase().includes(q)).map(p => `<label class="pickrow" ${single ? `onclick="window._pickRes(['${p.id}'])"` : ''}>${single ? '' : `<input type="checkbox" value="${p.id}">`}${avatarHtml(p, 30)}<span><b>${esc(p.name || p.mobile)}</b><br><span class="muted" style="font-size:12px">${esc([p.designation, ROLE_LABEL[p.role]].filter(Boolean).join(' · '))}</span></span></label>`).join('') || '<div class="empty">No one found.</div>'; };
+    render(''); document.getElementById('pickSearch').value = ''; document.getElementById('pickSearch').oninput = e => render(e.target.value.toLowerCase());
+    window._pickRes = v => { closeModal('pickBg'); res(v); };
+    document.getElementById('pickDone').onclick = () => window._pickRes([...box.querySelectorAll('input:checked')].map(i => i.value));
+    bg.onclick = e => { if (e.target === bg) window._pickRes(null); };
+    openModal('pickBg');
+  });
+}
+async function chatAddPeople() { const ids = await pickPeople(false); if (!ids || !ids.length) return; const { error } = await db.rpc('chat_add_members', { p_channel: _chatCur.id, p_members: ids }); if (error) alert(error.message); else openChat(_chatCur.id, true); }
+async function chatLeave() { if (!confirm('Leave this chat?')) return; const { error } = await db.rpc('chat_leave', { p_channel: _chatCur.id }); if (error) { alert(error.message); return; } _chatCur = null; await loadChat(); renderChatRoom(); }
+async function chatToggleMute() { await db.rpc('chat_set_muted', { p_channel: _chatCur.id, p_muted: !_chatCur.muted }); await loadChat(); }
+function chatMembersSheet() {
+  const canManage = isOwner() || ['owner', 'admin'].includes(_chatMembers[ME.id]?._role);
+  alertHtml(`<h3 style="margin-bottom:10px">${esc(_chatCur.name || 'Members')} · ${Object.keys(_chatMembers).length} members</h3>` +
+    Object.entries(_chatMembers).map(([id, u]) => `<div class="pickrow">${avatarHtml(u, 30)}<span style="flex:1"><b>${esc(u.name || u.mobile)}${id === ME.id ? ' (you)' : ''}</b><br><span class="muted" style="font-size:12px">${esc([u.designation, ROLE_LABEL[u.role], u._role === 'owner' ? 'channel owner' : ''].filter(Boolean).join(' · '))}</span></span>${canManage && id !== ME.id && _chatCur.kind !== 'dm' ? `<button class="btn danger sm" onclick="db.rpc('chat_remove_member',{p_channel:'${_chatCur.id}',p_user:'${id}'}).then(()=>{closeModal('htmlBg');openChat('${_chatCur.id}',true)})">Remove</button>` : ''}</div>`).join(''));
+}
+function alertHtml(html) { document.getElementById('htmlBody').innerHTML = html; openModal('htmlBg'); }
+function chatFilter(f, btn) { _chatFilter = f; btn.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn)); renderChatInbox(); }
 
 // ---------- CSV export ----------
 function exportCsv(kind) {
