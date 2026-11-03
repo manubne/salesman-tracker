@@ -1326,10 +1326,19 @@ function parseCard(input) {
   return out;
 }
 
-let _tessP, _cardExtras = '';
+let _tessP, _tessWorker, _cardExtras = '';
 function loadTesseract() {
   if (window.Tesseract) return Promise.resolve();
   return _tessP = _tessP || new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); });
+}
+// white margin around the photo — OCR misses text that touches the edge
+async function padImage(blob) {
+  try {
+    const bmp = await createImageBitmap(blob), pad = Math.round(Math.max(bmp.width, bmp.height) * 0.06);
+    const c = document.createElement('canvas'); c.width = bmp.width + pad * 2; c.height = bmp.height + pad * 2;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, pad, pad);
+    return await new Promise(r => c.toBlob(b => r(b || blob), 'image/jpeg', 0.92));
+  } catch (_) { return blob; }
 }
 async function scanCardFile(file) {
   if (!file) return;
@@ -1337,8 +1346,12 @@ async function scanCardFile(file) {
   box.innerHTML = '<span class="muted">Reading the card… (first time takes ~10 seconds)</span>';
   try {
     await loadTesseract();
-    const img = await compressImage(file, 2000, 0.9);
-    const { data } = await Tesseract.recognize(img, 'eng');
+    const img = await padImage(await compressImage(file, 2000, 0.9));
+    if (!_tessWorker) {
+      _tessWorker = await Tesseract.createWorker('eng');
+      await _tessWorker.setParameters({ tessedit_pageseg_mode: '3' }); // automatic layout — cards mix big and small text
+    }
+    const { data } = await _tessWorker.recognize(img);
     const lines = (data.lines || []).map(l => ({ text: l.text, h: l.bbox ? l.bbox.y1 - l.bbox.y0 : 0 }));
     const r = parseCard(lines.length ? lines : (data.text || ''));
     const map = [['lfName', r.name, 'Name'], ['lfCompany', r.company, 'Company'], ['lfDesig', r.designation, 'Designation'], ['lfMobile', r.mobile, 'Mobile'],
