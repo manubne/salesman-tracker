@@ -952,8 +952,8 @@ const MP = {
     }
     await this.loadLeaflet();
     const m = L.map(el, { zoomControl: true }).setView([22.97, 78.65], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' }).addTo(m);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(m);
     setTimeout(() => m.invalidateSize(), 200);
     return m;
   },
@@ -967,7 +967,7 @@ const MP = {
   },
   note() {
     let n = document.getElementById('mapNote');
-    if (!n) { n = document.createElement('div'); n.id = 'mapNote'; n.className = 'muted'; n.style.cssText = 'font-size:11.5px;margin:4px 2px'; document.getElementById('map').after(n); }
+    if (!n) { n = document.createElement('div'); n.id = 'mapNote'; n.className = 'muted'; n.style.cssText = 'font-size:11.5px;margin:4px 2px'; document.querySelector('.mapgrid').before(n); }
     n.innerHTML = this.kind === 'google' ? '' : `Showing OpenStreetMap — Google Maps is unavailable${this.reason ? ' (' + esc(this.reason) + ')' : ''}. ${/Billing/i.test(this.reason) ? 'Enable billing on the Google Cloud project to switch to Google Maps automatically.' : ''}`;
   },
   svgDot(color, size, label, fs) {
