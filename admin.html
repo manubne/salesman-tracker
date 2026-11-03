@@ -171,6 +171,9 @@
   .seg button { background:#fff; border:none; padding:8px 14px; font:inherit; font-size:13px; cursor:pointer; color:var(--muted); font-weight:600; }
   .seg button.active { background:var(--brand); color:#fff; }
   .setsec { border-top:1px solid var(--border); padding-top:18px; margin-top:6px; }
+  .lfdot { background: none; border: none; }
+  #map { position: relative; z-index: 0; }
+  .leaflet-popup-content a { color: #2F5BEA; }
 </style>
 </head>
 <body>
@@ -894,24 +897,36 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let ME = null;           // my users row
 let SETTINGS = {};       // app_settings by key
 let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [], leads: [] };
-let map, markers = [], infoWin, gmapsReady;
-const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
+let map, markers = [], gmapsReady;
 const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'In pipeline', dropped:'Dropped' };
 const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
 const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO copy', payment:'Payment proof', document:'Document', other:'Other' };
 
-function ensureGmaps() {
+function ensureGmaps() {   // Leaflet + OpenStreetMap (free, no API key / billing)
   if (gmapsReady) return gmapsReady;
   gmapsReady = new Promise((resolve, reject) => {
-    const ready = () => window.google && window.google.maps && window.google.maps.Map;
-    const waitReady = () => { let n = 0; const t = setInterval(() => { if (ready()) { clearInterval(t); resolve(); } else if (++n > 100) { clearInterval(t); reject(new Error('maps load timeout')); } }, 100); };
-    if (ready()) return resolve();
+    if (window.L && L.map) return resolve();
+    const css = document.createElement('link'); css.rel = 'stylesheet';
+    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
     const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY;
-    s.async = true; s.defer = true; s.onload = waitReady; s.onerror = reject;
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    s.onload = () => window.L ? resolve() : reject(new Error('map load failed')); s.onerror = () => { gmapsReady = null; reject(new Error('map load failed')); };
     document.head.appendChild(s);
   });
   return gmapsReady;
+}
+// helpers
+function dotIcon(color, size, label, fs) {
+  return L.divIcon({ className: 'lfdot', iconSize: [size, size], iconAnchor: [size / 2, size / 2], popupAnchor: [0, -size / 2],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:${size > 12 ? 2 : 1.5}px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);box-sizing:border-box;color:#fff;font:700 ${fs || 12}px/1 -apple-system,sans-serif;display:flex;align-items:center;justify-content:center">${label ? esc(label) : ''}</div>` });
+}
+function pinIcon(color, label) {
+  return L.divIcon({ className: 'lfdot', iconSize: [24, 32], iconAnchor: [12, 32], popupAnchor: [0, -28],
+    html: `<svg width="24" height="32" viewBox="-12 -32 24 32"><path d="M0,0 C-2,-12 -11,-14 -11,-21 A11,11 0 1,1 11,-21 C11,-14 2,-12 0,0z" fill="${color}" stroke="#fff" stroke-width="1.5"/><text x="0" y="-17" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="-apple-system,sans-serif">${esc(label)}</text></svg>` });
+}
+function fitTo(pts, pad) {
+  if (!pts.length) return;
+  if (pts.length === 1) map.setView(pts[0], 14); else map.fitBounds(L.latLngBounds(pts), { padding: [pad, pad], maxZoom: 16 });
 }
 
 // ---------- helpers ----------
@@ -1053,7 +1068,7 @@ function show(v) {
   if (v === 'leads') renderLeads();
   if (v === 'visits') { loadDaySummary(); loadVisits(); }
   if (v === 'photos') loadPhotos();
-  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); setMapMode(_mapMode || 'live'); } }, 60); }
+  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { map.invalidateSize(); setMapMode(_mapMode || 'live'); } }, 60); }
   if (v === 'travel') loadTravel();
   if (v === 'incentives') loadIncentives();
   if (v === 'billing') loadBilling();
@@ -2618,10 +2633,11 @@ function renderCharts() {
 // ---------- map ----------
 async function initMap() {
   const el = document.getElementById('map');
-  try { await ensureGmaps(); } catch (e) { el.innerHTML = '<div class="empty">Could not load Google Maps.</div>'; return; }
-  map = new google.maps.Map(el, { center: { lat: 22.97, lng: 78.65 }, zoom: 5, mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
-    styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }] });
-  infoWin = new google.maps.InfoWindow();
+  try { await ensureGmaps(); } catch (e) { el.innerHTML = '<div class="empty">Could not load the map. Check your internet and reload.</div>'; return; }
+  map = L.map(el, { zoomControl: true }).setView([22.97, 78.65], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 200);
 }
 async function loadMap() {
   if (!map) return;
@@ -2630,19 +2646,19 @@ async function loadMap() {
     .gte('scheduled_at', document.getElementById('mFrom').value + 'T00:00:00').lte('scheduled_at', document.getElementById('mTo').value + 'T23:59:59')
     .not('verified_lat','is',null).limit(1000);
   clearMapLayers();
-  const bounds = new google.maps.LatLngBounds(); let n = 0;
+  const pts = [];
   (data||[]).forEach(v => {
-    const flagged = realFlags(v.flags).length > 0, pos = { lat: v.verified_lat, lng: v.verified_lng };
-    const m = new google.maps.Marker({ position: pos, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: flagged ? '#DC2626' : '#2F5BEA', fillOpacity: .9, strokeColor: '#fff', strokeWeight: 1.5 } });
-    m.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.checkin_at || v.verified_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>` + (realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : 'clean') + '</div>'); infoWin.open(map, m); });
-    markers.push(m); bounds.extend(pos); n++;
+    const flagged = realFlags(v.flags).length > 0, pos = [v.verified_lat, v.verified_lng];
+    const m = L.marker(pos, { icon: dotIcon(flagged ? '#DC2626' : '#2F5BEA', 14) }).addTo(map);
+    m.bindPopup(() => (`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.checkin_at || v.verified_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>` + (realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : 'clean') + '</div>'));
+    markers.push(m); pts.push(pos);
   });
-  if (n) map.fitBounds(bounds, 40);
+  fitTo(pts, 40);
 }
 let _routeLayer = [];
 function fillRouteUsers() { const el = document.getElementById('routeUser'); const cur = el.value; el.innerHTML = repOpts(cur, '— salesperson —'); if (!document.getElementById('routeDate').value) document.getElementById('routeDate').value = todayStr(); }
 // ---------- live map, route replay (Phase 3) ----------
-let _mapMode = 'live', _liveTimer = null, _liveMarkers = [];
+let _mapMode = 'live', _liveTimer = null, _liveMarkers = [], _liveFitted = 0;
 const istDayStart = d => new Date(d + 'T00:00:00+05:30');
 const minsAgo = s => s ? Math.round((Date.now() - new Date(s)) / 60000) : null;
 function setMapMode(m) {
@@ -2657,9 +2673,9 @@ function setMapMode(m) {
   else document.getElementById('mapSide').innerHTML = '<div class="empty">Pick a salesperson and a date, then “Show route”.</div>';
 }
 function clearMapLayers() {
-  markers.forEach(x => x.setMap(null)); markers = [];
-  _routeLayer.forEach(x => x.setMap(null)); _routeLayer = [];
-  _liveMarkers.forEach(x => x.setMap(null)); _liveMarkers = [];
+  markers.forEach(x => x.remove()); markers = [];
+  _routeLayer.forEach(x => x.remove()); _routeLayer = [];
+  _liveMarkers.forEach(x => x.remove()); _liveMarkers = []; _liveFitted = 0;
 }
 function openMapView(mode) {
   show('mapv');
@@ -2703,23 +2719,21 @@ async function loadLive() {
   // markers
   if (!map) await initMap(); if (!map) return;
   if (_mapMode !== 'live') return;
-  _liveMarkers.forEach(x => x.setMap(null)); _liveMarkers = [];
-  const b = new google.maps.LatLngBounds(); let n = 0;
+  _liveMarkers.forEach(x => x.remove()); _liveMarkers = [];
+  const pts = [];
   rows.filter(r => r.lat != null).forEach(r => {
-    const pos = { lat: r.lat, lng: r.lng };
-    const mk = new google.maps.Marker({ position: pos, map, title: r.name || r.mobile,
-      label: { text: (r.name || r.mobile || '?').trim()[0].toUpperCase(), color: '#fff', fontWeight: '700', fontSize: '12px' },
-      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 13, fillColor: liveColor(r), fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
+    const pos = [r.lat, r.lng];
+    const mk = L.marker(pos, { title: r.name || r.mobile, icon: dotIcon(liveColor(r), 26, (r.name || r.mobile || '?').trim()[0].toUpperCase()), zIndexOffset: 500 }).addTo(map);
     mk._uid = r.user_id;
-    mk.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif;min-width:180px"><b>${esc(r.name || r.mobile)}</b><br>${r.open_visit ? 'At ' + esc(r.open_visit) + '<br>' : ''}Last seen ${ago(r.at)} (${fmtDT(r.at)})<br>${r.battery != null ? 'Battery ' + r.battery + '%<br>' : ''}${r.accuracy_m ? 'Accuracy ±' + Math.round(r.accuracy_m) + ' m<br>' : ''}<a href="#" onclick="routeFor('${r.user_id}');return false">Today's route →</a></div>`); infoWin.open(map, mk); });
-    _liveMarkers.push(mk); b.extend(pos); n++;
+    mk.bindPopup(() => `<div style="font:13px -apple-system,sans-serif;min-width:180px"><b>${esc(r.name || r.mobile)}</b><br>${r.open_visit ? 'At ' + esc(r.open_visit) + '<br>' : ''}Last seen ${ago(r.at)} (${fmtDT(r.at)})<br>${r.battery != null ? 'Battery ' + r.battery + '%<br>' : ''}${r.accuracy_m ? 'Accuracy ±' + Math.round(r.accuracy_m) + ' m<br>' : ''}<a href="#" onclick="routeFor('${r.user_id}');return false">Today's route →</a></div>`);
+    _liveMarkers.push(mk); pts.push(pos);
   });
-  if (n === 1) { map.setCenter(b.getCenter()); map.setZoom(13); } else if (n) map.fitBounds(b, 50);
+  if (!_liveFitted || pts.length !== _liveFitted) { fitTo(pts, 50); _liveFitted = pts.length; }
   if (!_liveTimer) _liveTimer = setInterval(() => { if (document.getElementById('mapv').classList.contains('active') && _mapMode === 'live') loadLive(); }, 60000);
 }
 function focusRep(uid) {
   const m = _liveMarkers.find(x => x._uid === uid); if (!m || !map) return;
-  map.panTo(m.getPosition()); map.setZoom(14); google.maps.event.trigger(m, 'click');
+  map.setView(m.getLatLng(), 15); m.openPopup();
 }
 function routeFor(uid, day) {
   setMapMode('route');
@@ -2740,26 +2754,30 @@ async function loadRoute() {
   const P = data || [];
   const side = document.getElementById('mapSide');
   if (!P.length) { side.innerHTML = '<div class="empty">No location trail for that day.</div>'; return; }
-  const good = P.filter(p => !p.mock), path = good.map(p => ({ lat: p.lat, lng: p.lng }));
-  _routeLayer.push(new google.maps.Polyline({ path, strokeColor: '#2F5BEA', strokeOpacity: .85, strokeWeight: 4, map,
-    icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 2.5, strokeColor: '#1E3A8A' }, offset: '0', repeat: '120px' }] }));
+  const good = P.filter(p => !p.mock), path = good.map(p => [p.lat, p.lng]);
+  _routeLayer.push(L.polyline(path, { color: '#2F5BEA', opacity: .85, weight: 4 }).addTo(map));
+  for (let i = 1; i < path.length; i += Math.max(1, Math.round(path.length / 25))) {   // direction arrows
+    const [a1, b1] = [path[i - 1], path[i]]; if (a1[0] === b1[0] && a1[1] === b1[1]) continue;
+    const ang = Math.atan2(b1[1] - a1[1], b1[0] - a1[0]) * 180 / Math.PI;
+    _routeLayer.push(L.marker([(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2], { interactive: false, keyboard: false,
+      icon: L.divIcon({ className: 'lfdot', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div style="transform:rotate(${ang}deg);color:#1E3A8A;font:700 13px/14px sans-serif;text-align:center">&#9650;</div>` }) }).addTo(map));
+  }
   P.forEach(p => {
     const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#2F5BEA';
-    const m = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: c, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1 } });
-    m.addListener('click', () => { infoWin.setContent(`<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`); infoWin.open(map, m); });
+    const m = L.marker([p.lat, p.lng], { icon: dotIcon(c, 9) }).addTo(map);
+    m.bindPopup(() => `<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`);
     _routeLayer.push(m);
   });
-  _routeLayer.push(new google.maps.Marker({ position: path[0] || P[0], map, label: { text: 'S', color: '#fff', fontWeight: '700' }, zIndex: 999 }));
-  _routeLayer.push(new google.maps.Marker({ position: path[path.length - 1] || P[P.length - 1], map, label: { text: 'E', color: '#fff', fontWeight: '700' }, zIndex: 999 }));
+  const first = path[0] || [P[0].lat, P[0].lng], last = path[path.length - 1] || [P[P.length - 1].lat, P[P.length - 1].lng];
+  _routeLayer.push(L.marker(first, { icon: dotIcon('#16A34A', 24, 'S'), zIndexOffset: 1000, title: 'Start' }).addTo(map));
+  _routeLayer.push(L.marker(last, { icon: dotIcon('#111827', 24, 'E'), zIndexOffset: 1000, title: 'End' }).addTo(map));
   (vs || []).forEach((v, i) => {
     if (v.verified_lat == null) return;
-    const m = new google.maps.Marker({ position: { lat: v.verified_lat, lng: v.verified_lng }, map, zIndex: 998,
-      label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
-      icon: { path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z', fillColor: realFlags(v.flags).length ? '#DC2626' : '#0D9488', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1, labelOrigin: new google.maps.Point(0, -30) } });
-    m.addListener('click', () => { infoWin.setContent(`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>${esc(v.outcome || '')}</div>`); infoWin.open(map, m); });
+    const m = L.marker([v.verified_lat, v.verified_lng], { icon: pinIcon(realFlags(v.flags).length ? '#DC2626' : '#0D9488', String(i + 1)), zIndexOffset: 900 }).addTo(map);
+    m.bindPopup(() => `<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>${esc(v.outcome || '')}</div>`);
     _routeLayer.push(m);
   });
-  const b = new google.maps.LatLngBounds(); P.forEach(p => b.extend({ lat: p.lat, lng: p.lng })); map.fitBounds(b, 40);
+  fitTo(P.map(p => [p.lat, p.lng]), 40);
   // timeline with gaps & stops
   const interval = Number(S('tracking', {}).interval_min || 10);
   let html = '', lastT = null;
