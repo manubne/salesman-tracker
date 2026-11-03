@@ -897,37 +897,134 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let ME = null;           // my users row
 let SETTINGS = {};       // app_settings by key
 let cache = { visits: [], customers: [], requirements: [], attendance: [], users: [], orders: [], followUps: [], products: [], targets: [], leads: [] };
-let map, markers = [], gmapsReady;
+let map, markers = [];
+const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'In pipeline', dropped:'Dropped' };
 const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
 const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO copy', payment:'Payment proof', document:'Document', other:'Other' };
 
-function ensureGmaps() {   // Leaflet + OpenStreetMap (free, no API key / billing)
-  if (gmapsReady) return gmapsReady;
-  gmapsReady = new Promise((resolve, reject) => {
-    if (window.L && L.map) return resolve();
-    const css = document.createElement('link'); css.rel = 'stylesheet';
-    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    s.onload = () => window.L ? resolve() : reject(new Error('map load failed')); s.onerror = () => { gmapsReady = null; reject(new Error('map load failed')); };
-    document.head.appendChild(s);
-  });
-  return gmapsReady;
-}
-// helpers
-function dotIcon(color, size, label, fs) {
-  return L.divIcon({ className: 'lfdot', iconSize: [size, size], iconAnchor: [size / 2, size / 2], popupAnchor: [0, -size / 2],
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:${size > 12 ? 2 : 1.5}px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);box-sizing:border-box;color:#fff;font:700 ${fs || 12}px/1 -apple-system,sans-serif;display:flex;align-items:center;justify-content:center">${label ? esc(label) : ''}</div>` });
-}
-function pinIcon(color, label) {
-  return L.divIcon({ className: 'lfdot', iconSize: [24, 32], iconAnchor: [12, 32], popupAnchor: [0, -28],
-    html: `<svg width="24" height="32" viewBox="-12 -32 24 32"><path d="M0,0 C-2,-12 -11,-14 -11,-21 A11,11 0 1,1 11,-21 C11,-14 2,-12 0,0z" fill="${color}" stroke="#fff" stroke-width="1.5"/><text x="0" y="-17" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="-apple-system,sans-serif">${esc(label)}</text></svg>` });
-}
-function fitTo(pts, pad) {
-  if (!pts.length) return;
-  if (pts.length === 1) map.setView(pts[0], 14); else map.fitBounds(L.latLngBounds(pts), { padding: [pad, pad], maxZoom: 16 });
-}
+// ---- map provider: Google Maps first; falls back to OpenStreetMap automatically if Google refuses (e.g. billing not enabled) ----
+const MP = {
+  kind: GMAPS_KEY ? 'google' : 'osm', reason: '', _gp: null, _lp: null, _iw: null,
+  loadGoogle() {
+    if (this._gp) return this._gp;
+    window.gm_authFailure = () => MP.fail('AuthFailure');
+    if (!console._mpWrapped) {
+      const ce = console.error; console._mpWrapped = true;
+      console.error = function (...a) { try { const m = String(a.join(' ')).match(/Google Maps JavaScript API error: (\w+)/); if (m) MP.fail(m[1]); } catch (_) {} return ce.apply(this, a); };
+    }
+    this._gp = new Promise((resolve, reject) => {
+      if (window.google && google.maps && google.maps.Map) return resolve();
+      window.__gmReady = () => resolve();
+      const sc = document.createElement('script');
+      sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&callback=__gmReady&loading=async';
+      sc.async = true; sc.onerror = () => reject(new Error('Google Maps did not load'));
+      document.head.appendChild(sc);
+      setTimeout(() => reject(new Error('Google Maps timeout')), 12000);
+    });
+    return this._gp;
+  },
+  loadLeaflet() {
+    if (this._lp) return this._lp;
+    this._lp = new Promise((resolve, reject) => {
+      if (window.L && L.map) return resolve();
+      const css = document.createElement('link'); css.rel = 'stylesheet';
+      css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+      sc.onload = () => resolve(); sc.onerror = () => { MP._lp = null; reject(new Error('map load failed')); };
+      document.head.appendChild(sc);
+    });
+    return this._lp;
+  },
+  async create(el) {
+    if (this.kind === 'google') {
+      try {
+        await this.loadGoogle();
+        if (this.kind === 'google') {
+          const m = new google.maps.Map(el, { center: { lat: 22.97, lng: 78.65 }, zoom: 5, mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
+            mapTypeControlOptions: { style: google.maps.MapTypeControlStyle.DROPDOWN_MENU },
+            styles: [{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] }] });
+          this._iw = new google.maps.InfoWindow();
+          return m;
+        }
+      } catch (e) { this.kind = 'osm'; this.reason = e.message; }
+    }
+    await this.loadLeaflet();
+    const m = L.map(el, { zoomControl: true }).setView([22.97, 78.65], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' }).addTo(m);
+    setTimeout(() => m.invalidateSize(), 200);
+    return m;
+  },
+  fail(reason) {   // Google refused after loading → rebuild on OpenStreetMap
+    if (this.kind !== 'google') return;
+    this.kind = 'osm'; this.reason = reason;
+    console.warn('Google Maps unavailable (' + reason + '), switching to OpenStreetMap');
+    markers = []; _routeLayer = []; _liveMarkers = []; _liveFitted = 0;
+    const old = document.getElementById('map'), el = old.cloneNode(false); old.replaceWith(el); map = null;
+    initMap().then(() => { if (map && document.getElementById('mapv').classList.contains('active')) setMapMode(_mapMode || 'live'); });
+  },
+  note() {
+    let n = document.getElementById('mapNote');
+    if (!n) { n = document.createElement('div'); n.id = 'mapNote'; n.className = 'muted'; n.style.cssText = 'font-size:11.5px;margin:4px 2px'; document.getElementById('map').after(n); }
+    n.innerHTML = this.kind === 'google' ? '' : `Showing OpenStreetMap — Google Maps is unavailable${this.reason ? ' (' + esc(this.reason) + ')' : ''}. ${/Billing/i.test(this.reason) ? 'Enable billing on the Google Cloud project to switch to Google Maps automatically.' : ''}`;
+  },
+  svgDot(color, size, label, fs) {
+    const sw = size > 12 ? 2 : 1.5;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - sw / 2}" fill="${color}" stroke="#fff" stroke-width="${sw}"/>` +
+      (label ? `<text x="${size / 2}" y="${size / 2}" dy=".36em" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="${fs || Math.round(size * .46)}">${esc(label)}</text>` : '') + '</svg>';
+  },
+  svgPin(color, label) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="-12 -32 24 32"><path d="M0,0 C-2,-12 -11,-14 -11,-21 A11,11 0 1,1 11,-21 C11,-14 2,-12 0,0z" fill="${color}" stroke="#fff" stroke-width="1.5"/><text x="0" y="-17" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Arial,Helvetica,sans-serif">${esc(label)}</text></svg>`;
+  },
+  // generic marker: o = { svg, w, h, ax, ay, z, title, interactive }
+  marker(pos, o) {
+    const h = { _pop: null, _pos: pos };
+    if (this.kind === 'google') {
+      const mk = new google.maps.Marker({ position: { lat: pos[0], lng: pos[1] }, map, title: o.title || '', zIndex: o.z || 0, clickable: o.interactive !== false,
+        icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(o.svg), scaledSize: new google.maps.Size(o.w, o.h), anchor: new google.maps.Point(o.ax, o.ay) } });
+      h.remove = () => mk.setMap(null);
+      h.bindPopup = fn => { h._pop = fn; mk.addListener('click', () => h.openPopup()); return h; };
+      h.openPopup = () => { if (h._pop) { MP._iw.setContent(h._pop()); MP._iw.open(map, mk); } };
+    } else {
+      const mk = L.marker(pos, { title: o.title || '', zIndexOffset: o.z || 0, interactive: o.interactive !== false, keyboard: o.interactive !== false,
+        icon: L.divIcon({ className: 'lfdot', iconSize: [o.w, o.h], iconAnchor: [o.ax, o.ay], popupAnchor: [0, -o.ay + 2], html: o.svg }) }).addTo(map);
+      h.remove = () => mk.remove();
+      h.bindPopup = fn => { mk.bindPopup(fn); return h; };
+      h.openPopup = () => mk.openPopup();
+    }
+    h.getLatLng = () => pos;
+    return h;
+  },
+  dot(pos, color, size, label, z, title) { return this.marker(pos, { svg: this.svgDot(color, size, label), w: size, h: size, ax: size / 2, ay: size / 2, z, title }); },
+  pin(pos, color, label, z) { return this.marker(pos, { svg: this.svgPin(color, label), w: 24, h: 32, ax: 12, ay: 32, z }); },
+  line(path) {   // route line with direction arrows
+    if (this.kind === 'google') {
+      const pl = new google.maps.Polyline({ path: path.map(p => ({ lat: p[0], lng: p[1] })), strokeColor: '#2F5BEA', strokeOpacity: .85, strokeWeight: 4, map,
+        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 2.5, strokeColor: '#1E3A8A' }, offset: '0', repeat: '120px' }] });
+      return { remove: () => pl.setMap(null) };
+    }
+    const parts = [L.polyline(path, { color: '#2F5BEA', opacity: .85, weight: 4 }).addTo(map)];
+    for (let i = 1; i < path.length; i += Math.max(1, Math.round(path.length / 25))) {
+      const [a1, b1] = [path[i - 1], path[i]]; if (a1[0] === b1[0] && a1[1] === b1[1]) continue;
+      const ang = Math.atan2(b1[1] - a1[1], b1[0] - a1[0]) * 180 / Math.PI;
+      parts.push(L.marker([(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2], { interactive: false, keyboard: false,
+        icon: L.divIcon({ className: 'lfdot', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div style="transform:rotate(${ang}deg);color:#1E3A8A;font:700 13px/14px sans-serif;text-align:center">&#9650;</div>` }) }).addTo(map));
+    }
+    return { remove: () => parts.forEach(x => x.remove()) };
+  },
+  fit(pts, pad) {
+    if (!pts.length || !map) return;
+    if (this.kind === 'google') {
+      if (pts.length === 1) { map.setCenter({ lat: pts[0][0], lng: pts[0][1] }); map.setZoom(14); return; }
+      const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend({ lat: p[0], lng: p[1] })); map.fitBounds(b, pad);
+    } else if (pts.length === 1) map.setView(pts[0], 14); else map.fitBounds(L.latLngBounds(pts), { padding: [pad, pad], maxZoom: 16 });
+  },
+  view(pos, z) { if (this.kind === 'google') { map.panTo({ lat: pos[0], lng: pos[1] }); map.setZoom(z); } else map.setView(pos, z); },
+  resize() { if (!map) return; if (this.kind === 'google') google.maps.event.trigger(map, 'resize'); else map.invalidateSize(); },
+};
+function fitTo(pts, pad) { MP.fit(pts, pad); }
 
 // ---------- helpers ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1068,7 +1165,7 @@ function show(v) {
   if (v === 'leads') renderLeads();
   if (v === 'visits') { loadDaySummary(); loadVisits(); }
   if (v === 'photos') loadPhotos();
-  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { map.invalidateSize(); setMapMode(_mapMode || 'live'); } }, 60); }
+  if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { MP.resize(); setMapMode(_mapMode || 'live'); } }, 60); }
   if (v === 'travel') loadTravel();
   if (v === 'incentives') loadIncentives();
   if (v === 'billing') loadBilling();
@@ -2633,11 +2730,8 @@ function renderCharts() {
 // ---------- map ----------
 async function initMap() {
   const el = document.getElementById('map');
-  try { await ensureGmaps(); } catch (e) { el.innerHTML = '<div class="empty">Could not load the map. Check your internet and reload.</div>'; return; }
-  map = L.map(el, { zoomControl: true }).setView([22.97, 78.65], 5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' }).addTo(map);
-  setTimeout(() => map.invalidateSize(), 200);
+  try { map = await MP.create(el); } catch (e) { el.innerHTML = '<div class="empty">Could not load the map. Check your internet and reload.</div>'; return; }
+  MP.note();
 }
 async function loadMap() {
   if (!map) return;
@@ -2649,7 +2743,7 @@ async function loadMap() {
   const pts = [];
   (data||[]).forEach(v => {
     const flagged = realFlags(v.flags).length > 0, pos = [v.verified_lat, v.verified_lng];
-    const m = L.marker(pos, { icon: dotIcon(flagged ? '#DC2626' : '#2F5BEA', 14) }).addTo(map);
+    const m = MP.dot(pos, flagged ? '#DC2626' : '#2F5BEA', 14);
     m.bindPopup(() => (`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.checkin_at || v.verified_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>` + (realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : 'clean') + '</div>'));
     markers.push(m); pts.push(pos);
   });
@@ -2723,7 +2817,7 @@ async function loadLive() {
   const pts = [];
   rows.filter(r => r.lat != null).forEach(r => {
     const pos = [r.lat, r.lng];
-    const mk = L.marker(pos, { title: r.name || r.mobile, icon: dotIcon(liveColor(r), 26, (r.name || r.mobile || '?').trim()[0].toUpperCase()), zIndexOffset: 500 }).addTo(map);
+    const mk = MP.dot(pos, liveColor(r), 26, (r.name || r.mobile || '?').trim()[0].toUpperCase(), 500, r.name || r.mobile);
     mk._uid = r.user_id;
     mk.bindPopup(() => `<div style="font:13px -apple-system,sans-serif;min-width:180px"><b>${esc(r.name || r.mobile)}</b><br>${r.open_visit ? 'At ' + esc(r.open_visit) + '<br>' : ''}Last seen ${ago(r.at)} (${fmtDT(r.at)})<br>${r.battery != null ? 'Battery ' + r.battery + '%<br>' : ''}${r.accuracy_m ? 'Accuracy ±' + Math.round(r.accuracy_m) + ' m<br>' : ''}<a href="#" onclick="routeFor('${r.user_id}');return false">Today's route →</a></div>`);
     _liveMarkers.push(mk); pts.push(pos);
@@ -2733,7 +2827,7 @@ async function loadLive() {
 }
 function focusRep(uid) {
   const m = _liveMarkers.find(x => x._uid === uid); if (!m || !map) return;
-  map.setView(m.getLatLng(), 15); m.openPopup();
+  MP.view(m.getLatLng(), 15); m.openPopup();
 }
 function routeFor(uid, day) {
   setMapMode('route');
@@ -2755,25 +2849,19 @@ async function loadRoute() {
   const side = document.getElementById('mapSide');
   if (!P.length) { side.innerHTML = '<div class="empty">No location trail for that day.</div>'; return; }
   const good = P.filter(p => !p.mock), path = good.map(p => [p.lat, p.lng]);
-  _routeLayer.push(L.polyline(path, { color: '#2F5BEA', opacity: .85, weight: 4 }).addTo(map));
-  for (let i = 1; i < path.length; i += Math.max(1, Math.round(path.length / 25))) {   // direction arrows
-    const [a1, b1] = [path[i - 1], path[i]]; if (a1[0] === b1[0] && a1[1] === b1[1]) continue;
-    const ang = Math.atan2(b1[1] - a1[1], b1[0] - a1[0]) * 180 / Math.PI;
-    _routeLayer.push(L.marker([(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2], { interactive: false, keyboard: false,
-      icon: L.divIcon({ className: 'lfdot', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div style="transform:rotate(${ang}deg);color:#1E3A8A;font:700 13px/14px sans-serif;text-align:center">&#9650;</div>` }) }).addTo(map));
-  }
+  _routeLayer.push(MP.line(path));
   P.forEach(p => {
     const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#2F5BEA';
-    const m = L.marker([p.lat, p.lng], { icon: dotIcon(c, 9) }).addTo(map);
+    const m = MP.dot([p.lat, p.lng], c, 9);
     m.bindPopup(() => `<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`);
     _routeLayer.push(m);
   });
   const first = path[0] || [P[0].lat, P[0].lng], last = path[path.length - 1] || [P[P.length - 1].lat, P[P.length - 1].lng];
-  _routeLayer.push(L.marker(first, { icon: dotIcon('#16A34A', 24, 'S'), zIndexOffset: 1000, title: 'Start' }).addTo(map));
-  _routeLayer.push(L.marker(last, { icon: dotIcon('#111827', 24, 'E'), zIndexOffset: 1000, title: 'End' }).addTo(map));
+  _routeLayer.push(MP.dot(first, '#16A34A', 24, 'S', 1000, 'Start'));
+  _routeLayer.push(MP.dot(last, '#111827', 24, 'E', 1000, 'End'));
   (vs || []).forEach((v, i) => {
     if (v.verified_lat == null) return;
-    const m = L.marker([v.verified_lat, v.verified_lng], { icon: pinIcon(realFlags(v.flags).length ? '#DC2626' : '#0D9488', String(i + 1)), zIndexOffset: 900 }).addTo(map);
+    const m = MP.pin([v.verified_lat, v.verified_lng], realFlags(v.flags).length ? '#DC2626' : '#0D9488', String(i + 1), 900);
     m.bindPopup(() => `<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>${esc(v.outcome || '')}</div>`);
     _routeLayer.push(m);
   });
