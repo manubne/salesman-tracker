@@ -629,9 +629,9 @@
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
         <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Only emails you add here (or any @bne.org.in address) can sign in.</p>
       </div>
-      <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
+      <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div class="toolbar"><button class="btn" id="delInvBtn" style="background:#DC2626;display:none" onclick="deleteSelectedInvites()">Delete selected invites</button></div><div id="invitesTbl"></div></div>
       <div class="panel"><h2>People &amp; access <span class="sub">role decides what they can do; branch decides what they can see</span></h2>
-        <div class="toolbar"><input id="teamSearch" placeholder="Search people…" oninput="loadUsers(true)"></div>
+        <div class="toolbar"><input id="teamSearch" placeholder="Search people…" oninput="loadUsers(true)"> <button class="btn" id="delUsersBtn" data-roles="admin,head" style="background:#DC2626;display:none" onclick="deleteSelectedUsers()">Delete selected</button> <span id="delUsersMsg" class="muted" style="font-size:13px"></span></div>
         <div id="teamTbl"></div>
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
@@ -1821,13 +1821,14 @@ function waInvite(mob, name) {
 }
 async function loadInvites() {
   const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
-  document.getElementById('invitesTbl').innerHTML = tbl(['Name','Email','Mobile','Role','Branch','Status','Action'],
-    (data || []).map(i => [esc(i.name) || '<span class="muted">(no name)</span>', esc(i.email || '—'), esc(i.mobile || '—'), esc(ROLE_LABEL[i.role] || i.role), esc(branchName(i.branch_id)) || '—', chip(i.status),
+  _selInv.clear(); updDelInv();
+  document.getElementById('invitesTbl').innerHTML = tbl(['<input type="checkbox" title="Select all pending" onchange="selAllInv(this)" style="width:16px;height:16px">','Name','Email','Mobile','Role','Branch','Status','Action'],
+    (data || []).map(i => [i.status === 'accepted' ? '' : `<input type="checkbox" class="invSel" data-id="${i.id}" onchange="togInv(this)" style="width:16px;height:16px">`, esc(i.name) || '<span class="muted">(no name)</span>', esc(i.email || '—'), esc(i.mobile || '—'), esc(ROLE_LABEL[i.role] || i.role), esc(branchName(i.branch_id)) || '—', chip(i.status),
       i.status === 'accepted' ? '<span class="muted">joined</span>' : (i.email ? '<a href="#" onclick="emailInvite(' + JSON.stringify(i.email).replace(/"/g,'&quot;') + ',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">Email link</a>' : '') + (i.mobile ? ' · <a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">WhatsApp</a>' : '')]));
 }
 async function loadUsers(onlyRender) {
   if (!onlyRender) {
-    const [{ data }, _b] = await Promise.all([db.from('users').select('*').order('name'), loadBranches()]);
+    const [{ data }, _b] = await Promise.all([db.from('users').select('*').is('deleted_at', null).order('name'), loadBranches()]);
     cache.users = data || [];
     if (isOwner()) await loadMgrBranches();
   }
@@ -1838,8 +1839,9 @@ async function loadUsers(onlyRender) {
   const q = (document.getElementById('teamSearch')?.value || '').toLowerCase();
   const rows = cache.users.filter(u => (!BRANCH || u.branch_id === BRANCH || (_mgrBranches[u.id] || []).includes(BRANCH)) && (!q || `${u.name || ''} ${u.mobile || ''} ${u.role} ${branchName(u.branch_id)}`.toLowerCase().includes(q)));
   const bOpts = sel => `<option value="">— no branch —</option>` + _branches.filter(b => b.active !== false || b.id === sel).map(b => `<option value="${b.id}" ${b.id === sel ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
-  el.innerHTML = tbl(['', 'Name', 'Mobile', 'Role', 'Branch', 'Also manages', 'Territory', 'Vehicle', 'Own rate ₹/km', 'Active'],
-    rows.map(u => [avatarHtml(u, 30),
+  _selUsers.forEach(id => { if (!rows.some(u => u.id === id)) _selUsers.delete(id); }); updDelUsers();
+  el.innerHTML = tbl([canEdit ? '<input type="checkbox" title="Select all shown" onchange="selAllUsers(this)" style="width:16px;height:16px">' : '', '', 'Name', 'Mobile', 'Role', 'Branch', 'Also manages', 'Territory', 'Vehicle', 'Own rate ₹/km', 'Active'],
+    rows.map(u => [canEdit && u.id !== ME.id ? `<input type="checkbox" class="userSel" data-id="${u.id}" ${_selUsers.has(u.id) ? 'checked' : ''} onchange="togUser(this)" style="width:16px;height:16px">` : '', avatarHtml(u, 30),
       canEdit ? `<input class="inp" value="${esc(u.name)}" placeholder="add name" onchange="setUser('${u.id}',{name:this.value.trim()})" style="width:150px"><div class="muted" style="font-size:11px">${esc([u.designation, u.email].filter(Boolean).join(' · '))}</div>` : `${esc(u.name) || '<span class="muted">(no name)</span>'}<div class="muted" style="font-size:11px">${esc(u.designation || '')}</div>`,
       esc(u.mobile),
       canEdit && u.id !== ME.id ? `<select class="inp" onchange="setUser('${u.id}',{role:this.value})" title="${esc(ROLE_HELP[u.role] || '')}">${roles.map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLE_LABEL[r]}</option>`).join('')}</select>` : esc(ROLE_LABEL[u.role] || u.role),
@@ -1849,6 +1851,31 @@ async function loadUsers(onlyRender) {
       canEdit ? `<select class="inp" onchange="setUser('${u.id}',{vehicle_type:this.value||null})"><option value="">default</option>${['bike','car','none'].map(v => `<option ${u.vehicle_type===v?'selected':''}>${v}</option>`).join('')}</select>` : (esc(u.vehicle_type) || 'default'),
       canEdit ? `<input class="inp" value="${u.fuel_rate ?? ''}" placeholder="default" inputmode="decimal" onchange="setUser('${u.id}',{fuel_rate:this.value===''?null:Number(this.value)})" style="width:80px">` : (u.fuel_rate ?? 'default'),
       canEdit && u.id !== ME.id ? `<input type="checkbox" ${u.active?'checked':''} onchange="setUser('${u.id}',{active:this.checked})" style="width:18px;height:18px;accent-color:var(--brand)">` : (u.active ? '✔' : '✖')]));
+}
+const _selUsers = new Set(), _selInv = new Set();
+function updDelUsers() { const b = document.getElementById('delUsersBtn'); if (b) { b.style.display = _selUsers.size && isOwner() ? '' : 'none'; b.textContent = `Delete selected (${_selUsers.size})`; } }
+function togUser(cb) { cb.checked ? _selUsers.add(cb.dataset.id) : _selUsers.delete(cb.dataset.id); updDelUsers(); }
+function selAllUsers(cb) { document.querySelectorAll('.userSel').forEach(x => { x.checked = cb.checked; cb.checked ? _selUsers.add(x.dataset.id) : _selUsers.delete(x.dataset.id); }); updDelUsers(); }
+async function deleteSelectedUsers() {
+  const ids = [..._selUsers]; if (!ids.length) return;
+  const names = cache.users.filter(u => ids.includes(u.id)).map(u => u.name || u.email || u.mobile).slice(0, 8).join(', ');
+  if (!confirm(`Delete ${ids.length} ${ids.length === 1 ? 'person' : 'people'}?\n\n${names}${ids.length > 8 ? '…' : ''}\n\nPeople with no work history are removed completely. People who have visits, leads, deals or payments are archived instead: they disappear from lists and can no longer sign in, but their past records stay for reports.`)) return;
+  const btn = document.getElementById('delUsersBtn'); btn.disabled = true;
+  const { data, error } = await db.rpc('admin_delete_users', { p_ids: ids });
+  btn.disabled = false;
+  if (error) { alert(error.message); return; }
+  _selUsers.clear();
+  document.getElementById('delUsersMsg').textContent = `${data.deleted} deleted, ${data.archived} archived (had work history)${data.skipped ? `, ${data.skipped} skipped (you / review account)` : ''}.`;
+  loadUsers(); loadInvites();
+}
+function updDelInv() { const b = document.getElementById('delInvBtn'); if (b) { b.style.display = _selInv.size ? '' : 'none'; b.textContent = `Delete selected invites (${_selInv.size})`; } }
+function togInv(cb) { cb.checked ? _selInv.add(cb.dataset.id) : _selInv.delete(cb.dataset.id); updDelInv(); }
+function selAllInv(cb) { document.querySelectorAll('.invSel').forEach(x => { x.checked = cb.checked; cb.checked ? _selInv.add(x.dataset.id) : _selInv.delete(x.dataset.id); }); updDelInv(); }
+async function deleteSelectedInvites() {
+  const ids = [..._selInv]; if (!ids.length || !confirm(`Delete ${ids.length} pending invite(s)? They will no longer be able to join with these details.`)) return;
+  const { error } = await db.rpc('admin_delete_invites', { p_ids: ids });
+  if (error) { alert(error.message); return; }
+  loadInvites();
 }
 async function setUser(id, patch) { const { error } = await db.from('users').update(patch).eq('id', id); if (error) alert(error.message); else loadUsers(); }
 
