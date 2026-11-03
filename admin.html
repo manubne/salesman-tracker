@@ -226,6 +226,7 @@
 
       <div class="navlabel" data-roles="admin,manager">Sales</div>
       <button data-v="pipeline" data-roles="admin,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
+      <button data-v="billing" data-roles="admin,manager" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
       <button data-v="customers" data-roles="admin,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
       <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
       <button data-v="followups" data-roles="admin,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
@@ -387,6 +388,21 @@
       <div class="panel"><h2>Lead-source performance <span class="sub">which sources turn into orders</span></h2><div id="sourceTbl"></div></div>
       <div class="panel"><h2>Won orders <span class="sub" id="wonSub"></span></h2><div id="wonTbl"></div></div>
       <div class="panel"><h2>Lost deals — reasons <span class="sub" id="lostSub"></span></h2><div id="lostTbl"></div></div>
+    </div>
+
+    <!-- ================= BILLING REQUESTS ================= -->
+    <div id="billing" class="view">
+      <div class="cards" id="brCards"></div>
+      <div class="panel">
+        <div class="toolbar">
+          <input id="brSearch" placeholder="Search #, customer, PO, salesperson…" oninput="renderBilling()" style="min-width:240px">
+          <select id="brFilter" onchange="renderBilling()"><option value="open">Open (not processed)</option><option value="">All</option><option value="submitted">Submitted</option><option value="emailed">Sent to accounts</option><option value="email_failed">Email failed</option><option value="processed">Processed</option><option value="cancelled">Cancelled</option></select>
+          <span style="flex:1"></span>
+          <button class="btn sec" onclick="loadBilling()">Refresh</button>
+        </div>
+        <div id="brTbl"></div>
+        <p class="hint">Salespeople raise these from the app once a deal is marked Won. Each one is emailed to Accounts (managers in CC, installation team when installation is required). Recipients are set in Settings → Billing request emails.</p>
+      </div>
     </div>
 
     <!-- ================= CUSTOMERS ================= -->
@@ -635,6 +651,17 @@
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="saveTravelSettings()">Save tracking &amp; fuel</button> <span id="msgTravel"></span></div>
       </div>
+      <div class="panel">
+        <h2>Billing request emails <span class="sub">who receives the invoice request when a salesperson submits it</span></h2>
+        <div class="formgrid">
+          <div class="field"><label>To: Accounts team (one email per line) *</label><textarea id="setBrAcc" placeholder="accounts@bne.org.in"></textarea></div>
+          <div class="field"><label>CC: Managers (one per line)</label><textarea id="setBrMgr"></textarea></div>
+          <div class="field"><label>Installation team — also gets it when installation is required</label><textarea id="setBrInst"></textarea></div>
+          <div class="field"><label>Lead source options on the form (one per line)</label><textarea id="setBrSrc"></textarea></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" onclick="saveBillingSettings()">Save</button> <button class="btn sec" onclick="testBillingEmail()">Send test email</button> <span id="msgBilling"></span></div>
+        <p class="hint">Emails go out through Resend. To deliver to these addresses, the sending domain (e.g. bne.org.in) must be verified in Resend and the RESEND_FROM secret set — use “Send test email” to check.</p>
+      </div>
       <p class="hint">Every change is recorded in the audit log with who changed it and when. Incentive plans are on the Incentives &amp; scorecards page.</p>
     </div>
   </main>
@@ -740,6 +767,7 @@
         <div>
           <div class="kv" id="ovKv"></div>
           <div id="ovActions" style="margin-top:18px"></div>
+          <div id="ovBilling"></div>
           <div class="toolbar" style="margin-top:10px"><input id="ovNote" placeholder="Add a note…" style="flex:1" onkeydown="if(event.key==='Enter')addOppNote()"><button class="btn sec sm" onclick="addOppNote()">Add note</button></div>
           <div id="ovMsg"></div>
         </div>
@@ -835,6 +863,22 @@
   </div>
 </div>
 
+<div class="modal-bg" id="billViewBg" onclick="if(event.target===this)closeModal('billViewBg')">
+  <div class="modal" style="max-width:900px">
+    <div class="mh"><h3 id="bvTitle">Billing request</h3><span id="bvChip"></span><button class="xbtn" onclick="closeModal('billViewBg')">×</button></div>
+    <div class="mb">
+      <div class="grid2">
+        <div><div class="kv" id="bvKv"></div></div>
+        <div>
+          <div class="toolbar" id="bvActions" style="flex-wrap:wrap"></div><div id="bvMsg"></div>
+          <h4 style="font-size:13px;margin:14px 0 8px">Attachments <span class="muted" style="font-weight:400">(request files + PO copy & payment proof from the deal)</span></h4>
+          <div class="thumbs" id="bvFiles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="lightboxBg" onclick="if(event.target===this)closeModal('lightboxBg')">
   <div class="modal" style="max-width:1000px">
     <div class="mh"><h3 id="lbTitle">Photo</h3><a id="lbMap" target="_blank" class="btn sec sm" style="text-decoration:none">Open location</a><button class="xbtn" onclick="closeModal('lightboxBg')">×</button></div>
@@ -854,7 +898,7 @@ let map, markers = [], infoWin, gmapsReady;
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'In pipeline', dropped:'Dropped' };
 const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
-const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO', payment:'Payment', document:'Document', other:'Other' };
+const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO copy', payment:'Payment proof', document:'Document', other:'Other' };
 
 function ensureGmaps() {
   if (gmapsReady) return gmapsReady;
@@ -986,6 +1030,7 @@ async function init() {
   if (isManager()) {
     show('overview');
     loadClaimBadge();
+    loadBilling();
     Promise.all([loadInvites(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadFollowUps()]).then(loadOverview);
   } else {
     show('leads');
@@ -1011,6 +1056,7 @@ function show(v) {
   if (v === 'mapv') { fillRouteUsers(); setTimeout(async () => { if (!map) await initMap(); if (map) { google.maps.event.trigger(map, 'resize'); setMapMode(_mapMode || 'live'); } }, 60); }
   if (v === 'travel') loadTravel();
   if (v === 'incentives') loadIncentives();
+  if (v === 'billing') loadBilling();
   if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'pipeline') loadPipeline();
@@ -1043,6 +1089,7 @@ async function saveSetting(key, value, msgId) {
 }
 function renderSettings() {
   loadCategories();
+  renderBillingSettings();
   renderPipeSettings();
   renderTravelSettings();
   const ls = S('lead_setup', {});
@@ -1922,6 +1969,7 @@ async function openOpp(id) {
   document.getElementById('ovNote').value = ''; document.getElementById('ovMsg').innerHTML = '';
   openModal('oppViewBg');
   loadOppExtras(o.id);
+  loadOppBilling(o.id);
 }
 async function loadOppExtras(id) {
   const [{ data: ev }, { data: md }] = await Promise.all([
@@ -2373,6 +2421,123 @@ async function exportIncentivesXlsx() {
     'Achievement %': r.achievement_pct, Km: Number(r.km || 0) }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sc.length ? sc : [{ Note: 'No data' }]), 'Scorecard');
   XLSX.writeFile(wb, `incentives_${m.slice(0, 7)}.xlsx`);
+}
+
+// ---------- billing (invoice) requests ----------
+const BR = {
+  req: { proforma: 'Proforma / Order confirmation', invoice: 'Invoice' },
+  cat: { supply: 'Supply Only', supply_installation: 'Supply + Installation' },
+  inv: { gst: 'GST', regular: 'Regular', others: 'Others' },
+  pay: { yes: 'YES', credit: 'No (Offering Credit)', pdc_on_delivery: 'PDC Upon Delivery', cash_on_delivery: 'Cash Upon Delivery', bank_on_delivery: 'Bank Transfer Upon Delivery', other: 'Other' },
+  inst: { yes: 'Yes', no: 'No', piping_only: 'Only piping work now' },
+  st: { submitted: ['open', 'Submitted'], emailed: ['new', 'Sent to accounts'], email_failed: ['lost', 'Email failed'], processed: ['won', 'Processed'], cancelled: ['dropped', 'Cancelled'] },
+};
+let _br = [], _brView = null;
+async function loadBilling() {
+  const { data, error } = await db.from('billing_requests').select('*, orders(id, title, order_value, po_number, customers(name, company), leads(name, company))').order('created_at', { ascending: false }).limit(1000);
+  if (error) { document.getElementById('brTbl').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  _br = data || []; renderBilling();
+  const b = document.getElementById('brBadge'); const n = _br.filter(x => ['submitted', 'emailed', 'email_failed'].includes(x.status)).length;
+  if (b) { b.style.display = n ? '' : 'none'; b.textContent = n; }
+}
+function renderBilling() {
+  const f = document.getElementById('brFilter').value, q = (document.getElementById('brSearch').value || '').toLowerCase();
+  const rows = _br.filter(x => (!f || (f === 'open' ? ['submitted', 'emailed', 'email_failed'].includes(x.status) : x.status === f)) &&
+    (!q || `${x.ref_no} ${x.firm_name || ''} ${x.contact_name} ${x.orders?.po_number || ''} ${uname(x.sales_person_id)}`.toLowerCase().includes(q)));
+  document.getElementById('brCards').innerHTML =
+    kpi(_br.filter(x => ['submitted', 'emailed'].includes(x.status)).length, 'Waiting for accounts', 'orange', '⏳', "document.getElementById('brFilter').value='open';renderBilling()") +
+    kpi(_br.filter(x => x.status === 'email_failed').length, 'Email failed', _br.some(x => x.status === 'email_failed') ? 'red' : 'green', '!', "document.getElementById('brFilter').value='email_failed';renderBilling()") +
+    kpi(_br.filter(x => x.installation_required !== 'no' && x.status !== 'processed' && x.status !== 'cancelled').length, 'Installations pending', 'purple', '🔧') +
+    kpi(_br.filter(x => x.status === 'processed').length, 'Processed', 'green', '✓');
+  document.getElementById('brTbl').innerHTML = tbl(['#', 'Date', 'Customer', 'Sales person', 'Request', 'Order value', 'Delivery', 'Installation', 'Status', ''],
+    rows.map(x => [`<b>${x.ref_no}</b>`, fmtDT(x.created_at), `<b>${esc(x.firm_name || x.contact_name)}</b><br><span class="muted">${esc(x.contact_name)} · ${esc(x.contact_number)}</span>`,
+      esc(uname(x.sales_person_id)), esc(BR.req[x.requesting_for]), x.orders?.order_value ? rs(x.orders.order_value) : '—', esc(x.delivery_date || ''),
+      x.installation_required === 'no' ? '—' : `${esc(BR.inst[x.installation_required])}<br><span class="muted">${esc(x.installation_date || '')}</span>`,
+      chip(BR.st[x.status]?.[0] || 'pending', BR.st[x.status]?.[1] || x.status) + (x.status === 'email_failed' ? `<br><span class="muted" style="font-size:11px">${esc((x.email_error || '').slice(0, 80))}</span>` : ''),
+      `<button class="btn sm sec" onclick="event.stopPropagation();openBilling('${x.id}')">View</button>`]),
+    i => `class="rowlink" onclick="openBilling('${rows[i].id}')"`);
+}
+async function openBilling(id) {
+  let x = _br.find(r => r.id === id);
+  if (!x) { await loadBilling(); x = _br.find(r => r.id === id); if (!x) return; }
+  _brView = x;
+  const kv = [['Requesting for', BR.req[x.requesting_for]], ['Lead source', x.lead_source], ['Order category', BR.cat[x.order_category]], ['Sales person', uname(x.sales_person_id)],
+    ['Invoice type', BR.inv[x.invoice_type]], ['Payment received?', BR.pay[x.payment_received]], ['Payment details', x.payment_details], ['Contact person', x.contact_name],
+    ['Contact number', x.contact_number], ['Email', x.email], ['Firm name', x.firm_name], ['GST', x.gst_number], ['Billing & delivery address', x.billing_address],
+    ['Machine details', x.machine_details], ['Delivery date', x.delivery_date], ['Installation', BR.inst[x.installation_required] + (x.installation_date ? ' — ' + x.installation_date : '')],
+    ['Delivery location', x.delivery_location], ['Delivery contact', x.delivery_contact], ['Comments', x.comments],
+    ['Deal', `${x.orders?.customers?.name || x.orders?.leads?.name || ''} — ${x.orders?.title || ''} · PO ${x.orders?.po_number || '—'} · ${x.orders?.order_value ? rs(x.orders.order_value) : ''}`],
+    ['Emailed', x.emailed_at ? `${fmtDT(x.emailed_at)} → ${(x.email_to || []).join(', ')}${(x.email_cc || []).length ? ' · CC ' + x.email_cc.join(', ') : ''}` : (x.email_error ? '<span class="stale">Failed: ' + esc(x.email_error) + '</span>' : 'not yet')],
+    ['Accounts note', x.accounts_note]];
+  document.getElementById('bvTitle').textContent = `Billing request #${x.ref_no} — ${x.firm_name || x.contact_name}`;
+  document.getElementById('bvChip').innerHTML = chip(BR.st[x.status]?.[0] || 'pending', BR.st[x.status]?.[1] || x.status);
+  document.getElementById('bvKv').innerHTML = kv.filter(([, v]) => v).map(([k, v]) => `<div>${esc(k)}</div><div style="white-space:pre-wrap">${k === 'Emailed' ? v : esc(v)}</div>`).join('');
+  document.getElementById('bvActions').innerHTML = `
+    <button class="btn sec sm" onclick="resendBilling()">${x.emailed_at ? 'Resend email' : 'Send email'}</button>
+    ${x.status !== 'processed' ? `<button class="btn sm" onclick="setBillingStatus('processed')">Mark processed</button>` : `<button class="btn sec sm" onclick="setBillingStatus('emailed')">Reopen</button>`}
+    ${x.status !== 'cancelled' && x.status !== 'processed' ? `<button class="btn danger sm" onclick="setBillingStatus('cancelled')">Cancel request</button>` : ''}
+    <button class="btn sec sm" onclick="closeModal('billViewBg');openOpp('${x.order_id}')">Open deal</button>`;
+  document.getElementById('bvMsg').innerHTML = '';
+  document.getElementById('bvFiles').innerHTML = '<span class="muted">Loading…</span>';
+  openModal('billViewBg');
+  const [{ data: m1 }, { data: m2 }] = await Promise.all([
+    db.from('media').select('*').eq('entity_type', 'billing').eq('entity_id', x.id),
+    db.from('media').select('*').eq('entity_type', 'order').eq('entity_id', x.order_id).in('kind', ['po', 'payment'])]);
+  const files = [...(m1 || []), ...(m2 || [])], urls = await signedUrls(files.map(f => f.storage_path));
+  document.getElementById('bvFiles').innerHTML = files.length ? files.map((f, i) => /\.pdf$/i.test(f.storage_path)
+    ? `<a href="${urls[i]}" target="_blank" class="btn sec sm">${esc(KIND_LABEL[f.kind] || f.kind)} (PDF) ↗</a>`
+    : `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: f.kind, at: f.created_at, by: f.uploaded_by })})'><div class="muted" style="font-size:11px">${esc(KIND_LABEL[f.kind] || f.kind)}</div></div>`).join('')
+    : '<span class="muted">No attachments.</span>';
+}
+async function resendBilling() {
+  flash('bvMsg', 'Sending…');
+  const { data, error } = await db.functions.invoke('billing-request-email', { body: { id: _brView.id } });
+  let msg = null;
+  if (error) { try { msg = (await error.context.json()).error; } catch (_) { msg = error.message; } }
+  else if (data && data.error) msg = data.error;
+  await loadBilling(); openBilling(_brView.id);
+  setTimeout(() => flash('bvMsg', msg ? 'Email failed: ' + msg : 'Email sent ✓', !msg), 300);
+}
+async function setBillingStatus(status) {
+  let note = null;
+  if (status === 'processed') { note = prompt('Note from accounts (invoice number etc.) — optional:', _brView.accounts_note || ''); if (note === null) return; }
+  if (status === 'cancelled' && !confirm('Cancel this billing request?')) return;
+  const upd = { status, accounts_note: note ?? _brView.accounts_note };
+  if (status === 'processed') { upd.processed_by = ME.id; upd.processed_at = new Date().toISOString(); }
+  const { error } = await db.from('billing_requests').update(upd).eq('id', _brView.id);
+  if (error) { flash('bvMsg', error.message, false); return; }
+  await loadBilling(); openBilling(_brView.id);
+}
+async function loadOppBilling(orderId) {
+  const el = document.getElementById('ovBilling'); if (!el) return;
+  const o = cache.orders.find(x => x.id === orderId);
+  if (!o || o.stage !== 'won') { el.innerHTML = ''; return; }
+  const { data } = await db.from('billing_requests').select('id, ref_no, requesting_for, status, created_at, installation_required').eq('order_id', orderId).order('created_at', { ascending: false });
+  el.innerHTML = `<h4 style="font-size:13px;margin:16px 0 6px">Billing requests</h4>` + ((data || []).length
+    ? data.map(b => `<div class="rowlink" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #EEF1F7;cursor:pointer" onclick="closeModal('oppViewBg');openBilling('${b.id}')">
+        <b>#${b.ref_no}</b><span style="flex:1">${esc(BR.req[b.requesting_for])}${b.installation_required !== 'no' ? ' · installation' : ''}</span>${chip(BR.st[b.status]?.[0] || 'pending', BR.st[b.status]?.[1] || b.status)}</div>`).join('')
+    : '<span class="muted">None yet — the salesperson fills it from the app after marking Won.</span>');
+}
+// settings
+function renderBillingSettings() {
+  const b = S('billing', {}), v = (id, a) => document.getElementById(id).value = (a || []).join('\n');
+  v('setBrAcc', b.accounts_to); v('setBrMgr', b.managers_cc); v('setBrInst', b.installation_to); v('setBrSrc', b.lead_sources);
+}
+async function saveBillingSettings() {
+  const list = id => document.getElementById(id).value.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+  const bad = [...list('setBrAcc'), ...list('setBrMgr'), ...list('setBrInst')].filter(e => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+  if (bad.length) { flash('msgBilling', 'Not a valid email: ' + bad.join(', '), false); return; }
+  if (!list('setBrAcc').length) { flash('msgBilling', 'Add at least one Accounts email', false); return; }
+  await saveSetting('billing', { ...S('billing', {}), accounts_to: list('setBrAcc').map(s => s.toLowerCase()), managers_cc: list('setBrMgr').map(s => s.toLowerCase()),
+    installation_to: list('setBrInst').map(s => s.toLowerCase()), lead_sources: document.getElementById('setBrSrc').value.split('\n').map(s => s.trim()).filter(Boolean) }, 'msgBilling');
+}
+async function testBillingEmail() {
+  flash('msgBilling', 'Sending test…');
+  const { data, error } = await db.functions.invoke('billing-request-email', { body: { test: true } });
+  let msg = null;
+  if (error) { try { msg = (await error.context.json()).error; } catch (_) { msg = error.message; } }
+  else if (data && data.error) msg = data.error;
+  flash('msgBilling', msg ? 'Test failed: ' + msg : 'Test email sent ✓ — check the inboxes', !msg);
 }
 
 // ---------- follow-ups ----------
