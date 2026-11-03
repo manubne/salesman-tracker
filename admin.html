@@ -230,6 +230,7 @@
       <div class="navlabel" data-roles="admin,manager">Sales</div>
       <button data-v="pipeline" data-roles="admin,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
       <button data-v="billing" data-roles="admin,manager" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
+      <button data-v="payments" data-roles="admin,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
       <button data-v="customers" data-roles="admin,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
       <button data-v="orders" data-roles="admin,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
       <button data-v="followups" data-roles="admin,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
@@ -405,6 +406,23 @@
         </div>
         <div id="brTbl"></div>
         <p class="hint">Salespeople raise these from the app once a deal is marked Won. Each one is emailed to Accounts (managers in CC, installation team when installation is required). Recipients are set in Settings → Billing request emails.</p>
+      </div>
+    </div>
+
+    <!-- ================= PAYMENTS ================= -->
+    <div id="payments" class="view">
+      <div class="cards" id="payCards"></div>
+      <div class="panel">
+        <div class="toolbar">
+          <div class="seg"><button id="payTabE" class="active" onclick="payTab('entries')">Payment entries</button><button id="payTabO" onclick="payTab('orders')">Outstanding orders</button></div>
+          <input id="paySearch" placeholder="Search customer, PO, UTR, salesperson…" oninput="renderPayments()" style="min-width:240px">
+          <select id="payFilter" onchange="renderPayments()"><option value="pending">Waiting for verification</option><option value="">All</option><option value="verified">Verified</option><option value="rejected">Rejected</option></select>
+          <span style="flex:1"></span>
+          <button class="btn sec" onclick="exportPayments()">Export CSV</button>
+          <button class="btn sec" onclick="loadPayments()">Refresh</button>
+        </div>
+        <div id="payTbl"></div>
+        <p class="hint">Salespeople add each payment they collect on a won order (amount, UTR / cheque no., screenshot). Check it against the bank statement and verify it. An order counts for incentive only when the verified amount (incl. TDS) covers the full order value. Rules are in Settings → Payments &amp; incentive.</p>
       </div>
     </div>
 
@@ -665,6 +683,16 @@
         <div style="margin-top:14px"><button class="btn" onclick="saveBillingSettings()">Save</button> <button class="btn sec" onclick="testBillingEmail()">Send test email</button> <span id="msgBilling"></span></div>
         <p class="hint">Emails go out through Resend. To deliver to these addresses, the sending domain (e.g. bne.org.in) must be verified in Resend and the RESEND_FROM secret set — use “Send test email” to check.</p>
       </div>
+      <div class="panel">
+        <h2>Payments &amp; incentive <span class="sub">how collected payments unlock incentive</span></h2>
+        <div class="formgrid">
+          <div class="field"><label>An order counts for incentive</label><select id="setPayBasis"><option value="fully_paid">When fully paid &amp; verified (in that month)</option><option value="won">When marked Won (PO received)</option></select></div>
+          <div class="field"><label>Treat as fully paid when the balance is at most (₹)</label><input id="setPayTol" type="number" min="0" step="1"></div>
+          <div class="field"><label><input type="checkbox" id="setPayProof"> Payment screenshot / proof is required</label></div>
+          <div class="field"><label>UTR / reference required for</label><input id="setPayUtr" placeholder="upi, neft, rtgs, imps, cheque, dd, card"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" onclick="savePaySettings()">Save</button> <span id="msgPay"></span></div>
+      </div>
       <p class="hint">Every change is recorded in the audit log with who changed it and when. Incentive plans are on the Incentives &amp; scorecards page.</p>
     </div>
   </main>
@@ -672,6 +700,21 @@
 </div>
 
 <!-- ================= MODALS ================= -->
+<div class="modal-bg" id="payViewBg" onclick="if(event.target===this)closeModal('payViewBg')">
+  <div class="modal" style="max-width:900px">
+    <div class="mh"><h3 id="pvTitle">Payment</h3><span id="pvChip"></span><button class="xbtn" onclick="closeModal('payViewBg')">×</button></div>
+    <div class="mb">
+      <div class="grid2">
+        <div><div class="kv" id="pvKv"></div><div id="pvOrder" style="margin-top:14px"></div></div>
+        <div>
+          <div class="toolbar" id="pvActions" style="flex-wrap:wrap"></div><div id="pvMsg"></div>
+          <h4 style="font-size:13px;margin:14px 0 8px">Payment proof</h4>
+          <div class="thumbs" id="pvFiles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="leadFormBg" onclick="if(event.target===this)closeModal('leadFormBg')">
   <div class="modal">
     <div class="mh"><h3 id="leadFormTitle">New lead</h3><button class="xbtn" onclick="closeModal('leadFormBg')">×</button></div>
@@ -770,6 +813,7 @@
         <div>
           <div class="kv" id="ovKv"></div>
           <div id="ovActions" style="margin-top:18px"></div>
+          <div id="ovPayments"></div>
           <div id="ovBilling"></div>
           <div class="toolbar" style="margin-top:10px"><input id="ovNote" placeholder="Add a note…" style="flex:1" onkeydown="if(event.key==='Enter')addOppNote()"><button class="btn sec sm" onclick="addOppNote()">Add note</button></div>
           <div id="ovMsg"></div>
@@ -1143,6 +1187,7 @@ async function init() {
     show('overview');
     loadClaimBadge();
     loadBilling();
+    loadPayments();
     Promise.all([loadInvites(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadFollowUps()]).then(loadOverview);
   } else {
     show('leads');
@@ -1169,6 +1214,7 @@ function show(v) {
   if (v === 'travel') loadTravel();
   if (v === 'incentives') loadIncentives();
   if (v === 'billing') loadBilling();
+  if (v === 'payments') loadPayments();
   if (v === 'chat') loadChat();
   if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'pipeline') loadPipeline();
@@ -1202,6 +1248,7 @@ async function saveSetting(key, value, msgId) {
 function renderSettings() {
   loadCategories();
   renderBillingSettings();
+  renderPaySettings();
   renderPipeSettings();
   renderTravelSettings();
   const ls = S('lead_setup', {});
@@ -2082,6 +2129,7 @@ async function openOpp(id) {
   openModal('oppViewBg');
   loadOppExtras(o.id);
   loadOppBilling(o.id);
+  loadOppPayments(o.id);
 }
 async function loadOppExtras(id) {
   const [{ data: ev }, { data: md }] = await Promise.all([
@@ -2533,6 +2581,142 @@ async function exportIncentivesXlsx() {
     'Achievement %': r.achievement_pct, Km: Number(r.km || 0) }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sc.length ? sc : [{ Note: 'No data' }]), 'Scorecard');
   XLSX.writeFile(wb, `incentives_${m.slice(0, 7)}.xlsx`);
+}
+
+// ---------- payment collections ----------
+const PAY_MODE = { upi: 'UPI', neft: 'NEFT', rtgs: 'RTGS', imps: 'IMPS', cheque: 'Cheque', dd: 'DD', card: 'Card', cash: 'Cash', other: 'Other' };
+const PAY_ST = { pending: ['open', 'Waiting for verification'], verified: ['won', 'Verified'], rejected: ['lost', 'Rejected'] };
+let _pay = [], _payOrders = [], _payView = null, _payTab = 'entries';
+const payParty = o => o ? (o.customers?.company || o.customers?.name || o.leads?.company || o.leads?.name || o.title || '—') : '—';
+const paySt = (s, short) => { const x = PAY_ST[s] || ['pending', s]; return chip(x[0], short ? x[1].split(' ')[0] : x[1]); };
+function fmtD(d) { if (!d) return ''; const x = new Date(String(d).length <= 10 ? d + 'T00:00:00' : d); return x.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+async function loadPayments() {
+  const [{ data, error }, { data: od }] = await Promise.all([
+    db.from('payment_receipts').select('*, orders(id, title, po_number, order_value, collected_amount, pending_amount, fully_paid_at, owner_id, won_at, customers(name, company), leads(name, company))').order('created_at', { ascending: false }).limit(2000),
+    db.from('orders').select('id, title, po_number, order_value, collected_amount, pending_amount, fully_paid_at, owner_id, created_by, won_at, customers(name, company), leads(name, company)').eq('stage', 'won').is('fully_paid_at', null).order('won_at', { ascending: true }).limit(2000)]);
+  if (error) { const t = document.getElementById('payTbl'); if (t) t.innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  _pay = data || []; _payOrders = od || [];
+  const b = document.getElementById('payBadge'), n = _pay.filter(x => x.status === 'pending').length;
+  if (b) { b.style.display = n ? '' : 'none'; b.textContent = n; }
+  if (document.getElementById('payments')?.classList.contains('active')) renderPayments();
+}
+function payTab(t) {
+  _payTab = t;
+  document.getElementById('payTabE').classList.toggle('active', t === 'entries'); document.getElementById('payTabO').classList.toggle('active', t === 'orders');
+  document.getElementById('payFilter').style.display = t === 'entries' ? '' : 'none';
+  renderPayments();
+}
+function renderPayments() {
+  const q = (document.getElementById('paySearch').value || '').toLowerCase(), f = document.getElementById('payFilter').value;
+  const m0 = new Date(); m0.setDate(1); m0.setHours(0, 0, 0, 0);
+  const pend = _pay.filter(x => x.status === 'pending'), sum = a => a.reduce((s, x) => s + Number(x.amount || 0) + Number(x.tds_amount || 0), 0);
+  const outBal = _payOrders.reduce((s, o) => s + Math.max(Number(o.order_value || 0) - Number(o.collected_amount || 0), 0), 0);
+  const verM = _pay.filter(x => x.status === 'verified' && x.verified_at && new Date(x.verified_at) >= m0);
+  document.getElementById('payCards').innerHTML =
+    kpi(pend.length, `Waiting for verification · ${rs(sum(pend))}`, pend.length ? 'orange' : 'green', '⏳', "payTab('entries');document.getElementById('payFilter').value='pending';renderPayments()") +
+    kpi(rs(sum(verM)), 'Verified this month', 'green', '✓') +
+    kpi(_payOrders.length, `Won orders not fully paid · ${rs(outBal)} due`, 'red', '₹', "payTab('orders')") +
+    kpi(_pay.filter(x => x.status === 'rejected').length, 'Rejected entries', 'purple', '✕', "payTab('entries');document.getElementById('payFilter').value='rejected';renderPayments()");
+  if (_payTab === 'orders') {
+    const rows = _payOrders.filter(o => !q || `${payParty(o)} ${o.title || ''} ${o.po_number || ''} ${uname(o.owner_id)}`.toLowerCase().includes(q));
+    document.getElementById('payTbl').innerHTML = tbl(['Customer', 'PO', 'Salesperson', 'Won', 'Order value', 'Verified', 'Being checked', 'Balance', 'Collected'],
+      rows.map(o => {
+        const v = Number(o.order_value || 0), c = Number(o.collected_amount || 0), pct = v ? Math.min(100, Math.round(c / v * 100)) : 0;
+        const age = o.won_at ? Math.floor((Date.now() - new Date(o.won_at)) / 864e5) : null;
+        return [`<b>${esc(payParty(o))}</b><br><span class="muted">${esc(o.title || '')}</span>`, esc(o.po_number || '—'), esc(uname(o.owner_id || o.created_by)),
+          o.won_at ? `${esc(fmtD(o.won_at))}<br><span class="${age > 45 ? 'stale' : 'muted'}">${age} days ago</span>` : '—', rs(v), rs(c),
+          Number(o.pending_amount) ? `<span style="color:var(--orange)">${rs(o.pending_amount)}</span>` : '—', `<b style="color:var(--red)">${rs(Math.max(v - c, 0))}</b>`,
+          `<div style="background:#EEF1F7;border-radius:4px;height:8px;width:90px"><div style="background:var(--green);height:8px;border-radius:4px;width:${pct}%"></div></div><span class="muted" style="font-size:11px">${pct}%</span>`];
+      }), i => `class="rowlink" onclick="openOpp('${rows[i].id}')"`);
+    return;
+  }
+  const rows = _pay.filter(x => (!f || x.status === f) &&
+    (!q || `${x.ref_no} ${payParty(x.orders)} ${x.orders?.po_number || ''} ${x.utr || ''} ${x.payer_name || ''} ${uname(x.created_by)}`.toLowerCase().includes(q)));
+  document.getElementById('payTbl').innerHTML = tbl(['#', 'Received', 'Customer / PO', 'Salesperson', 'Amount', 'Mode / UTR', 'Order progress', 'Status', ''],
+    rows.map(x => {
+      const o = x.orders || {}, v = Number(o.order_value || 0), c = Number(o.collected_amount || 0);
+      return [`<b>${x.ref_no}</b>`, `${esc(fmtD(x.received_on))}<br><span class="muted" style="font-size:11px">added ${esc(fmtDT(x.created_at))}</span>`,
+        `<b>${esc(payParty(o))}</b><br><span class="muted">PO ${esc(o.po_number || '—')}</span>`, esc(uname(x.created_by)),
+        `<b>${rs(x.amount)}</b>${Number(x.tds_amount) ? `<br><span class="muted">+ TDS ${rs(x.tds_amount)}</span>` : ''}`,
+        `${esc(PAY_MODE[x.mode] || x.mode)}${x.utr ? `<br><span class="muted">${esc(x.utr)}</span>` : ''}`,
+        v ? `${rs(c)} / ${rs(v)}${o.fully_paid_at ? '<br><span style="color:var(--green);font-size:11px">fully paid</span>' : ''}` : '—',
+        paySt(x.status) + (x.status === 'rejected' && x.reject_reason ? `<br><span class="muted" style="font-size:11px">${esc(x.reject_reason)}</span>` : ''),
+        x.status === 'pending' ? `<button class="btn sm" onclick="event.stopPropagation();openPayment('${x.id}')">Check</button>` : `<button class="btn sm sec" onclick="event.stopPropagation();openPayment('${x.id}')">View</button>`];
+    }), i => `class="rowlink" onclick="openPayment('${rows[i].id}')"`);
+}
+async function openPayment(id) {
+  let x = _pay.find(r => r.id === id);
+  if (!x) { await loadPayments(); x = _pay.find(r => r.id === id); if (!x) return; }
+  _payView = x; const o = x.orders || {};
+  const kv = [['Customer', payParty(o)], ['Deal', `${o.title || ''} · PO ${o.po_number || '—'}`], ['Salesperson', uname(x.created_by)],
+    ['Amount received', rs(x.amount)], ['TDS deducted', Number(x.tds_amount) ? rs(x.tds_amount) : ''], ['Date received', fmtD(x.received_on)],
+    ['Mode', PAY_MODE[x.mode] || x.mode], ['UTR / reference', x.utr], ['Bank', x.bank], ['Paid by', x.payer_name], ['Notes', x.notes],
+    ['Submitted', fmtDT(x.created_at)], ['Checked', x.verified_at ? `${fmtDT(x.verified_at)} by ${uname(x.verified_by)}` : ''], ['Reject reason', x.reject_reason]];
+  document.getElementById('pvTitle').textContent = `Payment #${x.ref_no} — ${rs(x.amount)}`;
+  document.getElementById('pvChip').innerHTML = paySt(x.status);
+  document.getElementById('pvKv').innerHTML = kv.filter(([, v]) => v).map(([k, v]) => `<div>${esc(k)}</div><div style="white-space:pre-wrap">${esc(v)}</div>`).join('');
+  document.getElementById('pvActions').innerHTML = `
+    ${x.status !== 'verified' ? `<button class="btn sm" onclick="reviewPayment('verified')">✓ Verify</button>` : ''}
+    ${x.status !== 'rejected' ? `<button class="btn danger sm" onclick="reviewPayment('rejected')">Reject</button>` : ''}
+    ${x.status !== 'pending' ? `<button class="btn sec sm" onclick="reviewPayment('pending')">Back to pending</button>` : ''}
+    <button class="btn sec sm" onclick="closeModal('payViewBg');openOpp('${x.order_id}')">Open deal</button>`;
+  document.getElementById('pvMsg').innerHTML = '';
+  document.getElementById('pvOrder').innerHTML = '<span class="muted">Loading…</span>';
+  document.getElementById('pvFiles').innerHTML = '<span class="muted">Loading…</span>';
+  openModal('payViewBg');
+  const [{ data: files }, { data: all }] = await Promise.all([
+    db.from('media').select('*').eq('entity_type', 'payment').eq('entity_id', x.id),
+    db.from('payment_receipts').select('id, ref_no, amount, tds_amount, received_on, mode, utr, status').eq('order_id', x.order_id).order('received_on')]);
+  const urls = await signedUrls((files || []).map(f => f.storage_path));
+  document.getElementById('pvFiles').innerHTML = (files || []).length ? files.map((f, i) =>
+    `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: f.kind, at: f.created_at, by: f.uploaded_by })})'></div>`).join('')
+    : '<span class="muted">No screenshot attached.</span>';
+  const v = Number(o.order_value || 0), c = Number(o.collected_amount || 0);
+  document.getElementById('pvOrder').innerHTML = `<h4 style="font-size:13px;margin:0 0 6px">All payments on this order</h4>
+    <div class="muted" style="margin-bottom:6px">Order ${rs(v)} · verified ${rs(c)} · balance <b style="color:${v - c > 0 ? 'var(--red)' : 'var(--green)'}">${rs(Math.max(v - c, 0))}</b>${o.fully_paid_at ? ' · <b style="color:var(--green)">fully paid</b>' : ''}</div>` +
+    (all || []).map(r => `<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #EEF1F7;${r.id === x.id ? 'font-weight:700' : 'cursor:pointer'}" ${r.id === x.id ? '' : `onclick="openPayment('${r.id}')"`}>
+      <span style="width:42px">#${r.ref_no}</span><span style="width:96px">${esc(fmtD(r.received_on))}</span><span style="flex:1">${rs(r.amount)}${Number(r.tds_amount) ? ' + TDS ' + rs(r.tds_amount) : ''} · ${esc(PAY_MODE[r.mode] || r.mode)} ${esc(r.utr || '')}</span>${paySt(r.status, true)}</div>`).join('');
+}
+async function reviewPayment(status) {
+  let reason = null;
+  if (status === 'rejected') { reason = prompt('Reason for rejecting (the salesperson sees this):', ''); if (reason === null) return; if (!reason.trim()) { flash('pvMsg', 'A reason is required', false); return; } }
+  const { error } = await db.rpc('payment_review', { p_id: _payView.id, p_status: status, p_reason: reason });
+  if (error) { flash('pvMsg', error.message, false); return; }
+  await loadPayments(); await openPayment(_payView.id);
+  flash('pvMsg', status === 'verified' ? 'Verified ✓' : status === 'rejected' ? 'Rejected' : 'Moved back to pending');
+}
+async function loadOppPayments(orderId) {
+  const el = document.getElementById('ovPayments'); if (!el) return;
+  const o = cache.orders.find(x => x.id === orderId);
+  if (!o || o.stage !== 'won') { el.innerHTML = ''; return; }
+  const [{ data }, { data: od }] = await Promise.all([
+    db.from('payment_receipts').select('id, ref_no, amount, tds_amount, received_on, mode, utr, status').eq('order_id', orderId).order('received_on'),
+    db.from('orders').select('order_value, collected_amount, pending_amount, fully_paid_at').eq('id', orderId).single()]);
+  const v = Number(od?.order_value || 0), c = Number(od?.collected_amount || 0);
+  el.innerHTML = `<h4 style="font-size:13px;margin:16px 0 6px">Payments received</h4>
+    <div class="muted" style="margin-bottom:4px">Verified ${rs(c)} of ${rs(v)}${Number(od?.pending_amount) ? ` · ${rs(od.pending_amount)} being checked` : ''} · balance <b style="color:${v - c > 0 ? 'var(--red)' : 'var(--green)'}">${rs(Math.max(v - c, 0))}</b>${od?.fully_paid_at ? ' · <b style="color:var(--green)">fully paid ' + esc(fmtD(od.fully_paid_at)) + '</b>' : ''}</div>` +
+    ((data || []).length ? data.map(r => `<div class="rowlink" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #EEF1F7;cursor:pointer" onclick="closeModal('oppViewBg');openPayment('${r.id}')">
+        <b>#${r.ref_no}</b><span style="flex:1">${esc(fmtD(r.received_on))} · ${rs(r.amount)}${Number(r.tds_amount) ? ' + TDS ' + rs(r.tds_amount) : ''} · ${esc(PAY_MODE[r.mode] || r.mode)} ${esc(r.utr || '')}</span>${paySt(r.status, true)}</div>`).join('')
+      : '<span class="muted">No payments recorded yet — the salesperson adds them from the app.</span>');
+}
+function exportPayments() {
+  const head = ['Ref', 'Received on', 'Customer', 'PO', 'Salesperson', 'Amount', 'TDS', 'Mode', 'UTR/Ref', 'Bank', 'Paid by', 'Status', 'Reject reason', 'Order value', 'Verified total', 'Fully paid'];
+  const rows = _pay.map(x => [x.ref_no, x.received_on, payParty(x.orders), x.orders?.po_number || '', uname(x.created_by), x.amount, x.tds_amount, PAY_MODE[x.mode] || x.mode, x.utr || '', x.bank || '', x.payer_name || '', x.status, x.reject_reason || '', x.orders?.order_value || '', x.orders?.collected_amount || '', x.orders?.fully_paid_at ? 'yes' : 'no']);
+  const csv = [head, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `payments_${todayStr()}.csv`; a.click();
+}
+function renderPaySettings() {
+  const p = S('payments', {});
+  document.getElementById('setPayBasis').value = p.incentive_basis || 'fully_paid';
+  document.getElementById('setPayTol').value = p.tolerance_amount ?? 10;
+  document.getElementById('setPayProof').checked = p.proof_required !== false;
+  document.getElementById('setPayUtr').value = (p.utr_required_modes || ['upi', 'neft', 'rtgs', 'imps', 'cheque', 'dd', 'card']).join(', ');
+}
+async function savePaySettings() {
+  const modes = document.getElementById('setPayUtr').value.split(/[\s,]+/).map(s => s.trim().toLowerCase()).filter(s => PAY_MODE[s]);
+  await saveSetting('payments', { ...S('payments', {}), incentive_basis: document.getElementById('setPayBasis').value,
+    tolerance_amount: Math.max(0, Number(document.getElementById('setPayTol').value || 0)), proof_required: document.getElementById('setPayProof').checked,
+    utr_required_modes: modes }, 'msgPay');
 }
 
 // ---------- billing (invoice) requests ----------
