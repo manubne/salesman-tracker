@@ -151,6 +151,7 @@ jobs:
           flutter build web --release --base-href /salesman-tracker/
           cp ../admin.html build/web/admin.html
           cp ../privacy.html build/web/privacy.html || true
+          cp ../logo.png build/web/logo.png || true
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
