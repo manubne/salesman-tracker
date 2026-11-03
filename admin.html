@@ -276,6 +276,7 @@
       <button data-v="reqs" data-roles="admin,head,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
 
       <div class="navlabel" data-roles="admin,head,manager">Insights</div>
+      <button data-v="analytics" data-roles="admin,head,manager" onclick="show('analytics')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Analytics by date</span></button>
       <button data-v="reports" data-roles="admin,head,manager" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports &amp; targets</span></button>
       <button data-v="incentives" data-roles="admin,head,manager" onclick="show('incentives')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89L17 22l-5-3-5 3 1.52-9.11"/></svg><span>Incentives &amp; scorecards</span></button>
 
@@ -530,6 +531,27 @@
     </div>
 
     <!-- ================= REPORTS ================= -->
+    <div id="analytics" class="view">
+      <div class="panel">
+        <div class="toolbar" style="margin-bottom:6px">
+          <select id="anPreset" onchange="anPreset(this.value)">
+            <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This week</option><option value="last7">Last 7 days</option>
+            <option value="month" selected>This month</option><option value="lastmonth">Last month</option><option value="last30">Last 30 days</option><option value="quarter">This quarter</option><option value="year">This year</option><option value="custom">Custom range…</option>
+          </select>
+          <label class="muted" style="font-size:13px">From <input type="date" id="anFrom" onchange="anCustom()"></label>
+          <label class="muted" style="font-size:13px">To <input type="date" id="anTo" onchange="anCustom()"></label>
+          <select id="anBranch" onchange="anFillReps();loadAnalytics()"></select>
+          <select id="anRep" onchange="loadAnalytics()"></select>
+          <button class="btn" onclick="anExport()">Download CSV</button>
+        </div>
+        <div class="muted" id="anLabel" style="font-size:13px"></div>
+      </div>
+      <div class="cards" id="anCards"></div>
+      <div class="panel"><h2>Day by day</h2><canvas id="chAnTrend" height="90"></canvas></div>
+      <div class="panel"><h2 id="anTblTitle">By salesperson</h2><div id="anRepTbl"></div></div>
+      <div class="panel" id="anBranchPanel"><h2>By branch</h2><div id="anBranchTbl"></div></div>
+    </div>
+
     <div id="reports" class="view">
       <div class="cards" id="repCards"></div>
       <div class="panel"><h2>Insights</h2>
@@ -1310,6 +1332,7 @@ function show(v) {
   if (v === 'chat') { loadChat(); }
   if (v === 'followups') loadFollowUps();
   if (v === 'reports') loadReports();
+  if (v === 'analytics') initAnalytics();
   if (v === 'settings') renderSettings();
 }
 
@@ -3328,6 +3351,138 @@ async function saveTravelSettings() {
 }
 
 
+
+// ---------- analytics by date range / branch / salesperson ----------
+const _d2s = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+let _an = null, _anInit = false;
+function anRange(p) {
+  const t = new Date(); t.setHours(0,0,0,0); const d = n => { const x = new Date(t); x.setDate(x.getDate() + n); return x; };
+  switch (p) {
+    case 'today': return [t, t];
+    case 'yesterday': return [d(-1), d(-1)];
+    case 'week': { const w = (t.getDay() + 6) % 7; return [d(-w), t]; }
+    case 'last7': return [d(-6), t];
+    case 'lastmonth': return [new Date(t.getFullYear(), t.getMonth()-1, 1), new Date(t.getFullYear(), t.getMonth(), 0)];
+    case 'last30': return [d(-29), t];
+    case 'quarter': return [new Date(t.getFullYear(), Math.floor(t.getMonth()/3)*3, 1), t];
+    case 'year': return [new Date(t.getFullYear(), 0, 1), t];
+    default: return [new Date(t.getFullYear(), t.getMonth(), 1), t];
+  }
+}
+function anPreset(p) {
+  if (p === 'custom') { document.getElementById('anFrom').focus(); return; }
+  const [a, b] = anRange(p); document.getElementById('anFrom').value = _d2s(a); document.getElementById('anTo').value = _d2s(b); loadAnalytics();
+}
+function anCustom() { document.getElementById('anPreset').value = 'custom'; loadAnalytics(); }
+function anPeople() { return cache.users.filter(u => !u.deleted_at && ['sales','manager'].includes(u.role)); }
+function anFillReps() {
+  const b = document.getElementById('anBranch').value, cur = document.getElementById('anRep').value;
+  const list = anPeople().filter(u => !b || u.branch_id === b);
+  document.getElementById('anRep').innerHTML = '<option value="">All salespeople</option>' + list.map(u => `<option value="${u.id}" ${u.id === cur ? 'selected' : ''}>${esc(u.name || u.email || u.mobile)}</option>`).join('');
+}
+async function initAnalytics() {
+  if (!cache.users || !cache.users.length) await loadUsers();
+  if (!_branches.length) await loadBranches();
+  if (!_anInit) {
+    _anInit = true;
+    const bs = document.getElementById('anBranch');
+    bs.innerHTML = '<option value="">All branches</option>' + _branches.filter(b => b.active !== false).map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
+    if (BRANCH) bs.value = BRANCH;
+    const [a, b] = anRange('month'); document.getElementById('anFrom').value = _d2s(a); document.getElementById('anTo').value = _d2s(b);
+  }
+  anFillReps(); loadAnalytics();
+}
+async function loadAnalytics() {
+  const from = document.getElementById('anFrom').value, to = document.getElementById('anTo').value;
+  if (!from || !to) return;
+  if (from > to) { document.getElementById('anLabel').textContent = '“From” date is after “To” date.'; return; }
+  const branch = document.getElementById('anBranch').value, rep = document.getElementById('anRep').value;
+  const fromTs = new Date(from + 'T00:00:00').toISOString(), toTs = new Date(new Date(to + 'T00:00:00').getTime() + 86400000).toISOString();
+  document.getElementById('anLabel').textContent = 'Loading…';
+  const L = 10000;
+  const [vis, lds, newD, wonD, lostD, pays, trv, att] = await Promise.all([
+    db.from('visits').select('id,user_id,status,checkin_at,checkout_at,duration_min,flags,outcome').gte('checkin_at', fromTs).lt('checkin_at', toTs).limit(L),
+    db.from('leads').select('id,created_by,assigned_to,created_at,status,est_value').gte('created_at', fromTs).lt('created_at', toTs).limit(L),
+    db.from('orders').select('id,owner_id,created_by,created_at,stage,est_value,quote_total,order_value').gte('created_at', fromTs).lt('created_at', toTs).limit(L),
+    db.from('orders').select('id,owner_id,created_by,won_at,stage,est_value,quote_total,order_value').eq('stage', 'won').gte('won_at', fromTs).lt('won_at', toTs).limit(L),
+    db.from('orders').select('id,owner_id,created_by,closed_at,stage').eq('stage', 'lost').gte('closed_at', fromTs).lt('closed_at', toTs).limit(L),
+    db.from('payment_receipts').select('id,amount,received_on,status,created_by,orders(owner_id,created_by)').gte('received_on', from).lte('received_on', to).limit(L),
+    db.from('daily_travel').select('user_id,day,km_final,adjusted_km,amount').gte('day', from).lte('day', to).limit(L),
+    db.from('attendance').select('user_id,date,day_start_at').gte('date', from).lte('date', to).not('day_start_at', 'is', null).limit(L),
+  ]);
+  const err = [vis, lds, newD, wonD, lostD, pays, trv, att].find(r => r.error);
+  if (err) { document.getElementById('anLabel').textContent = err.error.message; return; }
+  const uById = Object.fromEntries(cache.users.map(u => [u.id, u]));
+  const ok = uid => (!rep || uid === rep) && (!branch || (uById[uid] && uById[uid].branch_id === branch));
+  const own = o => o.owner_id || o.created_by;
+  const payOwner = p => (p.orders && (p.orders.owner_id || p.orders.created_by)) || p.created_by;
+  const D = {
+    visits: vis.data.filter(v => ok(v.user_id)), leads: lds.data.filter(l => ok(l.assigned_to || l.created_by)),
+    newDeals: newD.data.filter(o => ok(own(o))), won: wonD.data.filter(o => ok(own(o))), lost: lostD.data.filter(o => ok(own(o))),
+    pays: pays.data.filter(p => ok(payOwner(p)) && p.status !== 'rejected'), travel: trv.data.filter(t => ok(t.user_id)), att: att.data.filter(a => ok(a.user_id)),
+  };
+  const km = t => Number(t.adjusted_km ?? t.km_final ?? 0);
+  const sum = (a, f) => a.reduce((s, x) => s + (Number(f(x)) || 0), 0);
+  const tot = {
+    visits: D.visits.length, done: D.visits.filter(v => v.checkout_at).length, flagged: D.visits.filter(v => (v.flags || []).length).length,
+    siteMin: sum(D.visits, v => v.duration_min), leads: D.leads.length, newDeals: D.newDeals.length, newVal: sum(D.newDeals, oppVal),
+    won: D.won.length, wonVal: sum(D.won, oppVal), lost: D.lost.length,
+    collected: sum(D.pays.filter(p => p.status === 'verified'), p => p.amount), pending: sum(D.pays.filter(p => p.status !== 'verified'), p => p.amount),
+    km: sum(D.travel, km), days: D.att.length,
+  };
+  const winRate = (tot.won + tot.lost) ? Math.round(tot.won / (tot.won + tot.lost) * 100) + '%' : '—';
+  const hm = m => `${Math.floor(m / 60)}h ${m % 60}m`;
+  const fmtD = x => new Date(x + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  document.getElementById('anLabel').textContent = `${fmtD(from)} – ${fmtD(to)} · ${branch ? branchName(branch) : 'All branches'} · ${rep ? (uById[rep]?.name || 'Salesperson') : 'All salespeople'}`;
+  document.getElementById('anCards').innerHTML =
+    kpi(tot.visits, `Visits (${tot.done} completed${tot.flagged ? ', ' + tot.flagged + ' flagged' : ''})`, 'blue', '⌖') +
+    kpi(hm(tot.siteMin), 'Time at sites', 'teal', '◷') + kpi(tot.days, 'Days on duty', 'purple', '☀') +
+    kpi(tot.leads, 'New leads', 'blue', '◎') + kpi(tot.newDeals, `New deals · ${_rupees(tot.newVal)}`, 'purple', '#') +
+    kpi(tot.won, 'Deals won', 'green', '✓') + kpi(_rupees(tot.wonVal), 'Revenue won', 'green', '₹') + kpi(winRate, 'Win rate', 'orange', '%') +
+    kpi(_rupees(tot.collected), `Collected${tot.pending ? ' · ' + _rupees(tot.pending) + ' pending' : ''}`, 'teal', '₹') + kpi(Math.round(tot.km) + ' km', 'Travelled', 'orange', '➜');
+  // day-by-day trend
+  const days = []; for (let d = new Date(from + 'T00:00:00'); _d2s(d) <= to; d.setDate(d.getDate() + 1)) days.push(_d2s(d));
+  const dayOf = ts => _d2s(new Date(ts));
+  const per = (arr, f, val) => days.map(dd => arr.filter(x => f(x) === dd).reduce((s, x) => s + (val ? val(x) : 1), 0));
+  const lbl = days.map(dd => new Date(dd + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+  mkChart('chAnTrend', { type: 'bar', data: { labels: lbl, datasets: [
+    { type: 'bar', label: 'Visits', data: per(D.visits, v => dayOf(v.checkin_at)), backgroundColor: '#22779A', yAxisID: 'y' },
+    { type: 'bar', label: 'New leads', data: per(D.leads, l => dayOf(l.created_at)), backgroundColor: '#5B8DEF', yAxisID: 'y' },
+    { type: 'line', label: 'Revenue won (Rs.)', data: per(D.won, o => dayOf(o.won_at), oppVal), borderColor: '#16A34A', backgroundColor: '#16A34A', yAxisID: 'y2', tension: .3 },
+    { type: 'line', label: 'Collected (Rs.)', data: per(D.pays.filter(p => p.status === 'verified'), p => p.received_on, p => Number(p.amount)), borderColor: '#D97706', backgroundColor: '#D97706', yAxisID: 'y2', tension: .3 },
+  ] }, options: { responsive: true, interaction: { mode: 'index', intersect: false }, scales: { y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Count' } }, y2: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Rs.' } } } } });
+  // per salesperson
+  const people = anPeople().filter(u => (!branch || u.branch_id === branch) && (!rep || u.id === rep));
+  const extra = [...new Set([...D.visits.map(v => v.user_id), ...D.won.map(own)])].filter(id => id && !people.some(p => p.id === id) && ok(id));
+  extra.forEach(id => uById[id] && people.push(uById[id]));
+  const rowFor = ids => {
+    const f = uid => ids.includes(uid);
+    const v = D.visits.filter(x => f(x.user_id)), w = D.won.filter(o => f(own(o))), lo = D.lost.filter(o => f(own(o))), nd = D.newDeals.filter(o => f(own(o)));
+    const col = sum(D.pays.filter(p => p.status === 'verified' && f(payOwner(p))), p => p.amount);
+    return { visits: v.length, site: sum(v, x => x.duration_min), days: D.att.filter(a => f(a.user_id)).length, leads: D.leads.filter(l => f(l.assigned_to || l.created_by)).length,
+      nd: nd.length, ndv: sum(nd, oppVal), won: w.length, wonv: sum(w, oppVal), wr: (w.length + lo.length) ? Math.round(w.length / (w.length + lo.length) * 100) + '%' : '—', col, km: Math.round(sum(D.travel.filter(t => f(t.user_id)), km)) };
+  };
+  const H = ['Name', 'Days on duty', 'Visits', 'Time at sites', 'New leads', 'New deals', 'New deal value', 'Won', 'Revenue won', 'Win rate', 'Collected', 'Km'];
+  const toCells = (name, r) => [name, r.days, r.visits, hm(r.site), r.leads, r.nd, _rupees(r.ndv), r.won, _rupees(r.wonv), r.wr, _rupees(r.col), r.km];
+  const repRows = people.map(u => ({ u, r: rowFor([u.id]) })).sort((a, b) => b.r.wonv - a.r.wonv || b.r.visits - a.r.visits);
+  _an = { H, rows: repRows.map(x => toCells(x.u.name || x.u.email || x.u.mobile || '', x.r)), from, to };
+  document.getElementById('anRepTbl').innerHTML = tbl(H, repRows.map(x => toCells(`${esc(x.u.name || x.u.email || x.u.mobile)}<div class="muted" style="font-size:11px">${esc(branchName(x.u.branch_id) || '')}</div>`, x.r)));
+  // per branch (only when all branches & all reps)
+  const bp = document.getElementById('anBranchPanel');
+  if (!branch && !rep && _branches.length) {
+    bp.style.display = '';
+    const groups = _branches.filter(b => b.active !== false).map(b => ({ name: b.name, ids: anPeople().filter(u => u.branch_id === b.id).map(u => u.id) }));
+    const none = anPeople().filter(u => !u.branch_id).map(u => u.id); if (none.length) groups.push({ name: 'No branch', ids: none });
+    document.getElementById('anBranchTbl').innerHTML = tbl(['Branch', ...H.slice(1)], groups.map(g => toCells(esc(g.name), rowFor(g.ids))));
+  } else bp.style.display = 'none';
+}
+function anExport() {
+  if (!_an) return;
+  const q = c => '"' + String(c).replace(/<[^>]+>/g, '').replace(/"/g, '""') + '"';
+  const csv = [_an.H, ..._an.rows].map(r => r.map(q).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `bne-analytics-${_an.from}-to-${_an.to}.csv`; a.click();
+}
 // ---------- branches & access ----------
 let BRANCH = '';           // dashboard-wide branch filter (admin / head only); '' = all
 let _branches = [];
