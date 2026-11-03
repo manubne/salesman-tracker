@@ -652,6 +652,7 @@
         <div class="field"><label>Company / firm</label><input id="lfCompany"></div>
         <div class="field"><label>Mobile</label><input id="lfMobile" inputmode="tel" onblur="checkDup()"><div id="lfDup"></div></div>
         <div class="field"><label>Email</label><input id="lfEmail" type="email"></div>
+        <div class="field"><label>Designation</label><input id="lfDesig"></div>
         <div class="field"><label>Contact type</label><select id="lfType"></select></div>
         <div class="field"><label>Lead source</label><select id="lfSource"></select></div>
         <div class="field"><label>Machine category</label><select id="lfCat"></select></div>
@@ -662,8 +663,9 @@
         <div class="field full"><label>Requirement</label><textarea id="lfReq" placeholder="What does the customer need? Capacity, site, timeline…"></textarea></div>
         <div class="field"><label>Assign to salesperson</label><select id="lfAssign"></select><p class="hint" id="lfAssignHint"></p></div>
         <div class="field"><label>Next follow-up</label><input id="lfNext" type="date"></div>
-        <div class="field full" id="lfCardWrap"><label>Visiting card (front / back)</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap"><input type="file" id="lfCardF" accept="image/*"> <input type="file" id="lfCardB" accept="image/*"></div></div>
+        <div class="field full" id="lfCardWrap"><label>Visiting card (front / back) — details are read from the card and filled in automatically</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><input type="file" id="lfCardF" accept="image/*" onchange="scanCardFile(this.files[0])"> <input type="file" id="lfCardB" accept="image/*" onchange="scanCardFile(this.files[0])"></div>
+          <div id="lfScan" class="hint"></div></div>
       </div>
       <div class="err" id="lfErr"></div>
     </div>
@@ -1195,13 +1197,163 @@ function openLeadForm(l) {
   const set = (id, v) => document.getElementById(id).value = v ?? '';
   set('lfName', l?.name); set('lfCompany', l?.company); set('lfMobile', l?.mobile); set('lfEmail', l?.email);
   set('lfValue', l?.est_value); set('lfCity', l?.city); set('lfTerritory', l?.territory); set('lfAddress', l?.address);
-  set('lfReq', l?.requirement); set('lfNext', l?.next_follow_up);
+  set('lfReq', l?.requirement); set('lfNext', l?.next_follow_up); set('lfDesig', l?.designation);
+  _cardExtras = ''; document.getElementById('lfScan').innerHTML = '';
   document.getElementById('lfCardF').value = ''; document.getElementById('lfCardB').value = '';
   document.getElementById('lfCardWrap').style.display = l ? 'none' : '';
   document.getElementById('lfDup').innerHTML = ''; document.getElementById('lfErr').textContent = '';
   fillLeadFormSelects(l);
   openModal('leadFormBg');
   setTimeout(() => document.getElementById('lfName').focus(), 50);
+}
+// ---- visiting-card text parser (kept in sync with app/lib/services/card_parser.dart) ----
+const CARD = {
+  addr: /\b(road|rd\.?|street|st\.|marg|nagar|lane|ln\.|floor|flr|plot|sector|sec\.|phase|colony|layout|main|cross|bldg|building|complex|near|opp\.?|opposite|chowk|estate|industrial|midc|gidc|tower|block|park|society|soc\.|apartment|apts?\.?|village|taluk|dist\.?|district|house|shop|unit|wing|survey|khasra|highway|bypass|circle|square|bazar|bazaar|market|po\b|p\.o\.|ps\b)\b/i,
+  desig: /\b(manager|director|engineer|executive|head|officer|ceo|cto|cfo|coo|cmo|md|founder|co-founder|proprietor|propriter|partner|owner|architect|consultant|president|vp|vice|associate|lead|chairman|principal|gm|agm|dgm|supervisor|in-?charge|specialist|designer|contractor|representative|coordinator|analyst|accountant|admin|administrator|incharge|sr\.|jr\.|senior|junior|asst\.?|assistant|deputy|technician|planner|estimator|purchase|procurement|marketing|sales|business development|bd)\b/i,
+  comp: /\b(pvt|private|ltd|limited|llp|inc|corp|corporation|enterprises?|industries|industry|solutions?|technologies|technology|tech|systems|services|associates|consultants|consultancy|architects|traders|trading|engineers|engineering|infra|infrastructure|builders|developers|constructions?|group|co\.|company|sons|agencies|agency|studio|hvac|aircon|air\s?conditioning|refrigeration|cooling|interiors?|designs?|projects|electricals?|mechanical|ventures|exports|imports|international|global|india|works|labs?|realty|estates|hospitality|hotels?|pharma|foods|textiles|motors|automation|power|energy|logistics)\b/i,
+  states: /^(u\.?p\.?|m\.?p\.?|a\.?p\.?|h\.?p\.?|t\.?n\.?|w\.?b\.?|j\s?&\s?k|mh|ka|gj|rj|dl|hr|pb|br|or|od|tg|ts|kl|uttar pradesh|madhya pradesh|andhra pradesh|himachal pradesh|arunachal pradesh|tamil nadu|tamilnadu|west bengal|maharashtra|karnataka|gujarat|rajasthan|delhi ncr|ncr|haryana|punjab|bihar|odisha|orissa|telangana|kerala|assam|jharkhand|chhattisgarh|uttarakhand|goa|india)$/i,
+  freeMail: /^(gmail|yahoo|ymail|hotmail|outlook|live|rediffmail|rediff|icloud|aol|proton|protonmail|zoho)\./i,
+  cities: ['Mumbai','Navi Mumbai','Thane','Pune','Delhi','New Delhi','Noida','Greater Noida','Gurgaon','Gurugram','Faridabad','Ghaziabad','Bengaluru','Bangalore','Mysuru','Mysore','Chennai','Coimbatore','Madurai','Hyderabad','Secunderabad','Kolkata','Howrah','Ahmedabad','Surat','Vadodara','Baroda','Rajkot','Jaipur','Udaipur','Jodhpur','Lucknow','Kanpur','Noida','Indore','Bhopal','Nagpur','Nashik','Aurangabad','Kochi','Cochin','Thiruvananthapuram','Trivandrum','Kozhikode','Calicut','Visakhapatnam','Vizag','Vijayawada','Bhubaneswar','Cuttack','Patna','Ranchi','Raipur','Chandigarh','Mohali','Ludhiana','Amritsar','Jalandhar','Dehradun','Goa','Panaji','Margao','Mangaluru','Mangalore','Hubli','Belgaum','Belagavi','Guwahati','Agra','Varanasi','Allahabad','Prayagraj','Meerut','Jammu','Srinagar','Shimla','Siliguri','Durgapur','Tiruchirappalli','Trichy','Salem','Erode','Tirupur','Vellore','Nellore','Guntur','Warangal','Jamshedpur','Dhanbad','Gwalior','Jabalpur','Kota','Ajmer','Bikaner','Solapur','Kolhapur','Sangli','Satara','Ahmednagar','Jalgaon','Amravati','Bhiwandi','Vasai','Virar','Kalyan','Panvel'],
+};
+function cardTitle(s) { return s.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()); }
+function parseCard(input) {
+  // input: array of {text, h} (h = line height, bigger = larger font) or a plain string
+  let lines = typeof input === 'string' ? input.split(/\n/).map(t => ({ text: t, h: 0 })) : input;
+  lines = lines.map(l => ({ text: String(l.text || '').replace(/\s+/g, ' ').replace(/\s*@\s*/g, '@').trim(), h: l.h || 0 })).filter(l => l.text.length > 1);
+  const all = lines.map(l => l.text).join('\n');
+  const out = { name: '', company: '', designation: '', mobile: '', phone2: '', email: '', website: '', address: '', city: '', pincode: '', gstin: '', raw: all };
+  const used = new Set();
+  // email
+  const em = all.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/);
+  if (em) out.email = em[0].toLowerCase();
+  // website
+  const web = all.replace(/[A-Za-z0-9._%+-]+@\S+/g, ' ').match(/\b((https?:\/\/)?(www\.)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+|(https?:\/\/)[^\s]+|[A-Za-z0-9-]{3,}\.(com|in|co\.in|net|org|biz|info|co)\b)/i);
+  if (web) out.website = web[0].replace(/^https?:\/\//i, '').replace(/[.,;]$/, '').toLowerCase();
+  // GSTIN
+  const g = all.toUpperCase().replace(/\s/g, ' ').match(/\b\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]\b/);
+  if (g) out.gstin = g[0];
+  // phones
+  const phones = [];
+  for (const m of all.split('\n').flatMap(ln => [...ln.matchAll(/(\+?\d[\d \-–().\/]{7,}\d)/g)])) {
+    for (const part of m[0].split(/\s*[\/,]\s*(?=\+?\d{5,})/)) {
+      let d = part.replace(/\D/g, '');
+      if (out.gstin && out.gstin.includes(d)) continue;
+      if (d.length === 12 && d.startsWith('91')) { d = d.slice(2); if (!/^[6-9]/.test(d)) d = '0' + d; }
+      else if (d.length === 11 && d.startsWith('0') && /^0[6-9]/.test(d)) d = d.slice(1);
+      else if (d.length === 13 && d.startsWith('091')) d = d.slice(3);
+      if (d.length === 10 && /^[6-9]/.test(d)) phones.push({ d, mobile: true });
+      else if (d.length >= 10 && d.length <= 12 && d.startsWith('0')) phones.push({ d, mobile: false }); // landline with STD code
+    }
+  }
+  const uniq = [...new Map(phones.map(p => [p.d, p])).values()];
+  const mob = uniq.filter(p => p.mobile), land = uniq.filter(p => !p.mobile);
+  out.mobile = (mob[0] || land[0] || {}).d || '';
+  out.phone2 = ([...mob, ...land].find(p => p.d !== out.mobile) || {}).d || '';
+  // classify lines
+  const isContact = t => /@/.test(t) || /\b(www\.|https?:|\.com\b|\.in\b)/i.test(t) || (t.replace(/\D/g, '').length >= 8 && t.replace(/[^A-Za-z]/g, '').length <= 12) ||
+    /^(ph|tel|mob|mobile|cell|m|t|p|fax|e|email|w|web|gst|gstin)\b\s*[:.\-]/i.test(t);
+  const pinRe = /\b(\d{3}\s?\d{3})\b/;
+  const addrIdx = [];
+  lines.forEach((l, i) => {
+    const t = l.text;
+    if (isContact(t) && !CARD.addr.test(t)) { used.add(i); return; }
+    const hasPin = pinRe.test(t.replace(/\+?\d[\d\s\-]{9,}/g, '')) && !/\d{7,}/.test(t.replace(/\s/g, '').replace(/\d{3}\s?\d{3}/, ''));
+    if (CARD.addr.test(t) || hasPin || /^\d+[\/,-]?\s?[A-Za-z]?[,\s]/.test(t) || /^#\s?\d/.test(t)) { addrIdx.push(i); used.add(i); }
+  });
+  if (addrIdx.length) {
+    out.address = addrIdx.map(i => lines[i].text.replace(/^(address|add|addr|office|regd\.?\s*office|works|factory|branch)\s*[:.\-]\s*/i, '')).join(', ').replace(/\s*,\s*,/g, ',');
+    const pm = out.address.match(/\b(\d{3})\s?(\d{3})\b(?!.*\b\d{3}\s?\d{3}\b)/);
+    if (pm) out.pincode = pm[1] + pm[2];
+    const before = out.address.split(/\b\d{3}\s?\d{3}\b/)[0];
+    const segs = before.split(/[,\-–]/).map(x => x.trim().replace(/\b(dist|district|taluk|tal)\b\.?/i, '').trim()).filter(Boolean).reverse();
+    const c = segs.find(x => /^[A-Za-z][A-Za-z .]{2,24}$/.test(x) && !CARD.states.test(x) && !CARD.addr.test(x) && x.replace(/[^A-Za-z]/g, '').length >= 3);
+    if (c) out.city = cardTitle(c.replace(/\.$/, ''));
+  }
+  {
+    const lc = (out.address || all).toLowerCase();
+    const hit = CARD.cities.filter(c => new RegExp('\\b' + c.toLowerCase() + '\\b').test(lc)).sort((a, b) => b.length - a.length)[0];
+    if (hit && (!out.city || !CARD.cities.some(c => c.toLowerCase() === out.city.toLowerCase()))) out.city = hit;
+  }
+  // designation
+  let desigIdx = -1;
+  lines.forEach((l, i) => {
+    if (desigIdx >= 0 || used.has(i)) return;
+    const t = l.text;
+    if (CARD.desig.test(t) && t.length <= 60 && !CARD.comp.test(t.replace(CARD.desig, '')) || (CARD.desig.test(t) && t.split(' ').length <= 5 && !/\b(pvt|ltd|llp|limited|private)\b/i.test(t))) {
+      desigIdx = i; out.designation = t.replace(/^[,|\-–]\s*/, ''); used.add(i);
+    }
+  });
+  // company
+  let compIdx = -1;
+  lines.forEach((l, i) => {
+    if (compIdx >= 0 || used.has(i)) return;
+    if (CARD.comp.test(l.text) && /[A-Za-z]{3}/.test(l.text) && l.text.length <= 70) { compIdx = i; out.company = l.text; used.add(i); }
+  });
+  // name
+  const nameOk = t => {
+    const s = t.replace(/^(mr|mrs|ms|miss|dr|er|ar|prof|ca|cs|adv|shri|smt)\.?\s+/i, '');
+    if (/\d|@|:|\/|&/.test(s)) return false;
+    const w = s.split(' ').filter(Boolean);
+    if (w.length < 1 || w.length > 4 || s.length < 3 || s.length > 40) return false;
+    if (w.length === 1 && s.length < 4) return false;
+    return w.every(x => /^[A-Za-z][A-Za-z.'\-]*$/.test(x)) && !CARD.comp.test(s) && !CARD.desig.test(s) && !CARD.addr.test(s);
+  };
+  const cands = lines.map((l, i) => ({ ...l, i })).filter(l => !used.has(l.i) && nameOk(l.text));
+  let pick = null;
+  if (desigIdx >= 0) pick = cands.find(c => c.i === desigIdx - 1) || cands.find(c => c.i === desigIdx + 1);
+  if (!pick && cands.length) {
+    const multi = cands.filter(c => c.text.split(' ').length >= 2);
+    const pool = multi.length ? multi : cands;
+    pick = pool.reduce((a, b) => (b.h > a.h ? b : a), pool[0]);
+    if (pool.every(c => !c.h)) pick = pool[0];
+  }
+  if (pick) {
+    let n = pick.text.replace(/^(mr|mrs|ms|miss|shri|smt|dr|er|ar|prof|ca|cs|adv)\.?\s+/i, '');
+    if (n === n.toUpperCase()) n = cardTitle(n);
+    out.name = n; used.add(pick.i);
+  }
+  // company fallback: a remaining all-caps / big line, else email domain
+  if (!out.company) {
+    const rest = lines.map((l, i) => ({ ...l, i })).filter(l => !used.has(l.i) && /[A-Za-z]{3}/.test(l.text) && !/\d{4,}/.test(l.text) && l.text.length <= 50);
+    const caps = rest.find(l => l.text === l.text.toUpperCase() && l.text.replace(/[^A-Z]/g, '').length >= 3);
+    if (caps) out.company = caps.text;
+    else {
+      const dom = (out.email.split('@')[1] || out.website.replace(/^www\./, '') || '');
+      if (dom && !CARD.freeMail.test(dom)) out.company = cardTitle(dom.split('.')[0].replace(/[-_]/g, ' '));
+    }
+  }
+  if (out.company && out.company === out.company.toUpperCase() && out.company.length > 4 && !/\b[A-Z]{2,4}\b/.test(out.company.replace(/\b(PVT|LTD|LLP|INC|CO)\b/g, '')) === false) {} // keep as printed
+  return out;
+}
+
+let _tessP, _cardExtras = '';
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve();
+  return _tessP = _tessP || new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); });
+}
+async function scanCardFile(file) {
+  if (!file) return;
+  const box = document.getElementById('lfScan');
+  box.innerHTML = '<span class="muted">Reading the card… (first time takes ~10 seconds)</span>';
+  try {
+    await loadTesseract();
+    const img = await compressImage(file, 2000, 0.9);
+    const { data } = await Tesseract.recognize(img, 'eng');
+    const lines = (data.lines || []).map(l => ({ text: l.text, h: l.bbox ? l.bbox.y1 - l.bbox.y0 : 0 }));
+    const r = parseCard(lines.length ? lines : (data.text || ''));
+    const map = [['lfName', r.name, 'Name'], ['lfCompany', r.company, 'Company'], ['lfDesig', r.designation, 'Designation'], ['lfMobile', r.mobile, 'Mobile'],
+      ['lfEmail', r.email, 'Email'], ['lfAddress', r.address, 'Address'], ['lfCity', r.city, 'City']];
+    const filled = [];
+    for (const [id, val, label] of map) { const el = document.getElementById(id); if (val && !el.value.trim()) { el.value = val; filled.push(label); } }
+    const extras = [r.phone2 && 'Other phone: ' + r.phone2, r.website && 'Website: ' + r.website, r.gstin && 'GSTIN: ' + r.gstin].filter(Boolean);
+    if (extras.length) _cardExtras = [_cardExtras, ...extras].filter(Boolean).join('\n');
+    box.innerHTML = filled.length
+      ? `<span class="okmsg">Filled from card: ${filled.join(', ')}.</span> Please check them.${extras.length ? ' Also saved to notes: ' + esc(extras.join(' · ')) + '.' : ''}`
+      : '<span class="err">Could not find contact details on the card — please type them in.</span>';
+    if (r.mobile) checkDup();
+  } catch (e) {
+    box.innerHTML = '<span class="err">Could not read the card here (' + esc(e.message || e) + '). Please type the details.</span>';
+  }
 }
 async function checkDup() {
   const m = document.getElementById('lfMobile').value.replace(/\D/g, '');
@@ -1219,7 +1371,8 @@ async function saveLead() {
   const row = { name: v('lfName'), company: v('lfCompany') || null, mobile: v('lfMobile') || null, email: v('lfEmail') || null,
     contact_type: v('lfType') || 'customer', source: v('lfSource') || null, category_id: v('lfCat') || null,
     est_value: parseFloat(v('lfValue')) || null, city: v('lfCity') || null, territory: v('lfTerritory') || null,
-    address: v('lfAddress') || null, requirement: v('lfReq') || null, next_follow_up: v('lfNext') || null };
+    address: v('lfAddress') || null, requirement: v('lfReq') || null, next_follow_up: v('lfNext') || null, designation: v('lfDesig') || null };
+  if (_cardExtras && !v('lfId')) row.notes = _cardExtras;
   const assign = v('lfAssign');
   const id = v('lfId');
   const btn = document.getElementById('lfSave'); btn.disabled = true;
