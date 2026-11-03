@@ -27,6 +27,26 @@ jobs:
       - name: Create platform folders (org.bne package)
         working-directory: app
         run: flutter create --org org.bne --platforms=android,web .
+      - name: Brand app name and icon (BNE Sales)
+        working-directory: app
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's#android:label="[^"]*"#android:label="BNE Sales"#' $M
+          grep -n 'android:label' $M
+          pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          logo = Image.open('assets/logo.png').convert('RGBA')
+          bb = logo.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox() or (0, 0, *logo.size)
+          c = logo.crop(bb); s = max(c.size)
+          sq = Image.new('RGBA', (s, s), (0, 0, 0, 0)); sq.paste(c, ((s - c.size[0]) // 2, (s - c.size[1]) // 2))
+          for d, px in {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}.items():
+              ic = Image.new('RGBA', (px, px), (255, 255, 255, 255))
+              inner = round(px * 0.92); ic.alpha_composite(sq.resize((inner, inner), Image.LANCZOS), ((px - inner) // 2, (px - inner) // 2))
+              ic.convert('RGB').save(f'android/app/src/main/res/mipmap-{d}/ic_launcher.png')
+              print('icon', d, px)
+          PY
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26 || true
       - name: Add Android permissions
         working-directory: app
         run: |
