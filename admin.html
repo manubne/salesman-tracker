@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root { --brand:#2F5BEA; --brand2:#5B8DEF; --navy:#0F1B33; --navy2:#16264A; --bg:#F4F6FB; --card:#fff; --border:#E5E9F2;
+  :root { --brand:#22779A; --brand2:#3E9BBF; --navy:#143F52; --navy2:#1B4F66; --bg:#F4F6FB; --card:#fff; --border:#E5E9F2;
           --text:#0F172A; --muted:#64748B; --green:#16A34A; --orange:#D97706; --red:#DC2626; --teal:#0D9488; --purple:#7C3AED;
           --accent:var(--brand); --blue:var(--brand); }
   * { box-sizing:border-box; margin:0; }
@@ -58,7 +58,7 @@
   .card .lbl { font-size:12px; color:var(--muted); margin-top:3px; font-weight:600; }
   .card.click { cursor:pointer; transition:transform .1s, box-shadow .1s; }
   .card.click:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,24,40,.08); }
-  .t-blue .ico { background:#E8EEFE; color:var(--brand); } .t-green .ico { background:#E6F6EC; color:var(--green); }
+  .t-blue .ico { background:#E6F1F6; color:var(--brand); } .t-green .ico { background:#E6F6EC; color:var(--green); }
   .t-orange .ico { background:#FEF3E2; color:var(--orange); } .t-red .ico { background:#FDECEC; color:var(--red); }
   .t-teal .ico { background:#E1F5F3; color:var(--teal); } .t-purple .ico { background:#F1EBFE; color:var(--purple); }
   .panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:20px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
@@ -80,7 +80,7 @@
   .chatwrap { display:grid; grid-template-columns:300px 1fr; gap:0; border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; height:calc(100vh - 150px); min-height:520px; }
   .chatside { border-right:1px solid var(--border); display:flex; flex-direction:column; min-width:0; }
   .chatrow { display:flex; gap:10px; padding:10px 12px; cursor:pointer; border-bottom:1px solid #F1F3F8; align-items:center; }
-  .chatrow:hover { background:#F7F9FD; } .chatrow.on { background:#E8EEFE; }
+  .chatrow:hover { background:#F7F9FD; } .chatrow.on { background:#E6F1F6; }
   .chatrow .badge { background:var(--brand); color:#fff; font-size:11px; font-weight:700; border-radius:10px; padding:1px 7px; }
   .chatmain { display:flex; flex-direction:column; min-width:0; }
   #chatHead { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); }
@@ -100,8 +100,8 @@
   .chatmsg:hover .acts { display:inline-block; }
   .reacts { display:flex; gap:4px; flex-wrap:wrap; margin:2px 0 0 38px; } .reacts.mine { margin:2px 38px 0 0; justify-content:flex-end; }
   .reacts span { font-size:12px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:1px 7px; cursor:pointer; }
-  .reacts span.me { background:#E8EEFE; border-color:var(--brand); }
-  .mentiontag { color:var(--brand); font-weight:700; background:#E8EEFE; border-radius:4px; padding:0 3px; } .chatmsg.mine .mentiontag { color:#fff; background:rgba(255,255,255,.2); }
+  .reacts span.me { background:#E6F1F6; border-color:var(--brand); }
+  .mentiontag { color:var(--brand); font-weight:700; background:#E6F1F6; border-radius:4px; padding:0 3px; } .chatmsg.mine .mentiontag { color:#fff; background:rgba(255,255,255,.2); }
   .chatmsg.mine .bubble a { color:#fff; }
   #chatComposer { border-top:1px solid var(--border); padding:8px 10px; position:relative; }
   #chatComposer textarea { width:100%; resize:none; border:none; background:#F4F6FA; border-radius:18px; padding:10px 14px; font:inherit; font-size:14px; min-height:40px; max-height:140px; }
@@ -111,7 +111,7 @@
   .pickrow { display:flex; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid #F1F3F8; cursor:pointer; }
   .chip { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:650; white-space:nowrap; text-transform:capitalize; }
   .chip.planned, .chip.visit_scheduled, .chip.draft, .chip.open { background:#FEF3E2; color:var(--orange); }
-  .chip.verified, .chip.new, .chip.need_quote { background:#E8EEFE; color:var(--brand); }
+  .chip.verified, .chip.new, .chip.need_quote { background:#E6F1F6; color:var(--brand); }
   .chip.contacted, .chip.quoted { background:#F1EBFE; color:var(--purple); }
   .chip.checked_in, .chip.visited { background:#E1F5F3; color:var(--teal); }
   .chip.completed, .chip.converted, .chip.won, .chip.done, .chip.accepted { background:#E6F6EC; color:var(--green); }
@@ -174,6 +174,13 @@
   #loginView { display:flex; min-height:100vh; align-items:center; justify-content:center; padding:20px;
                background:radial-gradient(1200px 600px at 10% 0%,#DCE6FF 0%,transparent 60%),radial-gradient(900px 500px at 100% 100%,#E1F5F3 0%,transparent 55%),var(--bg); }
   #loginBox { background:#fff; border:1px solid var(--border); border-radius:20px; padding:40px; width:390px; box-shadow:0 20px 50px rgba(15,23,42,.08); }
+  .loginlogo { width:120px; height:120px; border-radius:50%; display:block; margin:0 auto 14px; box-shadow:0 14px 36px rgba(34,119,154,.22); animation:logoIn .9s cubic-bezier(.2,.9,.3,1.2) both, floaty 3s ease-in-out 1s infinite alternate; }
+  @keyframes logoIn { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+  @keyframes floaty { from { transform:translateY(0); } to { transform:translateY(-4px); } }
+  #loginBox h1, #loginBox p, #loginBox #emailStep, #loginBox #codeStep { animation:fadeUp .7s ease .35s both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .emailpill { display:flex; align-items:center; gap:8px; background:#E6F1F6; border-radius:12px; padding:9px 12px; margin-bottom:12px; font-size:13.5px; font-weight:600; } .emailpill span { flex:1; overflow:hidden; text-overflow:ellipsis; }
+  #loginBox { text-align:center; }
   #loginBox .logo { width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--brand2),var(--brand)); color:#fff; display:grid; place-items:center; font-weight:800; font-size:20px; margin-bottom:16px; }
   #loginBox h1 { font-size:22px; margin-bottom:6px; font-weight:750; letter-spacing:-0.5px; }
   #loginBox p { color:var(--muted); font-size:13.5px; margin-bottom:22px; }
@@ -208,31 +215,28 @@
   .setsec { border-top:1px solid var(--border); padding-top:18px; margin-top:6px; }
   .lfdot { background: none; border: none; }
   #map { position: relative; z-index: 0; }
-  .leaflet-popup-content a { color: #2F5BEA; }
+  .leaflet-popup-content a { color: #22779A; }
 </style>
 </head>
 <body>
 
 <div id="loginView">
   <div id="loginBox">
-    <div class="logo">B</div>
+    <img src="logo.png" alt="BNE" class="loginlogo" onerror="this.style.display='none'">
     <h1>BNE Sales</h1>
-    <p>Sign in to the management dashboard</p>
-    <div id="emailLogin">
-      <input id="email" type="email" placeholder="Email" autocomplete="username">
-      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-      <button class="btn" onclick="login()">Sign in</button>
-      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('wa');return false" style="font-size:13px">Sign in with WhatsApp OTP instead</a></p>
+    <p id="loginSub">Sign in with your company email</p>
+    <div id="emailStep">
+      <input id="email" type="email" placeholder="you@bne.org.in" autocomplete="username" onkeydown="if(event.key==='Enter')sendCode()">
+      <button class="btn" id="sendBtn" onclick="sendCode()">Send sign-in code</button>
     </div>
-    <div id="waLogin" style="display:none">
-      <input id="waMobile" type="tel" placeholder="Mobile number (10 digits)" maxlength="10">
-      <div id="waCodeWrap" style="display:none">
-        <input id="waCode" type="text" placeholder="Enter OTP" inputmode="numeric">
-      </div>
-      <button class="btn" id="waBtn" onclick="waAuth()">Send OTP</button>
-      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="toggleLogin('email');return false" style="font-size:13px">Sign in with email instead</a></p>
+    <div id="codeStep" style="display:none">
+      <div class="emailpill"><span id="emailShown"></span><a href="#" onclick="changeEmail();return false">Change</a></div>
+      <input id="code" type="text" inputmode="numeric" placeholder="6-digit code" maxlength="8" style="text-align:center;font-size:22px;letter-spacing:8px;font-weight:800" onkeydown="if(event.key==='Enter')verifyCode()">
+      <button class="btn" id="verifyBtn" onclick="verifyCode()">Verify &amp; sign in</button>
+      <p style="text-align:center;margin:12px 0 0"><a href="#" id="resendLink" onclick="sendCode();return false" style="font-size:13px">Resend code</a></p>
     </div>
     <div id="loginErr" class="err"></div>
+    <p class="muted" style="font-size:12px;text-align:center;margin-top:18px">Only registered BNE team members can sign in.</p>
   </div>
 </div>
 
@@ -247,7 +251,7 @@
 <div id="appView" class="shell" style="display:none">
   <div id="scrim" onclick="toggleSidebar(false)"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="logo">B</span> BNE Sales</div>
+    <div class="brand"><img src="logo.png" alt="" style="width:30px;height:30px;border-radius:50%;background:#fff" onerror="this.outerHTML='<span class=&quot;logo&quot;>B</span>'"> BNE Sales</div>
     <div class="me" id="meBox"></div>
     <nav>
       <button data-v="overview" data-roles="admin,head,manager" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
@@ -614,15 +618,16 @@
       <div class="panel" data-roles="admin,head">
         <h2>Add team member</h2>
         <div class="toolbar">
-          <input id="spName" placeholder="Full name">
-          <input id="spMobile" placeholder="Mobile (10 digits)" maxlength="10" inputmode="numeric">
-          <input id="spEmail" placeholder="Email (optional)">
-          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option></select>
-          <input id="spTerritory" placeholder="Territory (optional)">
-          <button class="btn" onclick="addInvite()">Add &amp; invite</button>
+          <input id="spName" placeholder="Full name *">
+          <input id="spEmail" type="email" placeholder="Work email * (name@bne.org.in)" style="min-width:230px">
+          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option></select>
+          <select id="spBranch"></select>
+          <input id="spMobile" placeholder="Mobile (optional)" maxlength="10" inputmode="numeric" style="max-width:150px">
+          <input id="spTerritory" placeholder="Territory (optional)" style="max-width:150px">
+          <button class="btn" onclick="addInvite()">Add person</button>
         </div>
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
-        <p class="hint">Everyone uses the mobile app. Managers, heads and admins also get the Team section in the app and can sign in to this dashboard.</p>
+        <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Only emails you add here (or any @bne.org.in address) can sign in.</p>
       </div>
       <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div id="invitesTbl"></div></div>
       <div class="panel"><h2>People &amp; access <span class="sub">role decides what they can do; branch decides what they can see</span></h2>
@@ -965,7 +970,7 @@
         <div class="field full"><label>Notes</label><input id="plNotes"></div>
         <label class="switch"><input type="checkbox" id="plActive" checked> Active</label>
       </div>
-      <div class="warnbox" id="plPreview" style="background:#EEF2FD;border-color:#D6DFFB;color:#1E3A8A;margin-top:12px"></div>
+      <div class="warnbox" id="plPreview" style="background:#EEF2FD;border-color:#D6DFFB;color:#175A76;margin-top:12px"></div>
       <div class="err" id="plErr"></div>
     </div>
     <div class="mf"><button class="btn danger" id="plDel" onclick="deletePlan()" style="margin-right:auto">Delete</button><button class="btn sec" onclick="closeModal('planBg')">Cancel</button><button class="btn" onclick="savePlan()">Save plan</button></div>
@@ -1114,16 +1119,16 @@ const MP = {
   pin(pos, color, label, z) { return this.marker(pos, { svg: this.svgPin(color, label), w: 24, h: 32, ax: 12, ay: 32, z }); },
   line(path) {   // route line with direction arrows
     if (this.kind === 'google') {
-      const pl = new google.maps.Polyline({ path: path.map(p => ({ lat: p[0], lng: p[1] })), strokeColor: '#2F5BEA', strokeOpacity: .85, strokeWeight: 4, map,
-        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 2.5, strokeColor: '#1E3A8A' }, offset: '0', repeat: '120px' }] });
+      const pl = new google.maps.Polyline({ path: path.map(p => ({ lat: p[0], lng: p[1] })), strokeColor: '#22779A', strokeOpacity: .85, strokeWeight: 4, map,
+        icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, scale: 2.5, strokeColor: '#175A76' }, offset: '0', repeat: '120px' }] });
       return { remove: () => pl.setMap(null) };
     }
-    const parts = [L.polyline(path, { color: '#2F5BEA', opacity: .85, weight: 4 }).addTo(map)];
+    const parts = [L.polyline(path, { color: '#22779A', opacity: .85, weight: 4 }).addTo(map)];
     for (let i = 1; i < path.length; i += Math.max(1, Math.round(path.length / 25))) {
       const [a1, b1] = [path[i - 1], path[i]]; if (a1[0] === b1[0] && a1[1] === b1[1]) continue;
       const ang = Math.atan2(b1[1] - a1[1], b1[0] - a1[0]) * 180 / Math.PI;
       parts.push(L.marker([(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2], { interactive: false, keyboard: false,
-        icon: L.divIcon({ className: 'lfdot', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div style="transform:rotate(${ang}deg);color:#1E3A8A;font:700 13px/14px sans-serif;text-align:center">&#9650;</div>` }) }).addTo(map));
+        icon: L.divIcon({ className: 'lfdot', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div style="transform:rotate(${ang}deg);color:#175A76;font:700 13px/14px sans-serif;text-align:center">&#9650;</div>` }) }).addTo(map));
     }
     return { remove: () => parts.forEach(x => x.remove()) };
   },
@@ -1202,37 +1207,48 @@ async function uploadMedia(file, entityType, entityId, kind, caption) {
   if (e2) throw e2;
 }
 
-// ---------- auth ----------
-async function login() {
-  const { error } = await db.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
-  if (error) { document.getElementById('loginErr').textContent = error.message; return; }
-  init();
+// ---------- auth (email one-time code) ----------
+let _loginEmail = '', _resendAt = 0;
+function changeEmail() { document.getElementById('codeStep').style.display = 'none'; document.getElementById('emailStep').style.display = ''; document.getElementById('loginSub').textContent = 'Sign in with your company email'; document.getElementById('loginErr').textContent = ''; }
+function friendlyAuth(m) {
+  m = String(m || '');
+  const r = m.match(/(Only company email[^"]*|Your email is not registered[^"]*|deactivated[^"]*)/); if (r) return r[1];
+  if (/rate limit|Too many|after \d+ seconds/i.test(m)) return 'Too many attempts — wait a minute and try again.';
+  if (/expired/i.test(m)) return 'That code has expired. Request a new one.';
+  if (/invalid|Token/i.test(m)) return 'That code is not right. Check the email and try again.';
+  if (/Signups not allowed|not allowed|Database error/i.test(m)) return 'This email is not allowed to sign in. Ask your admin to add you.';
+  return m || 'Something went wrong. Try again.';
+}
+async function sendCode() {
+  const err = document.getElementById('loginErr'); err.textContent = '';
+  const e = (document.getElementById('email').value || _loginEmail).trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { err.textContent = 'Enter your email address.'; return; }
+  if (Date.now() < _resendAt) { err.textContent = `Please wait ${Math.ceil((_resendAt - Date.now()) / 1000)} s before requesting a new code.`; return; }
+  const btn = document.getElementById('sendBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const { data: chk } = await db.rpc('login_allowed', { p_email: e });
+    if (chk && chk.allowed === false) { err.textContent = chk.reason || 'This email cannot sign in.'; return; }
+    const { error } = await db.auth.signInWithOtp({ email: e, options: { shouldCreateUser: true } });
+    if (error) { err.textContent = friendlyAuth(error.message); return; }
+    _loginEmail = e; _resendAt = Date.now() + 60000;
+    document.getElementById('emailShown').textContent = e;
+    document.getElementById('emailStep').style.display = 'none'; document.getElementById('codeStep').style.display = '';
+    document.getElementById('loginSub').textContent = 'Enter the code we emailed you';
+    setTimeout(() => document.getElementById('code').focus(), 50);
+  } finally { btn.disabled = false; btn.textContent = 'Send sign-in code'; }
+}
+async function verifyCode() {
+  const err = document.getElementById('loginErr'); err.textContent = '';
+  const token = document.getElementById('code').value.trim();
+  if (token.length < 6) { err.textContent = 'Enter the 6-digit code from your email.'; return; }
+  const btn = document.getElementById('verifyBtn'); btn.disabled = true; btn.textContent = 'Verifying…';
+  try {
+    const { error } = await db.auth.verifyOtp({ email: _loginEmail, token, type: 'email' });
+    if (error) { err.textContent = friendlyAuth(error.message); return; }
+    init();
+  } finally { btn.disabled = false; btn.textContent = 'Verify & sign in'; }
 }
 async function logout() { await db.auth.signOut(); location.reload(); }
-function toggleLogin(mode) {
-  document.getElementById('emailLogin').style.display = mode === 'email' ? 'block' : 'none';
-  document.getElementById('waLogin').style.display = mode === 'wa' ? 'block' : 'none';
-  document.getElementById('loginErr').textContent = '';
-}
-let _waSent = false;
-async function waAuth() {
-  const err = document.getElementById('loginErr'); err.textContent = '';
-  const phone = '+91' + document.getElementById('waMobile').value.trim();
-  const btn = document.getElementById('waBtn');
-  if (!_waSent) {
-    btn.disabled = true; btn.textContent = 'Sending…';
-    const { error } = await db.auth.signInWithOtp({ phone });
-    btn.disabled = false;
-    if (error) { err.textContent = error.message; btn.textContent = 'Send OTP'; return; }
-    _waSent = true; document.getElementById('waCodeWrap').style.display = 'block'; btn.textContent = 'Verify & sign in';
-  } else {
-    btn.disabled = true; btn.textContent = 'Verifying…';
-    const { error } = await db.auth.verifyOtp({ phone, token: document.getElementById('waCode').value.trim(), type: 'sms' });
-    btn.disabled = false; btn.textContent = 'Verify & sign in';
-    if (error) { err.textContent = 'Incorrect or expired code'; return; }
-    init();
-  }
-}
 
 async function init() {
   const { data: { session } } = await db.auth.getSession();
@@ -1778,37 +1794,36 @@ const APK_URL = 'https://github.com/manubne/salesman-tracker/releases/download/l
 async function addInvite() {
   const m = document.getElementById('inviteMsg'); m.style.color = 'var(--red)'; m.textContent = '';
   const name = document.getElementById('spName').value.trim(), mob = document.getElementById('spMobile').value.replace(/\D/g, '');
-  const email = document.getElementById('spEmail').value.trim(), role = document.getElementById('spRole').value, territory = document.getElementById('spTerritory').value.trim();
+  const email = document.getElementById('spEmail').value.trim().toLowerCase(), role = document.getElementById('spRole').value, territory = document.getElementById('spTerritory').value.trim();
+  const branch = document.getElementById('spBranch').value || null;
   if (!name) { m.textContent = 'Enter a name.'; return; }
-  if (mob.length !== 10) { m.textContent = 'Enter a valid 10-digit mobile.'; return; }
-  const { error } = await db.from('salesperson_invites').upsert({ mobile: '91' + mob, name, email: email || null, role, territory: territory || null, status: 'pending' }, { onConflict: 'mobile' });
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { m.textContent = 'Enter a valid work email.'; return; }
+  if (mob && mob.length !== 10) { m.textContent = 'Mobile must be 10 digits (or leave it blank).'; return; }
+  const { error } = await db.rpc('invite_user', { p_email: email, p_name: name, p_role: role, p_mobile: mob ? '91' + mob : null, p_territory: territory || null, p_branch: branch });
   if (error) { m.textContent = error.message; return; }
   m.style.color = 'var(--green)';
   const nm = JSON.stringify(name).replace(/"/g,'&quot;');
-  let links = '<a href="#" onclick="waInvite(\'' + mob + '\',' + nm + ',\'' + role + '\');return false" style="font-weight:650">Send WhatsApp invite →</a>';
-  if (email) links += ' &nbsp;·&nbsp; <a href="#" onclick="emailInvite(' + JSON.stringify(email).replace(/"/g,'&quot;') + ',' + nm + ',\'' + mob + '\');return false" style="font-weight:650">Email invite →</a>';
-  m.innerHTML = 'Added ' + esc(name) + '. ' + links;
+  let links = '<a href="#" onclick="emailInvite(' + JSON.stringify(email).replace(/"/g,'&quot;') + ',' + nm + ');return false" style="font-weight:650">Email the app link →</a>';
+  if (mob) links += ' &nbsp;·&nbsp; <a href="#" onclick="waInvite(\'' + mob + '\',' + nm + ');return false" style="font-weight:650">WhatsApp →</a>';
+  m.innerHTML = 'Added ' + esc(name) + ' — they can sign in now with ' + esc(email) + '. ' + links;
   ['spName','spMobile','spEmail','spTerritory'].forEach(id => document.getElementById(id).value = '');
-  loadInvites();
+  loadInvites(); loadUsers();
 }
-async function emailInvite(email, name, mobile) {
-  const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNE Sales</b>.</p><ol><li>Install the app: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it and log in with your mobile <b>${esc(mobile)}</b> — an OTP will arrive on WhatsApp.</li></ol><p>Welcome aboard!</p>`;
+async function emailInvite(email, name) {
+  const dash = location.origin + location.pathname;
+  const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNE Sales</b>.</p><ol><li>Install the app on your Android phone: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it, enter this email (<b>${esc(email)}</b>) and type the one-time code we send you.</li></ol><p>Managers can also use the web dashboard: <a href="${dash}">${dash}</a></p><p>Welcome aboard!</p>`;
   const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Sales', html } });
   if (error || (data && data.error)) { alert('Email failed: ' + (error?.message || data.error)); return; }
   alert('Invite email sent to ' + email);
 }
-function waInvite(mob, name, role) {
-  const dash = location.origin + location.pathname;
-  const how = ['coordinator','telecaller','manager'].includes(role)
-    ? 'Open the dashboard: ' + dash + ' and sign in with WhatsApp OTP on mobile ' + mob + '.'
-    : '1) Install the app: ' + APK_URL + '\n2) Open it and log in with your mobile ' + mob + ' — an OTP will arrive on WhatsApp.';
-  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent('Hi ' + name + ', you have been added to BNE Sales.\n\n' + how + '\n\nWelcome aboard!'), '_blank');
+function waInvite(mob, name) {
+  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent('Hi ' + name + ', you have been added to BNE Sales.\n\n1) Install the app: ' + APK_URL + '\n2) Open it and sign in with your work email — a one-time code will be emailed to you.\n\nWelcome aboard!'), '_blank');
 }
 async function loadInvites() {
   const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
-  document.getElementById('invitesTbl').innerHTML = tbl(['Name','Mobile','Role','Territory','Status','Action'],
-    (data || []).map(i => [esc(i.name) || '<span class="muted">(no name)</span>', esc(i.mobile), esc(i.role), esc(i.territory) || '—', chip(i.status),
-      i.status === 'accepted' ? '<span class="muted">joined</span>' : '<a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ',\'' + i.role + '\');return false" style="font-weight:650">WhatsApp</a>']));
+  document.getElementById('invitesTbl').innerHTML = tbl(['Name','Email','Mobile','Role','Branch','Status','Action'],
+    (data || []).map(i => [esc(i.name) || '<span class="muted">(no name)</span>', esc(i.email || '—'), esc(i.mobile || '—'), esc(ROLE_LABEL[i.role] || i.role), esc(branchName(i.branch_id)) || '—', chip(i.status),
+      i.status === 'accepted' ? '<span class="muted">joined</span>' : (i.email ? '<a href="#" onclick="emailInvite(' + JSON.stringify(i.email).replace(/"/g,'&quot;') + ',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">Email link</a>' : '') + (i.mobile ? ' · <a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">WhatsApp</a>' : '')]));
 }
 async function loadUsers(onlyRender) {
   if (!onlyRender) {
@@ -1996,7 +2011,7 @@ async function approveOrder(id) {
 // ---------- pipeline (Phase 2) ----------
 const STAGES = { qualified:'Qualified', demo:'Demo / site visit', need_quote:'Quote requested', quoted:'Quoted', negotiation:'Negotiation', won:'Won', lost:'Lost' };
 const OPEN_STAGES = ['qualified','demo','need_quote','quoted','negotiation'];
-const STAGE_COLOR = { qualified:'#2F5BEA', demo:'#7C3AED', need_quote:'#D97706', quoted:'#0E7490', negotiation:'#C2410C', won:'#16A34A', lost:'#64748B' };
+const STAGE_COLOR = { qualified:'#22779A', demo:'#7C3AED', need_quote:'#D97706', quoted:'#0E7490', negotiation:'#C2410C', won:'#16A34A', lost:'#64748B' };
 const oppVal = o => Number((o.stage === 'won' ? (o.order_value ?? o.quote_total ?? o.est_value) : (o.quote_total ?? o.est_value)) || 0);
 const party = o => o.customers || o.leads || {};
 const partyName = o => { const p = party(o); return (p.name || '—') + (p.company ? ' · ' + p.company : ''); };
@@ -2099,7 +2114,7 @@ function renderPipeline() {
   const fTot = months.map(k => open.filter(o => mkey(o) === k).reduce((a, o) => a + oppVal(o), 0));
   const fW = months.map(k => Math.round(open.filter(o => mkey(o) === k).reduce((a, o) => a + oppVal(o) * (o.probability || 0) / 100, 0)));
   mkChart('chForecast', { type: 'bar', data: { labels: months.map(mlabel), datasets: [
-      { label: 'Total open value', data: fTot, backgroundColor: '#C7D4FB' }, { label: 'Weighted', data: fW, backgroundColor: '#2F5BEA' }] },
+      { label: 'Total open value', data: fTot, backgroundColor: '#C7D4FB' }, { label: 'Weighted', data: fW, backgroundColor: '#22779A' }] },
     options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: x => x.dataset.label + ': ' + rsShort(x.raw) } } },
       scales: { y: { beginAtZero: true, ticks: { callback: v => rsShort(v) } } } } });
   const thisM = todayStr().slice(0, 7);
@@ -2148,7 +2163,7 @@ async function renderFunnel(rows, ps) {
   const leads = cache.leads.filter(l => new Date(l.created_at) >= ps && (!rep || l.assigned_to === rep)).length;
   const deals = rows.filter(o => new Date(o.created_at) >= ps).length;
   const won = rows.filter(o => o.stage === 'won' && new Date(o.won_at) >= ps);
-  const steps = [['Leads', leads, '#2F5BEA'], ['Check-ins', count || 0, '#0D9488'], ['Deals created', deals, '#7C3AED'], ['Won', won.length, '#16A34A']];
+  const steps = [['Leads', leads, '#22779A'], ['Check-ins', count || 0, '#0D9488'], ['Deals created', deals, '#7C3AED'], ['Won', won.length, '#16A34A']];
   const max = Math.max(1, ...steps.map(s => s[1]));
   document.getElementById('funnel').innerHTML = steps.map((s, i) => `
     <div style="display:flex;align-items:center;gap:12px;margin:8px 0">
@@ -2970,7 +2985,7 @@ let _charts = {};
 function mkChart(id, cfg) { if (typeof Chart === 'undefined') return; if (_charts[id]) _charts[id].destroy(); const el = document.getElementById(id); if (!el) return; _charts[id] = new Chart(el, cfg); }
 const _barOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } });
 const _pieOpt = () => ({ responsive: true, plugins: { legend: { position: 'bottom' } } });
-const _pal = n => { const c = ['#2F5BEA','#0D9488','#16A34A','#D97706','#DC2626','#7C3AED','#5B8DEF','#64748B']; return Array.from({length:n}, (_,i)=>c[i%c.length]); };
+const _pal = n => { const c = ['#22779A','#0D9488','#16A34A','#D97706','#DC2626','#7C3AED','#5B8DEF','#64748B']; return Array.from({length:n}, (_,i)=>c[i%c.length]); };
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
   const users = salesReps(), orders = cache.orders||[];
@@ -2978,9 +2993,9 @@ function renderCharts() {
   const labels = users.map(u => u.name || u.mobile || '—');
   const targets = users.map(u => { const t=(cache.targets||[]).find(x=>x.user_id===u.id); return t?Number(t.target_amount):0; });
   const achieved = users.map(u => orders.filter(o => ownerOf(o)===u.id && o.stage==='won' && o.won_at && new Date(o.won_at)>=mStart).reduce((s,o)=>s+oppVal(o),0));
-  mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#C7D4FB'},{label:'Achieved',data:achieved,backgroundColor:'#2F5BEA'}] }, options:_barOpt() });
+  mkChart('chTarget', { type:'bar', data:{ labels, datasets:[{label:'Target',data:targets,backgroundColor:'#C7D4FB'},{label:'Achieved',data:achieved,backgroundColor:'#22779A'}] }, options:_barOpt() });
   const pct = users.map((u,i)=> targets[i]? Math.round(achieved[i]/targets[i]*100):0);
-  mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#16A34A':'#2F5BEA')}] }, options:_barOpt() });
+  mkChart('chPct', { type:'bar', data:{ labels, datasets:[{label:'% of target',data:pct,backgroundColor:pct.map(p=>p>=100?'#16A34A':'#22779A')}] }, options:_barOpt() });
   const ls = Object.keys(STATUS_LABEL);
   mkChart('chLeads', { type:'bar', data:{ labels:ls.map(s=>STATUS_LABEL[s]), datasets:[{label:'Leads',data:ls.map(s=>cache.leads.filter(l=>l.status===s).length),backgroundColor:_pal(ls.length)}] }, options:{ ..._barOpt(), plugins:{ legend:{ display:false } } } });
   const srcMap = {}; cache.leads.forEach(l => { const n = l.source || 'Unknown'; srcMap[n] = (srcMap[n]||0)+1; });
@@ -2990,7 +3005,7 @@ function renderCharts() {
   mkChart('chWin', { type:'doughnut', data:{ labels:['Won','Lost'], datasets:[{data:[orders.filter(o=>o.stage==='won').length,orders.filter(o=>o.stage==='lost').length],backgroundColor:['#16A34A','#DC2626']}] }, options:_pieOpt() });
   const mo = []; for (let i=5;i>=0;i--) mo.push(new Date(now.getFullYear(), now.getMonth()-i, 1));
   const rev = mo.map(d => { const s=new Date(d.getFullYear(),d.getMonth(),1), e=new Date(d.getFullYear(),d.getMonth()+1,1); return orders.filter(o=>o.stage==='won'&&o.won_at&&new Date(o.won_at)>=s&&new Date(o.won_at)<e).reduce((a,o)=>a+oppVal(o),0); });
-  mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#2F5BEA',backgroundColor:'rgba(47,91,234,.12)',fill:true,tension:.3}] }, options:_barOpt() });
+  mkChart('chRev', { type:'line', data:{ labels:mo.map(d=>d.toLocaleDateString('en-IN',{month:'short'})), datasets:[{label:'Revenue won',data:rev,borderColor:'#22779A',backgroundColor:'rgba(47,91,234,.12)',fill:true,tension:.3}] }, options:_barOpt() });
   const catMap = {}; orders.forEach(o => { const n=o.order_categories?.name||'—'; catMap[n]=(catMap[n]||0)+1; });
   mkChart('chCat', { type:'doughnut', data:{ labels:Object.keys(catMap), datasets:[{data:Object.values(catMap),backgroundColor:_pal(Object.keys(catMap).length)}] }, options:_pieOpt() });
 }
@@ -3011,7 +3026,7 @@ async function loadMap() {
   const pts = [];
   (data||[]).forEach(v => {
     const flagged = realFlags(v.flags).length > 0, pos = [v.verified_lat, v.verified_lng];
-    const m = MP.dot(pos, flagged ? '#DC2626' : '#2F5BEA', 14);
+    const m = MP.dot(pos, flagged ? '#DC2626' : '#22779A', 14);
     m.bindPopup(() => (`<div style="font:13px -apple-system,sans-serif"><b>${esc(placeName(v))}</b><br>${esc(uname(v.user_id))}<br>${fmtDT(v.checkin_at || v.verified_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}<br>` + (realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : 'clean') + '</div>'));
     markers.push(m); pts.push(pos);
   });
@@ -3119,7 +3134,7 @@ async function loadRoute() {
   const good = P.filter(p => !p.mock), path = good.map(p => [p.lat, p.lng]);
   _routeLayer.push(MP.line(path));
   P.forEach(p => {
-    const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#2F5BEA';
+    const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#22779A';
     const m = MP.dot([p.lat, p.lng], c, 9);
     m.bindPopup(() => `<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`);
     _routeLayer.push(m);
@@ -3303,6 +3318,8 @@ async function loadBranches() {
     sel.innerHTML = '<option value="">All branches</option>' + _branches.filter(b => b.active !== false).map(b => `<option value="${b.id}" ${b.id === BRANCH ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
     sel.style.display = isOwner() && _branches.length ? '' : 'none';
   }
+  const sb = document.getElementById('spBranch');
+  if (sb) sb.innerHTML = '<option value="">— branch —</option>' + _branches.filter(b => b.active !== false).map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
 }
 function setBranchFilter(v) {
   BRANCH = v;
@@ -3349,7 +3366,7 @@ async function setMgrBranches(uid, sel) {
 }
 const avatarHtml = (u, size = 28) => {
   const n = ((u && (u.name || u.mobile)) || '?').trim(), init = n ? n[0].toUpperCase() : '?';
-  const cols = ['#2F5BEA', '#7C3AED', '#0D9488', '#D97706', '#DC2626', '#059669', '#DB2777'];
+  const cols = ['#22779A', '#7C3AED', '#0D9488', '#D97706', '#DC2626', '#059669', '#DB2777'];
   let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) & 0x7fffffff;
   const id = 'av' + Math.random().toString(36).slice(2, 8);
   if (u && u.avatar_path) signedUrls([u.avatar_path]).then(([url]) => { const el = document.getElementById(id); if (el && url) { el.style.backgroundImage = `url(${url})`; el.textContent = ''; } });
@@ -3384,7 +3401,7 @@ function renderChatInbox() {
     const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
     const bold = (c.unread || 0) + (c.mentions || 0) > 0;
     return `<div class="chatrow ${_chatCur && _chatCur.id === c.id ? 'on' : ''}" onclick="openChat('${c.id}')">
-      ${c.kind === 'dm' ? avatarHtml(other, 36) : `<span class="avatar" style="width:36px;height:36px;background:${c.kind === 'group' ? '#EDE9FE' : '#E8EEFE'};color:${c.kind === 'group' ? '#7C3AED' : '#2F5BEA'}">${c.kind === 'group' ? '👥' : (c.is_private ? '🔒' : '#')}</span>`}
+      ${c.kind === 'dm' ? avatarHtml(other, 36) : `<span class="avatar" style="width:36px;height:36px;background:${c.kind === 'group' ? '#EDE9FE' : '#E6F1F6'};color:${c.kind === 'group' ? '#7C3AED' : '#22779A'}">${c.kind === 'group' ? '👥' : (c.is_private ? '🔒' : '#')}</span>`}
       <div style="flex:1;min-width:0"><div style="display:flex;gap:6px"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? '' : 'font-weight:600'}">${esc(c.name || 'Chat')}</b><span class="muted" style="font-size:11px">${c.last_message_at ? ago(c.last_message_at) : ''}</span></div>
       <div style="display:flex;gap:6px;align-items:center"><span class="muted" style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? 'color:var(--text);font-weight:600' : ''}">${c.muted ? '🔕 ' : ''}${c.last_body ? esc((c.last_user === ME.id ? 'You: ' : (c.kind === 'dm' ? '' : pName(c.last_user).split(' ')[0] + ': ')) + c.last_body) : 'No messages yet'}</span>
       ${c.mentions ? `<span class="badge" style="background:var(--red)">@${c.mentions}</span>` : (c.unread ? `<span class="badge">${c.unread}</span>` : '')}</div></div></div>`;
@@ -3405,7 +3422,7 @@ function renderChatRoom() {
   if (!c) { head.innerHTML = '<span class="muted">Pick a chat on the left, or start a new one.</span>'; box.innerHTML = ''; comp.style.display = 'none'; return; }
   comp.style.display = c.archived ? 'none' : '';
   const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
-  head.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">${c.kind === 'dm' ? avatarHtml(other, 34) : `<span class="avatar" style="width:34px;height:34px;background:#E8EEFE;color:#2F5BEA">${c.kind === 'group' ? '👥' : '#'}</span>`}
+  head.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">${c.kind === 'dm' ? avatarHtml(other, 34) : `<span class="avatar" style="width:34px;height:34px;background:#E6F1F6;color:#22779A">${c.kind === 'group' ? '👥' : '#'}</span>`}
     <div style="min-width:0"><b>${esc(c.name || 'Chat')}</b><div class="muted" style="font-size:12px">${c.kind === 'dm' ? esc([other?.designation, ROLE_LABEL[other?.role]].filter(Boolean).join(' · ')) : `${Object.keys(_chatMembers).length} members${c.description ? ' · ' + esc(c.description) : ''}`}</div></div></div>
     <div class="toolbar" style="margin:0">
       ${c.kind !== 'dm' ? `<button class="btn sec sm" onclick="chatAddPeople()">+ People</button>` : ''}
@@ -3590,7 +3607,6 @@ function exportCsv(kind) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `${kind}_${todayStr()}.csv`; a.click();
 }
 
-document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show')); });
 init();
 </script>
