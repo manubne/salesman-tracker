@@ -158,13 +158,25 @@ jobs:
             app/build/app/outputs/bundle/release/app-release.aab
             app/build/app/outputs/flutter-apk/app-release.apk
       - name: Publish to Play internal testing
+        id: play1
         uses: r0adkll/upload-google-play@v1
         continue-on-error: true
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: org.bne.salesman_tracker
           releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
+          status: completed
+      # While another release is in review, Play refuses auto-review; retry holding changes for manual send
+      - name: Publish to Play internal testing (changes held for review)
+        if: steps.play1.outcome == 'failure'
+        uses: r0adkll/upload-google-play@v1
+        continue-on-error: true
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: org.bne.salesman_tracker
+          releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
+          tracks: internal
           status: completed
           changesNotSentForReview: true
       - name: Build web (app + admin dashboard)
