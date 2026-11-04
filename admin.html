@@ -216,6 +216,11 @@
   .lfdot { background: none; border: none; }
   #map { position: relative; z-index: 0; }
   .leaflet-popup-content a { color: #22779A; }
+  .otp{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .otp-green{background:#DCFCE7;color:#15803D}.otp-orange{background:#FEF3C7;color:#B45309}.otp-red{background:#FEE2E2;color:#B91C1C}
+  .tl{border-left:2px solid #E2E8F0;margin-left:6px;padding-left:14px}.tl .ti{position:relative;margin-bottom:12px}
+  .tl .ti:before{content:'';position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:#22779A}
+  .tl .ti.deal:before{background:#7C3AED}.tl .ti.lead:before{background:#5B8DEF}.tl .ti.ref:before{background:#D97706}
 </style>
 </head>
 <body>
@@ -469,9 +474,15 @@
 
     <!-- ================= CUSTOMERS ================= -->
     <div id="customers" class="view">
+      <div class="panel" id="lcrPanel" style="display:none">
+        <h2>Location change requests</h2>
+        <div id="lcrTbl"></div>
+      </div>
       <div class="panel">
         <div class="toolbar">
           <input id="cSearch" placeholder="Search…" oninput="renderCustomers()">
+          <select id="cType" onchange="renderCustomers()"><option value="">All types</option><option value="customer">Customer</option><option value="channel_partner">Channel partner</option><option value="corporate">Corporate</option><option value="architect">Architect</option><option value="consultant">Consultant</option></select>
+          <button class="btn sec" id="mergeBtn" onclick="mergeSelected()" style="display:none">Merge selected (2)</button>
           <button class="btn sec" onclick="exportCsv('customers')">Export CSV</button>
         </div>
         <div id="custTbl"></div>
@@ -709,6 +720,11 @@
           <label class="switch"><input type="checkbox" id="setCamOnly"> Camera only for check-in photos (no gallery uploads)</label>
           <div class="field"><label>Flag check-in if farther than (metres) from saved location</label><input id="setDist" type="number" min="50"></div>
           <div class="field"><label>Flag visits shorter than (minutes)</label><input id="setMinMin" type="number" min="0"></div>
+          <div class="field"><label>Meeting code (OTP to customer's mobile at check-in)</label><select id="setOtpMode">
+            <option value="off">Off</option>
+            <option value="flag">On — check-out allowed without code, visit marked "Not verified"</option>
+            <option value="strict">Strict — must enter the code or skip with a reason</option></select></div>
+          <div class="field"><label>Meeting code length</label><select id="setOtpDigits"><option value="4">4 digits</option><option value="6">6 digits</option></select></div>
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="saveCheckin()">Save check-in rules</button> <span id="msgCheckin"></span></div>
       </div>
@@ -791,6 +807,12 @@
     <div class="mh"><h3 id="pickTitle">Pick people</h3><button class="xbtn" onclick="window._pickRes&&window._pickRes(null)">×</button></div>
     <div class="mb"><input id="pickSearch" placeholder="Search people…" style="width:100%;margin-bottom:8px"><div id="pickList" style="max-height:50vh;overflow-y:auto"></div>
       <div style="margin-top:10px;text-align:right"><button class="btn" id="pickDone">Done</button></div></div>
+  </div>
+</div>
+<div class="modal-bg" id="custBg" onclick="if(event.target===this)closeModal('custBg')">
+  <div class="modal" style="max-width:900px">
+    <div class="mh"><h3 id="custTitle">Customer</h3><button class="xbtn" onclick="closeModal('custBg')">×</button></div>
+    <div class="mb" id="custBody"></div>
   </div>
 </div>
 <div class="modal-bg" id="htmlBg" onclick="if(event.target===this)closeModal('htmlBg')">
@@ -1040,7 +1062,9 @@ let cache = { visits: [], customers: [], requirements: [], attendance: [], users
 let map, markers = [];
 const GMAPS_KEY = 'AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78';
 const STATUS_LABEL = { new:'New', contacted:'Contacted', visit_scheduled:'Visit scheduled', visited:'Visited', converted:'In pipeline', dropped:'Dropped' };
-const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved' };
+const FLAG_LABEL = { far_from_site:'Far from site', short_visit:'Short visit', mock_location:'Fake GPS', low_accuracy:'Weak GPS', location_saved:'Location saved', meeting_not_verified:'Meeting not verified', meeting_code_skipped:'Code skipped', code_to_other_number:'Code to other number' };
+const OTP_LABEL = { verified:['Verified','green'], skipped:['Skipped','orange'], not_verified:['Not verified','red'], pending:['Pending','orange'] };
+function otpHtml(s) { const o = OTP_LABEL[s]; return o ? `<span class="otp otp-${o[1]}">${o[0]}</span>` : '<span class="muted">—</span>'; }
 const KIND_LABEL = { card_front:'Card (front)', card_back:'Card (back)', site:'Site', machine:'Machine', drawing:'Drawing', po:'PO copy', payment:'Payment proof', document:'Document', other:'Other' };
 
 // ---- map provider: Google Maps first; falls back to OpenStreetMap automatically if Google refuses (e.g. billing not enabled) ----
@@ -1386,6 +1410,8 @@ function renderSettings() {
   document.getElementById('setCamOnly').checked = cr.camera_only !== false;
   document.getElementById('setDist').value = cr.distance_flag_m || 300;
   document.getElementById('setMinMin').value = cr.min_visit_minutes ?? 5;
+  document.getElementById('setOtpMode').value = cr.otp_mode || 'flag';
+  document.getElementById('setOtpDigits').value = String(cr.otp_digits || 4);
 }
 function renderTerritoryMap() {
   const wrap = document.getElementById('terrWrap');
@@ -1417,7 +1443,8 @@ async function saveDuty() {
     end: document.getElementById('setDutyEnd').value, working_days: days, auto_end_time: document.getElementById('setAutoEnd').value }, 'msgDuty');
 }
 async function saveCheckin() {
-  await saveSetting('checkin_rules', { photo_mandatory: document.getElementById('setPhotoReq').checked, camera_only: document.getElementById('setCamOnly').checked,
+  await saveSetting('checkin_rules', { ...S('checkin_rules', {}), otp_mode: document.getElementById('setOtpMode').value,
+    otp_digits: parseInt(document.getElementById('setOtpDigits').value) || 4, photo_mandatory: document.getElementById('setPhotoReq').checked, camera_only: document.getElementById('setCamOnly').checked,
     distance_flag_m: parseInt(document.getElementById('setDist').value) || 300, min_visit_minutes: parseInt(document.getElementById('setMinMin').value) || 0 }, 'msgCheckin');
 }
 
@@ -1964,8 +1991,10 @@ async function loadVisits() {
   let pc = {};
   if (ids.length) { const { data: md } = await db.from('media').select('entity_id').eq('entity_type','visit').in('entity_id', ids.slice(0, 300)); (md || []).forEach(m => pc[m.entity_id] = (pc[m.entity_id] || 0) + 1); }
   document.getElementById('visitsTbl').innerHTML = tbl(
-    ['Check-in','Salesperson','Place','Type','Purpose','Status','Duration','Distance','Flags','Photos','Outcome / notes'],
-    rows.map(x => [fmtDT(x.checkin_at || x.verified_at || x.scheduled_at), esc(uname(x.user_id)), esc(placeName(x)),
+    ['Check-in','Salesperson','Place','Visit','Meeting code','Type','Purpose','Status','Duration','Distance','Flags','Photos','Outcome / notes'],
+    rows.map(x => [fmtDT(x.checkin_at || x.verified_at || x.scheduled_at), esc(uname(x.user_id)),
+      x.customer_id ? `<a href="#" onclick="openCustomer('${x.customer_id}');return false">${esc(placeName(x))}</a>` : esc(placeName(x)),
+      x.visit_no ? 'Visit ' + x.visit_no : '—', otpHtml(x.otp_status) + (x.otp_skip_reason ? `<div class="muted" style="font-size:11px">${esc(x.otp_skip_reason)}</div>` : ''),
       esc(x.contact_type ? typeLabel(x.contact_type) : '—'), esc((x.purpose || '').replace(/_/g,' ')),
       x.status === 'checked_in' ? '<span class="chip live">At site now</span>' : chip(x.status),
       x.duration_min != null ? x.duration_min + ' min' : '—',
@@ -1983,13 +2012,94 @@ async function showVisitPhotos(vid) {
 }
 
 // ---------- customers / requirements / attendance ----------
-async function loadCustomers() { const { data } = await db.from('customers').select('*').order('name').limit(1000); cache.customers = data || []; renderCustomers(); }
+let _custSel = new Set();
+const custName = id => { const c = (cache.customers || []).find(x => x.id === id); return c ? c.name + (c.company ? ' (' + c.company + ')' : '') : 'Customer'; };
+async function loadCustomers() {
+  const [{ data }, vc, lc] = await Promise.all([
+    db.from('customers').select('*').order('name').limit(5000),
+    db.from('visits').select('customer_id,otp_status').not('customer_id', 'is', null).not('checkin_at', 'is', null).limit(20000),
+    db.from('leads').select('customer_id').not('customer_id', 'is', null).limit(20000)]);
+  const cnt = {}; (vc.data || []).forEach(v => { const c = cnt[v.customer_id] ||= { v: 0, ok: 0, l: 0 }; c.v++; if (v.otp_status === 'verified') c.ok++; });
+  (lc.data || []).forEach(l => { (cnt[l.customer_id] ||= { v: 0, ok: 0, l: 0 }).l++; });
+  cache.customers = (data || []).map(c => ({ ...c, _n: cnt[c.id] || { v: 0, ok: 0, l: 0 } }));
+  _custSel = new Set();
+  renderCustomers();
+  loadLocationRequests();
+}
 function renderCustomers() {
-  const s = (document.getElementById('cSearch').value || '').toLowerCase();
-  const rows = cache.customers.filter(c => !s || (c.name+' '+(c.company||'')+' '+c.mobile).toLowerCase().includes(s));
-  document.getElementById('custTbl').innerHTML = tbl(['Name','Company','Type','Mobile','Verified','Territory','Owner','Location'],
-    rows.map(c => [esc(c.name), esc(c.company)||'—', esc(typeLabel(c.type)), esc(c.mobile), c.mobile_verified_at ? '✔' : '<span class="flag">no</span>', esc(c.territory)||'—', esc(uname(c.owner_user_id)),
-      c.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank">view</a>` : '—']));
+  const s = (document.getElementById('cSearch').value || '').toLowerCase(), ty = document.getElementById('cType').value;
+  const rows = cache.customers.filter(c => (!s || (c.name+' '+(c.company||'')+' '+(c.mobile||'')+' '+(c.city||'')).toLowerCase().includes(s)) && (!ty || c.type === ty));
+  const canMerge = isOwner();
+  document.getElementById('custTbl').innerHTML = tbl([canMerge ? '' : null, 'Name','Company','Type','Mobile','Branch','Leads','Visits','Verified meetings','Owner','Site location'].filter(h => h !== null),
+    rows.map(c => [canMerge ? `<input type="checkbox" ${_custSel.has(c.id) ? 'checked' : ''} onclick="event.stopPropagation();toggleCustSel('${c.id}',this.checked)">` : null,
+      `<b>${esc(c.name)}</b>`, esc(c.company)||'—', esc(typeLabel(c.type)), esc(c.mobile || '—') + (c.mobile_verified_at ? ' <span title="Verified by meeting code">✔</span>' : ''),
+      esc(branchName(c.branch_id) || '—'), c._n.l, c._n.v, c._n.v ? `${c._n.ok} / ${c._n.v}` : '—', esc(uname(c.owner_user_id)),
+      c.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" onclick="event.stopPropagation()">${c.location_locked_at ? '🔒 ' : ''}view</a>` : '—'].filter(x => x !== null)),
+    i => `class="rowlink" onclick="openCustomer('${rows[i].id}')"`);
+  updateMergeBtn();
+}
+function toggleCustSel(id, on) { on ? _custSel.add(id) : _custSel.delete(id); updateMergeBtn(); }
+function updateMergeBtn() { const b = document.getElementById('mergeBtn'); if (b) b.style.display = _custSel.size === 2 ? '' : 'none'; }
+async function mergeSelected() {
+  const [a, b] = [..._custSel].map(id => cache.customers.find(c => c.id === id));
+  if (!a || !b) return;
+  const keep = (a._n.v + a._n.l) >= (b._n.v + b._n.l) ? a : b, rem = keep === a ? b : a;
+  if (!confirm(`Merge duplicates?\n\nKEEP: ${keep.name} ${keep.company ? '(' + keep.company + ')' : ''} · ${keep.mobile || ''}\nMERGE INTO IT: ${rem.name} ${rem.company ? '(' + rem.company + ')' : ''} · ${rem.mobile || ''}\n\nAll leads, visits, deals and follow-ups move to the kept customer. Visits are renumbered. This cannot be undone.`)) return;
+  const { error } = await db.rpc('merge_customers', { p_keep: keep.id, p_remove: rem.id });
+  if (error) return alert(error.message);
+  await loadCustomers();
+}
+async function loadLocationRequests() {
+  const { data, error } = await db.from('location_change_requests').select('*').order('created_at', { ascending: false }).limit(200);
+  const panel = document.getElementById('lcrPanel');
+  const rows = (data || []).filter(r => r.status === 'pending' || (Date.now() - new Date(r.created_at)) < 14 * 864e5);
+  if (error || !rows.length) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  const mapA = (lat, lng) => lat != null ? `<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}">map</a>` : '';
+  document.getElementById('lcrTbl').innerHTML = tbl(['Asked','By','Customer','Current location','New location','Reason','Status / action'],
+    rows.map(r => { const c = cache.customers.find(x => x.id === r.customer_id) || {};
+      return [fmtDT(r.created_at), esc(uname(r.requested_by)), `<a href="#" onclick="openCustomer('${r.customer_id}');return false">${esc(custName(r.customer_id))}</a>`,
+        esc(c.address || '') + ' ' + mapA(c.lat, c.lng), esc(r.new_address || '') + ' ' + mapA(r.new_lat, r.new_lng), esc(r.reason || ''),
+        r.status === 'pending' ? (isOwner() ? `<button class="btn sm" onclick="decideLoc('${r.id}',true)">Approve</button> <button class="btn sec sm" onclick="decideLoc('${r.id}',false)">Reject</button>` : '<span class="otp otp-orange">Waiting for Admin</span>')
+          : `<span class="otp otp-${r.status === 'approved' ? 'green' : 'red'}">${esc(r.status)}</span>${r.decision_note ? '<div class="muted" style="font-size:11px">' + esc(r.decision_note) + '</div>' : ''}`]; }));
+}
+async function decideLoc(id, approve) {
+  const note = approve ? '' : (prompt('Reason for rejecting (optional)') ?? null);
+  if (note === null) return;
+  const { error } = await db.rpc('decide_location_change', { p_id: id, p_approve: approve, p_note: note || null });
+  if (error) return alert(error.message);
+  await loadCustomers();
+}
+async function openCustomer(id) {
+  document.getElementById('custTitle').textContent = 'Loading…';
+  document.getElementById('custBody').innerHTML = '<div class="empty">Loading…</div>';
+  openModal('custBg');
+  const [c, sm, ld, vs, od, rf] = await Promise.all([
+    db.from('customers').select('*').eq('id', id).single(),
+    db.rpc('customer_summary', { p_id: id }),
+    db.from('leads').select('id,name,status,requirement,created_at,assigned_to,created_by,est_value').eq('customer_id', id).order('created_at', { ascending: false }),
+    db.from('visits').select('id,user_id,visit_no,checkin_at,checkout_at,duration_min,outcome,notes,otp_status,otp_skip_reason,flags,status').eq('customer_id', id).not('checkin_at', 'is', null).order('checkin_at', { ascending: false }),
+    db.from('orders').select('id,title,stage,est_value,quote_total,order_value,created_at,owner_id,created_by,referred_by').eq('customer_id', id).order('created_at', { ascending: false }),
+    db.from('orders').select('id,title,stage,est_value,quote_total,order_value,created_at,customer_id').eq('referred_by', id).order('created_at', { ascending: false })]);
+  if (c.error) { document.getElementById('custBody').innerHTML = `<div class="err">${esc(c.error.message)}</div>`; return; }
+  const C = c.data, S2 = sm.data || {};
+  document.getElementById('custTitle').textContent = C.name + (C.company ? ' — ' + C.company : '');
+  const ev = [
+    ...(ld.data || []).map(l => ({ t: l.created_at, k: 'lead', h: `<b>Lead</b> · ${esc(l.requirement || l.name || '')} · ${chip(l.status)} <span class="muted">by ${esc(uname(l.assigned_to || l.created_by))}</span>`, on: `openLead('${l.id}')` })),
+    ...(vs.data || []).map(v => ({ t: v.checkin_at, k: 'visit', h: `<b>Visit ${v.visit_no || ''}</b> · ${esc(uname(v.user_id))} · ${v.duration_min != null ? v.duration_min + ' min' : 'in progress'} ${otpHtml(v.otp_status)} ${flagsHtml(realFlags(v.flags)).replace('<span class="muted">—</span>', '')}<div class="muted">${esc([v.outcome, v.notes, v.otp_skip_reason ? 'Code skipped: ' + v.otp_skip_reason : ''].filter(Boolean).join(' — '))}</div>` })),
+    ...(od.data || []).map(o => ({ t: o.created_at, k: 'deal', h: `<b>Deal</b> · ${esc(o.title || '')} · ${stageChip(o.stage)} ${oppVal(o) ? rs(oppVal(o)) : ''}${o.referred_by ? ' <span class="muted">· referred by ' + esc(custName(o.referred_by)) + '</span>' : ''}`, on: `openOpp('${o.id}')` })),
+    ...(rf.data || []).map(o => ({ t: o.created_at, k: 'ref', h: `<b>Referred a deal</b> · ${esc(custName(o.customer_id))} · ${esc(o.title || '')} · ${stageChip(o.stage)} ${oppVal(o) ? rs(oppVal(o)) : ''}`, on: `openOpp('${o.id}')` })),
+  ].sort((a, b) => new Date(b.t) - new Date(a.t));
+  const k = (n, l) => `<div style="flex:1;min-width:90px;text-align:center"><div style="font-size:20px;font-weight:800">${n}</div><div class="muted" style="font-size:11.5px">${l}</div></div>`;
+  document.getElementById('custBody').innerHTML = `
+    <div class="muted" style="margin-bottom:10px">${esc(typeLabel(C.type))} · ${esc(C.mobile || 'no mobile')}${C.mobile_verified_at ? ' ✔' : ''}${C.email ? ' · ' + esc(C.email) : ''} · ${esc(branchName(C.branch_id) || '')}<br>${esc([C.address, C.city].filter(Boolean).join(', '))}
+      ${C.lat ? ` · <a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${C.lat},${C.lng}">${C.location_locked_at ? '🔒 ' : ''}site on map</a>` : ''}${S2.pending_location_change ? ' · <span class="otp otp-orange">location change pending</span>' : ''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;background:#F8FAFC;border-radius:12px;padding:12px;margin-bottom:14px">
+      ${k(S2.visits ?? 0, 'Visits')}${k(S2.verified_visits ?? 0, 'Verified meetings')}${k(S2.leads ?? 0, 'Leads')}${k(S2.deals ?? 0, 'Deals')}${k(rs(S2.won_value || 0), 'Won')}
+      ${S2.referred_deals ? k(S2.referred_deals, 'Deals referred') + k(rs(S2.referred_won_value || 0), 'Referred & won') : ''}
+    </div>
+    <h4 style="margin:0 0 10px">Timeline</h4>
+    ${ev.length ? '<div class="tl">' + ev.map(e => `<div class="ti ${e.k}"><div class="muted" style="font-size:11.5px">${fmtDT(e.t)}</div><div ${e.on ? `class="rowlink" style="cursor:pointer" onclick="closeModal('custBg');${e.on}"` : ''}>${e.h}</div></div>`).join('') + '</div>' : '<div class="empty">Nothing recorded yet.</div>'}`;
 }
 async function loadReqs() { const { data } = await db.from('requirements').select('*, customers(name,company)').order('created_at',{ascending:false}).limit(500); cache.requirements = data || []; renderReqs(); }
 function renderReqs() {
@@ -2251,7 +2361,8 @@ async function openOpp(id) {
   const kv = [['Customer', esc(partyName(o)) + (o.customer_id ? '' : ' <span class="chip new">lead</span>')], ['Mobile', mob],
     ['Category', esc(o.order_categories?.name || '—')], ['Value', `<b>${oppVal(o) ? rs(oppVal(o)) : '—'}</b>`], ['Qty / area', [o.qty ? 'Qty ' + o.qty : '', o.sqft ? o.sqft + ' sq ft' : ''].filter(Boolean).join(' · ') || '—'],
     ['Owner', esc(uname(ownerOf(o)))], ['Chance', open ? (o.probability ?? 0) + '%' : '—'], ['Expected close', esc(o.expected_close || '—')],
-    ['In this stage', open ? daysIn(o) + ' days' : '—'], ['Source', esc(o.source || o.leads?.source || '—')], ['Created', fmtDT(o.created_at) + ' by ' + esc(uname(o.created_by))]];
+    ['In this stage', open ? daysIn(o) + ' days' : '—'], ['Source', esc(o.source || o.leads?.source || '—')],
+    ['Referred by', o.referred_by ? `<a href="#" onclick="openCustomer('${o.referred_by}');return false">${esc(custName(o.referred_by))}</a>` : '—'], ['Created', fmtDT(o.created_at) + ' by ' + esc(uname(o.created_by))]];
   if (o.quote_total) kv.push(['Quotation', `${esc(o.quote_number || '')} · ${rs(o.quote_total)}${o.discount_pct ? ' (' + o.discount_pct + '% disc.)' : ''}`]);
   if (o.quote_assigned_to) kv.push(['Quote by', esc(uname(o.quote_assigned_to))]);
   if (o.stage === 'won') kv.push(['PO', `<b>${esc(o.po_number)}</b> · ${esc(o.po_date || '')}`], ['Order value', `<b>${rs(o.order_value)}</b>`],
@@ -3401,7 +3512,7 @@ async function loadAnalytics() {
   document.getElementById('anLabel').textContent = 'Loading…';
   const L = 10000;
   const [vis, lds, newD, wonD, lostD, pays, trv, att] = await Promise.all([
-    db.from('visits').select('id,user_id,status,checkin_at,checkout_at,duration_min,flags,outcome').gte('checkin_at', fromTs).lt('checkin_at', toTs).limit(L),
+    db.from('visits').select('id,user_id,status,checkin_at,checkout_at,duration_min,flags,outcome,otp_status').gte('checkin_at', fromTs).lt('checkin_at', toTs).limit(L),
     db.from('leads').select('id,created_by,assigned_to,created_at,status,est_value').gte('created_at', fromTs).lt('created_at', toTs).limit(L),
     db.from('orders').select('id,owner_id,created_by,created_at,stage,est_value,quote_total,order_value').gte('created_at', fromTs).lt('created_at', toTs).limit(L),
     db.from('orders').select('id,owner_id,created_by,won_at,stage,est_value,quote_total,order_value').eq('stage', 'won').gte('won_at', fromTs).lt('won_at', toTs).limit(L),
@@ -3436,6 +3547,7 @@ async function loadAnalytics() {
   document.getElementById('anLabel').textContent = `${fmtD(from)} – ${fmtD(to)} · ${branch ? branchName(branch) : 'All branches'} · ${rep ? (uById[rep]?.name || 'Salesperson') : 'All salespeople'}`;
   document.getElementById('anCards').innerHTML =
     kpi(tot.visits, `Visits (${tot.done} completed${tot.flagged ? ', ' + tot.flagged + ' flagged' : ''})`, 'blue', '⌖') +
+    kpi(D.visits.filter(v => v.otp_status === 'verified').length + (tot.visits ? ` (${Math.round(D.visits.filter(v => v.otp_status === 'verified').length / tot.visits * 100)}%)` : ''), 'Meetings verified by code', 'green', '✔') +
     kpi(hm(tot.siteMin), 'Time at sites', 'teal', '◷') + kpi(tot.days, 'Days on duty', 'purple', '☀') +
     kpi(tot.leads, 'New leads', 'blue', '◎') + kpi(tot.newDeals, `New deals · ${_rupees(tot.newVal)}`, 'purple', '#') +
     kpi(tot.won, 'Deals won', 'green', '✓') + kpi(_rupees(tot.wonVal), 'Revenue won', 'green', '₹') + kpi(winRate, 'Win rate', 'orange', '%') +
@@ -3772,7 +3884,7 @@ function exportCsv(kind) {
       category: catName(l.category_id), value: l.est_value, city: l.city, territory: l.territory, status: l.status, drop_reason: l.drop_reason,
       assigned_to: l.assigned_to ? uname(l.assigned_to) : '', last_activity: l.last_activity_at, requirement: l.requirement }),
     visits: v => ({ checkin: v.checkin_at || v.scheduled_at, checkout: v.checkout_at, salesperson: uname(v.user_id), place: placeName(v), type: v.contact_type,
-      purpose: v.purpose, status: v.status, duration_min: v.duration_min, lat: v.verified_lat, lng: v.verified_lng, distance_m: v.distance_from_pin_m,
+      purpose: v.purpose, visit_no: v.visit_no, meeting_code: v.otp_status, code_skip_reason: v.otp_skip_reason, status: v.status, duration_min: v.duration_min, lat: v.verified_lat, lng: v.verified_lng, distance_m: v.distance_from_pin_m,
       flags: (v.flags||[]).join('|'), outcome: v.outcome, notes: v.notes }),
     customers: c => ({ name: c.name, company: c.company, type: c.type, mobile: c.mobile, verified: !!c.mobile_verified_at, territory: c.territory, owner: uname(c.owner_user_id), lat: c.lat, lng: c.lng }),
     requirements: r => ({ created: r.created_at, customer: r.customers?.name, product: r.product, qty: r.quantity, expected_value: r.expected_value, status: r.status, follow_up: r.follow_up_date, by: uname(r.created_by) }),
