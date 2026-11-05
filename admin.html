@@ -1942,16 +1942,16 @@ async function loadOverview() {
   const [{ data: att }, { data: summ }] = await Promise.all([
     db.from('attendance').select('user_id').eq('date', todayStr()).not('day_start_at','is',null),
     db.rpc('visit_day_summary', { p_day: todayStr() })]);
-  const S2 = summ || [];
+  const S2 = (summ || []).filter(r => !BRANCH || !r.user_id || inBranch(r.user_id));
   const checkins = S2.reduce((s, r) => s + r.checkins, 0), flagged = S2.reduce((s, r) => s + r.flagged, 0);
-  const orders = cache.orders || [], mStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  const orders = (cache.orders || []).filter(o => inBranch(ownerOf(o))), mStart = new Date(start.getFullYear(), start.getMonth(), 1);
   const pipeline = orders.filter(o => OPEN_STAGES.includes(o.stage)).reduce((s, o) => s + oppVal(o), 0);
   const wonM = orders.filter(o => o.stage === 'won' && o.won_at && new Date(o.won_at) >= mStart).reduce((s, o) => s + oppVal(o), 0);
   document.getElementById('statCards').innerHTML =
     kpi(cache.leads.filter(l => new Date(l.created_at) >= start).length, 'Leads today', 'blue', '＋', "setLeadFilter('')") +
     kpi(cache.leads.filter(isStale).length, 'Untouched leads', 'red', '⚠', "setLeadFilter('stale')") +
     kpi(checkins, 'Check-ins today', 'teal', '📍', "show('visits')") +
-    kpi((att || []).length, 'On duty today', 'purple', '👤', "show('attendance')") +
+    kpi((att || []).filter(a => inBranch(a.user_id)).length, 'On duty today', 'purple', '👤', "show('attendance')") +
     kpi(rsShort(pipeline), 'Open pipeline', 'orange', '₹', "show('pipeline')") +
     kpi(rsShort(wonM), 'Won this month', 'green', '✓', "show('pipeline')");
   document.getElementById('todayByUser').innerHTML = daySummaryTable(S2);
@@ -1961,8 +1961,8 @@ async function loadOverview() {
     stale.map(l => [`<b>${esc(l.name)}</b>${l.company ? ' <span class="muted">' + esc(l.company) + '</span>' : ''}`, l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>', `<span class="stale">${ago(l.last_activity_at)}</span>`]),
     i => `class="rowlink" onclick="openLead('${stale[i].id}')"`) : '<div class="empty">All leads are being worked on 👍</div>';
   const { data: fl } = await db.from('visits').select('*, customers(name,company), leads(name,company)')
-    .neq('flags','{}').gte('scheduled_at', new Date(Date.now()-7*864e5).toISOString()).order('scheduled_at',{ascending:false}).limit(40);
-  const fr = (fl || []).filter(x => realFlags(x.flags).length).slice(0, 10);
+    .neq('flags','{}').gte('scheduled_at', new Date(Date.now()-7*864e5).toISOString()).order('scheduled_at',{ascending:false}).limit(200);
+  const fr = (fl || []).filter(x => realFlags(x.flags).length && inBranch(x.user_id)).slice(0, 10);
   document.getElementById('flagged').innerHTML = fr.length ? tbl(['When','Salesperson','Place','Flags'],
     fr.map(x => [fmtDT(x.checkin_at || x.verified_at || x.scheduled_at), esc(uname(x.user_id)), esc(placeName(x)), flagsHtml(realFlags(x.flags))]))
     : '<div class="empty">No flagged visits. Good sign.</div>';
