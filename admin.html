@@ -1840,7 +1840,7 @@ async function loadPhotos() {
 }
 
 // ---------- team / invites ----------
-const APK_URL = 'https://github.com/manubne/salesman-tracker/releases/download/latest/app-release.apk';
+const APK_URL = 'https://play.google.com/store/apps/details?id=org.bne.salesman_tracker';
 async function addInvite() {
   const m = document.getElementById('inviteMsg'); m.style.color = 'var(--red)'; m.textContent = '';
   const name = document.getElementById('spName').value.trim(), mob = document.getElementById('spMobile').value.replace(/\D/g, '');
@@ -1863,7 +1863,12 @@ async function emailInvite(email, name) {
   const dash = location.origin + location.pathname;
   const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNE Sales</b>.</p><ol><li>Install the app on your Android phone: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it, enter this email (<b>${esc(email)}</b>) and type the one-time code we send you.</li></ol><p>Managers can also use the web dashboard: <a href="${dash}">${dash}</a></p><p>Welcome aboard!</p>`;
   const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Sales', html } });
-  if (error || (data && data.error)) { alert('Email failed: ' + (error?.message || data.error)); return; }
+  if (error || (data && (data.error || data.statusCode >= 400))) {
+    let why = data?.error?.message || data?.message || data?.error || error?.message || '';
+    try { const j = await error?.context?.json?.(); why = j?.message || j?.error?.message || j?.error || why; } catch (_) {}
+    alert('Could not send the email: ' + why + '\n\nThey can still sign in: open the app or this dashboard, enter ' + email + ' and type the code sent to that inbox.');
+    return;
+  }
   alert('Invite email sent to ' + email);
 }
 function waInvite(mob, name) {
