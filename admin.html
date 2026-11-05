@@ -826,7 +826,8 @@
         <div><div class="kv" id="pvKv"></div><div id="pvOrder" style="margin-top:14px"></div></div>
         <div>
           <div class="toolbar" id="pvActions" style="flex-wrap:wrap"></div><div id="pvMsg"></div>
-          <h4 style="font-size:13px;margin:14px 0 8px">Payment proof</h4>
+          <h4 style="font-size:13px;margin:14px 0 8px;display:flex;align-items:center;gap:10px">Payment proof
+            <label class="btn sec sm" style="cursor:pointer;margin:0">+ Attach screenshot<input type="file" accept="image/*,application/pdf" multiple hidden onchange="attachPayProof(this)"></label></h4>
           <div class="thumbs" id="pvFiles"></div>
         </div>
       </div>
@@ -2934,13 +2935,22 @@ async function openPayment(id) {
     db.from('payment_receipts').select('id, ref_no, amount, tds_amount, received_on, mode, utr, status').eq('order_id', x.order_id).order('received_on')]);
   const urls = await signedUrls((files || []).map(f => f.storage_path));
   document.getElementById('pvFiles').innerHTML = (files || []).length ? files.map((f, i) =>
-    `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: f.kind, at: f.created_at, by: f.uploaded_by })})'></div>`).join('')
+    (/\.pdf$/i.test(f.storage_path) ? `<div style="text-align:center"><a href="${urls[i]}" target="_blank" class="btn sec sm">PDF proof</a></div>` : `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: f.kind, at: f.created_at, by: f.uploaded_by })})'></div>`)).join('')
     : '<span class="muted">No screenshot attached.</span>';
   const v = Number(o.order_value || 0), c = Number(o.collected_amount || 0);
   document.getElementById('pvOrder').innerHTML = `<h4 style="font-size:13px;margin:0 0 6px">All payments on this order</h4>
     <div class="muted" style="margin-bottom:6px">Order ${rs(v)} · verified ${rs(c)} · balance <b style="color:${v - c > 0 ? 'var(--red)' : 'var(--green)'}">${rs(Math.max(v - c, 0))}</b>${o.fully_paid_at ? ' · <b style="color:var(--green)">fully paid</b>' : ''}</div>` +
     (all || []).map(r => `<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #EEF1F7;${r.id === x.id ? 'font-weight:700' : 'cursor:pointer'}" ${r.id === x.id ? '' : `onclick="openPayment('${r.id}')"`}>
       <span style="width:42px">#${r.ref_no}</span><span style="width:96px">${esc(fmtD(r.received_on))}</span><span style="flex:1">${rs(r.amount)}${Number(r.tds_amount) ? ' + TDS ' + rs(r.tds_amount) : ''} · ${esc(PAY_MODE[r.mode] || r.mode)} ${esc(r.utr || '')}</span>${paySt(r.status, true)}</div>`).join('');
+}
+async function attachPayProof(inp) {
+  const files = [...(inp.files || [])]; inp.value = '';
+  if (!files.length || !_payView) return;
+  const box = document.getElementById('pvFiles'); box.innerHTML = '<span class="muted">Uploading…</span>';
+  try {
+    for (const f of files) await uploadMedia(f, 'payment', _payView.id, 'payment');
+    await openPayment(_payView.id);
+  } catch (e) { box.innerHTML = `<span class="err">Upload failed: ${esc(e.message || e)}</span>`; }
 }
 async function reviewPayment(status) {
   let reason = null;
