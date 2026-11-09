@@ -1502,7 +1502,8 @@ function filteredLeads() {
   return cache.leads.filter(l =>
     (!q || [l.name, l.company, l.mobile, l.city, l.email].join(' ').toLowerCase().includes(q)) &&
     (!st || (st === 'open' ? isOpen(l) : st === 'stale' ? isStale(l) : st === 'unassigned' ? !l.assigned_to : l.status === st)) &&
-    (!rep || l.assigned_to === rep) && (!ty || l.contact_type === ty) && (!src || l.source === src));
+    (!rep || l.assigned_to === rep) && (!ty || l.contact_type === ty) && (!src || l.source === src) &&
+    (!BRANCH || !l.assigned_to || inBranch(l.assigned_to)));
 }
 function renderLeads() {
   const L = cache.leads.filter(l => inBranch(l.assigned_to || l.created_by)), mStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -3617,7 +3618,7 @@ const branchName = id => (_branches.find(b => b.id === id) || {}).name || '';
 function inBranch(uid) {
   if (!BRANCH || !uid) return true;
   const u = cache.users.find(x => x.id === uid);
-  return !u || u.branch_id === BRANCH;
+  return !!u && u.branch_id === BRANCH;
 }
 async function loadBranches() {
   const { data } = await db.from('branches').select('*').order('name');
