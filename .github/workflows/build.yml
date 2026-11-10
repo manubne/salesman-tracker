@@ -63,8 +63,8 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.WAKE_LOCK"/>' $M
           sed -i 's#</application>#        <service android:name="id.flutter.flutter_background_service.BackgroundService" android:foregroundServiceType="location" tools:replace="android:foregroundServiceType"/>\n    </application>#' $M
-          sed -i 's#</application>#        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"/>\n    </application>#' $M
-          sed -i 's#</head>#  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNT4QhzhjkPlfkp3KjuwiUrUS2X8Nl-78"></script>\n</head>#' web/index.html
+          sed -i 's#</application>#        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDXbBy28hjRVV3tHgXAJQSgiPMo5j3Y06w"/>\n    </application>#' $M
+          sed -i 's#</head>#  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC_OjH0aLXnZBvzKldqZpUwackrI7DVlbc"></script>\n</head>#' web/index.html
           # ML Kit text recognition references optional language packs we don't ship — tell R8 not to fail on them
           printf '%s\n' '-dontwarn com.google.mlkit.vision.text.chinese.**' '-dontwarn com.google.mlkit.vision.text.devanagari.**' '-dontwarn com.google.mlkit.vision.text.japanese.**' '-dontwarn com.google.mlkit.vision.text.korean.**' >> android/app/proguard-rules.pro
           echo "--- manifest ---"; cat $M
