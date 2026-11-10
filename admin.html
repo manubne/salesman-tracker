@@ -1880,13 +1880,16 @@ async function loadInvites() {
   const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
   _selInv.clear(); updDelInv();
   document.getElementById('invitesTbl').innerHTML = tbl(['<input type="checkbox" title="Select all pending" onchange="selAllInv(this)" style="width:16px;height:16px">','Name','Email','Mobile','Role','Branch','Status','Action'],
-    (data || []).map(i => [i.status === 'accepted' ? '' : `<input type="checkbox" class="invSel" data-id="${i.id}" onchange="togInv(this)" style="width:16px;height:16px">`, esc(i.name) || '<span class="muted">(no name)</span>', esc(i.email || '—'), esc(i.mobile || '—'), esc(ROLE_LABEL[i.role] || i.role), esc(branchName(i.branch_id)) || '—', chip(i.status),
+    (data || []).filter(i => !isHiddenUser(i)).map(i => [i.status === 'accepted' ? '' : `<input type="checkbox" class="invSel" data-id="${i.id}" onchange="togInv(this)" style="width:16px;height:16px">`, esc(i.name) || '<span class="muted">(no name)</span>', esc(i.email || '—'), esc(i.mobile || '—'), esc(ROLE_LABEL[i.role] || i.role), esc(branchName(i.branch_id)) || '—', chip(i.status),
       i.status === 'accepted' ? '<span class="muted">joined</span>' : (i.email ? '<a href="#" onclick="emailInvite(' + JSON.stringify(i.email).replace(/"/g,'&quot;') + ',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">Email link</a>' : '') + (i.mobile ? ' · <a href="#" onclick="waInvite(\'' + i.mobile.slice(2) + '\',' + JSON.stringify(i.name || '').replace(/"/g,'&quot;') + ');return false" style="font-weight:650">WhatsApp</a>' : '')]));
 }
+// Play Store reviewer login: kept working for Google's app review, hidden from every list
+const HIDDEN_EMAILS = ['playreview@bne.org.in'], HIDDEN_IDS = new Set(['99c95aea-9662-4c04-b09e-befa64d307cd']);
+const isHiddenUser = u => !!u && (HIDDEN_IDS.has(u.id || u.user_id) || HIDDEN_EMAILS.includes(String(u.email || '').toLowerCase()));
 async function loadUsers(onlyRender) {
   if (!onlyRender) {
     const [{ data }, _b] = await Promise.all([db.from('users').select('*').is('deleted_at', null).order('name'), loadBranches()]);
-    cache.users = data || [];
+    cache.users = (data || []).filter(u => !isHiddenUser(u));
     if (isOwner()) await loadMgrBranches();
   }
   const el = document.getElementById('teamTbl'); if (!el) return;
@@ -3245,7 +3248,7 @@ async function loadLive() {
   if (!isManager()) return;
   const { data, error } = await db.rpc('live_reps');
   if (error) { document.getElementById('mapSide').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
-  const rows = (data || []).filter(r => (r.role === 'sales' || r.at) && inBranch(r.user_id));
+  const rows = (data || []).filter(r => !HIDDEN_IDS.has(r.user_id) && (r.role === 'sales' || r.at) && inBranch(r.user_id));
   const onDuty = rows.filter(r => r.day_start_at && !r.day_end_at);
   const fresh = onDuty.filter(r => minsAgo(r.at) != null && minsAgo(r.at) <= 20);
   const lowBat = onDuty.filter(r => r.battery != null && r.battery < 20);
@@ -3687,7 +3690,7 @@ const avatarHtml = (u, size = 28) => {
 let _chatInbox = [], _chatPeople = {}, _chatCur = null, _chatMsgs = [], _chatMembers = {}, _chatRt = null, _chatReply = null, _chatEdit = null, _chatFiles = [], _chatMentions = {}, _chatFilter = '';
 async function loadChat() {
   const [inbox, people] = await Promise.all([db.rpc('chat_inbox'), db.rpc('chat_people')]);
-  _chatInbox = inbox.data || []; _chatPeople = {}; (people.data || []).forEach(p => _chatPeople[p.id] = p);
+  _chatInbox = inbox.data || []; _chatPeople = {}; (people.data || []).filter(p => !isHiddenUser(p)).forEach(p => _chatPeople[p.id] = p);
   renderChatInbox(); updateChatBadge();
   if (!_chatRt) {
     _chatRt = db.channel('chat-web')
