@@ -1407,7 +1407,7 @@ const NOTIF_CATS = [
   ['followup_due', 'Follow-ups due (daily 9:30 AM)', 'Salesperson'],
   ['deal_won', 'Deal won', 'Branch manager, Head, Admin'],
 ];
-const NOTIF_STATUS = { sent: 'Delivered', queued: 'Sending…', no_device: 'App not installed / never opened', failed: 'Failed', not_configured: 'Firebase key not set' };
+const NOTIF_STATUS = { sent: 'Delivered', queued: 'Sending…', no_device: 'No phone signed in with this account', failed: 'Failed', not_configured: 'Firebase key not set' };
 function renderNotifSettings() {
   if (!document.getElementById('nfCats')) return;
   const n = S('notifications', {}), c = n.categories || {};
@@ -1430,7 +1430,8 @@ async function saveNotifSettings() {
 async function notifTest() {
   const { error } = await db.rpc('notify_test');
   if (error) { flash('msgNotif', error.message, false); return; }
-  flash('msgNotif', 'Test sent — check your phone');
+  const { count } = await db.from('user_devices').select('id', { count: 'exact', head: true }).eq('user_id', ME.id);
+  flash('msgNotif', count ? 'Test sent — check your phone' : `Sent, but no phone is signed in to the app as ${ME.email || 'this account'} — sign in on your phone with this account first`, !!count);
   setTimeout(loadNotifLog, 3500);
 }
 async function loadNotifLog() {
