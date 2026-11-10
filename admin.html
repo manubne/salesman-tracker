@@ -3297,23 +3297,38 @@ function routeFor(uid, day) {
   document.getElementById('routeUser').value = uid; document.getElementById('routeDate').value = day || todayStr();
   loadRoute();
 }
-const SRC_LABEL = { bg: 'Tracking', start: 'Day start', end: 'Day end', checkin: 'Check-in', checkout: 'Check-out', app: 'App' };
+const SRC_LABEL = { bg: 'Tracking', move: 'Moving', start: 'Day start', end: 'Day end', checkin: 'Check-in', checkout: 'Check-out', app: 'App' };
+// all pings for one person/day (the API returns at most 1000 rows per request)
+async function dayPings(uid, s, e) {
+  const out = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data, error } = await db.from('location_pings').select('*').eq('user_id', uid).gte('at', s.toISOString()).lt('at', e.toISOString()).order('at').range(from, from + 999);
+    if (error) break;
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+const KM_METHOD = { road: 'road-snapped', live: 'live estimate · exact km tonight', estimated: 'estimated (Google unavailable)', straight: 'straight line' };
 async function loadRoute() {
   if (!map) await initMap(); if (!map) return;
   const uid = document.getElementById('routeUser').value, d = document.getElementById('routeDate').value;
   if (!uid || !d) { alert('Pick a salesperson and date'); return; }
   clearMapLayers();
   const s = istDayStart(d), e = new Date(s.getTime() + 864e5);
-  const [{ data }, { data: vs }, { data: tr }] = await Promise.all([
-    db.from('location_pings').select('*').eq('user_id', uid).gte('at', s.toISOString()).lt('at', e.toISOString()).order('at').limit(5000),
+  const [data, { data: vs }, { data: tr }, { data: tp }] = await Promise.all([
+    dayPings(uid, s, e),
     db.from('visits').select('*, customers(name,company), leads(name,company)').eq('user_id', uid).gte('checkin_at', s.toISOString()).lt('checkin_at', e.toISOString()).order('checkin_at'),
-    db.from('daily_travel').select('*').eq('user_id', uid).eq('day', d).maybeSingle()]);
+    db.from('daily_travel').select('*').eq('user_id', uid).eq('day', d).maybeSingle(),
+    db.from('travel_paths').select('path, method').eq('user_id', uid).eq('day', d).maybeSingle()]);
   const P = data || [];
   const side = document.getElementById('mapSide');
   if (!P.length) { side.innerHTML = '<div class="empty">No location trail for that day.</div>'; return; }
   const good = P.filter(p => !p.mock), path = good.map(p => [p.lat, p.lng]);
-  _routeLayer.push(MP.line(path));
+  const roadPath = tp && Array.isArray(tp.path) && tp.path.length > 1 ? tp.path : null;
+  _routeLayer.push(MP.line(roadPath || path));
   P.forEach(p => {
+    if (p.source === 'move' && !p.mock) return; // dense moving points: the line shows them
     const c = p.mock ? '#DC2626' : p.source === 'checkin' || p.source === 'checkout' ? '#7C3AED' : '#22779A';
     const m = MP.dot([p.lat, p.lng], c, 9);
     m.bindPopup(() => `<div style="font:12.5px -apple-system,sans-serif">${fmtT(p.at)} · ${esc(SRC_LABEL[p.source] || p.source || '')}<br>${p.battery != null ? 'Battery ' + p.battery + '% · ' : ''}${p.accuracy_m ? '±' + Math.round(p.accuracy_m) + ' m' : ''}${p.mock ? '<br><b style="color:#DC2626">Fake GPS</b>' : ''}</div>`);
@@ -3335,11 +3350,11 @@ async function loadRoute() {
   P.forEach(p => {
     const t = new Date(p.at);
     if (lastT && (t - lastT) / 60000 > interval * 2.5) html += `<div class="ev" style="color:var(--red)"><b>No signal for ${Math.round((t - lastT) / 60000)} min</b><small>phone off, no network, or tracking stopped</small></div>`;
-    if (p.source && p.source !== 'bg') html += `<div class="ev"><b>${esc(SRC_LABEL[p.source] || p.source)}</b>${p.mock ? ' <span class="flag">Fake GPS</span>' : ''}<small>${fmtT(p.at)}${p.battery != null ? ' · 🔋 ' + p.battery + '%' : ''}</small></div>`;
+    if (p.source && p.source !== 'bg' && p.source !== 'move') html += `<div class="ev"><b>${esc(SRC_LABEL[p.source] || p.source)}</b>${p.mock ? ' <span class="flag">Fake GPS</span>' : ''}<small>${fmtT(p.at)}${p.battery != null ? ' · 🔋 ' + p.battery + '%' : ''}</small></div>`;
     lastT = t;
   });
   (vs || []).forEach((v, i) => { html += `<div class="ev"><b>${i + 1}. ${esc(placeName(v))}</b> ${realFlags(v.flags).length ? flagsHtml(realFlags(v.flags)) : ''}<small>${fmtT(v.checkin_at)}–${fmtT(v.checkout_at)}${v.duration_min != null ? ' · ' + v.duration_min + ' min' : ''}</small></div>`; });
-  const kmLine = tr ? `<b style="font-size:20px">${Number(tr.adjusted_km ?? tr.km_final ?? 0).toFixed(1)} km</b> <span class="muted">${tr.adjusted_km != null ? 'adjusted' : esc(tr.method || '')}</span>${tr.amount ? ' · ' + rs(tr.amount) : ''}`
+  const kmLine = tr ? `<b style="font-size:20px">${Number(tr.adjusted_km ?? tr.km_final ?? 0).toFixed(1)} km</b> <span class="muted">${tr.adjusted_km != null ? 'adjusted' : esc(KM_METHOD[tr.method] || tr.method || '')}</span>${tr.amount ? ' · ' + rs(tr.amount) : ''}${tr.note ? `<div class="muted" style="font-size:11.5px;margin-top:4px">${esc(tr.note)}</div>` : ''}`
     : '<span class="muted">Km not calculated yet</span>';
   side.innerHTML = `<div style="padding:4px 2px 10px"><div style="font-weight:700">${esc(uname(uid))} · ${esc(d)}</div><div style="margin:6px 0">${kmLine}</div>
     <div class="muted" style="font-size:12px">${P.length} points · ${fmtT(P[0].at)} – ${fmtT(P[P.length - 1].at)} · ${(vs || []).length} check-ins${P.some(p => p.mock) ? ' · <span class="stale">' + P.filter(p => p.mock).length + ' fake-GPS points</span>' : ''}</div>
@@ -3409,7 +3424,7 @@ function renderTravel() {
   document.getElementById('travelTbl').innerHTML = tbl(['Date', 'Salesperson', 'Km', 'Method', 'On duty', 'Points', 'Longest gap', 'Amount', ''],
     list.map(t => [esc(t.day), esc(uname(t.user_id)),
       `<b>${effKm(t).toFixed(1)}</b>${t.adjusted_km != null ? ` <span class="flag info" title="${esc(t.adjust_reason || '')}">adjusted from ${Number(t.km_final).toFixed(1)}</span>` : ''}`,
-      `${esc(t.method || '—')}${t.note ? `<br><span class="muted" style="font-size:11px">${esc(t.note.slice(0, 90))}</span>` : ''}`,
+      `${esc(KM_METHOD[t.method] || t.method || '—')}${t.note ? `<br><span class="muted" style="font-size:11px">${esc(t.note.slice(0, 90))}</span>` : ''}`,
       t.first_at ? fmtT(t.first_at) + ' – ' + fmtT(t.last_at) : '—',
       `${t.points_used}/${t.points}${t.mock_points ? ` <span class="flag">${t.mock_points} fake</span>` : ''}`,
       t.max_gap_min > 45 ? `<span class="stale">${t.max_gap_min} min</span>` : (t.max_gap_min ?? '—') + ' min',
