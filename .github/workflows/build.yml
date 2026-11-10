@@ -71,6 +71,36 @@ jobs:
           # ML Kit text recognition references optional language packs we don't ship — tell R8 not to fail on them
           printf '%s\n' '-dontwarn com.google.mlkit.vision.text.chinese.**' '-dontwarn com.google.mlkit.vision.text.devanagari.**' '-dontwarn com.google.mlkit.vision.text.japanese.**' '-dontwarn com.google.mlkit.vision.text.korean.**' >> android/app/proguard-rules.pro
           echo "--- manifest ---"; cat $M
+      - name: Notifications (buzzer sound, channels, desugaring)
+        working-directory: app
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          mkdir -p android/app/src/main/res/raw
+          if [ -f notif/buzzer.wav ]; then
+            cp notif/buzzer.wav android/app/src/main/res/raw/buzzer.wav
+            printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@raw/buzzer" />' > android/app/src/main/res/raw/keep.xml
+          fi
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.VIBRATE"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>' $M
+          sed -i 's#</application>#        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="bne_general_v1"/>\n    </application>#' $M
+          python3 - <<'PY'
+          import os
+          p = 'android/app/build.gradle.kts'
+          if os.path.exists(p):
+              s = open(p).read()
+              if 'isCoreLibraryDesugaringEnabled' not in s:
+                  s = s.replace('compileOptions {', 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true', 1)
+                  s += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+          else:
+              p = 'android/app/build.gradle'
+              s = open(p).read()
+              if 'coreLibraryDesugaringEnabled' not in s:
+                  s = s.replace('compileOptions {', 'compileOptions {\n        coreLibraryDesugaringEnabled true', 1)
+                  s += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
+          open(p, 'w').write(s)
+          print('--- desugaring patched in', p, '---'); print(s[-600:])
+          PY
+          ls -la android/app/src/main/res/raw
       - name: Configure release signing
         working-directory: app
         env:
