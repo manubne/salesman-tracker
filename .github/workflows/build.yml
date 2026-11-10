@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+concurrency:
+  group: build-and-publish
+  cancel-in-progress: false
 permissions:
   contents: write
   pages: write
@@ -169,6 +172,7 @@ jobs:
           status: completed
       # While another release is in review, Play refuses auto-review; retry holding changes for manual send
       - name: Publish to Play internal testing (changes held for review)
+        id: play2
         if: steps.play1.outcome == 'failure'
         uses: r0adkll/upload-google-play@v1
         continue-on-error: true
@@ -179,6 +183,19 @@ jobs:
           tracks: internal
           status: completed
           changesNotSentForReview: true
+      # Last try after a pause (Play "edit expired" is usually a short-lived clash)
+      - name: Wait before final Play retry
+        if: steps.play1.outcome == 'failure' && steps.play2.outcome == 'failure'
+        run: sleep 45
+      - name: Publish to Play internal testing (final retry)
+        if: steps.play1.outcome == 'failure' && steps.play2.outcome == 'failure'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: org.bne.salesman_tracker
+          releaseFiles: app/build/app/outputs/bundle/release/app-release.aab
+          tracks: internal
+          status: completed
       - name: Build web (app + admin dashboard)
         working-directory: app
         run: |
