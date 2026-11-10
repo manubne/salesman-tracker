@@ -774,6 +774,18 @@
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="saveTravelSettings()">Save tracking &amp; fuel</button> <span id="msgTravel"></span></div>
       </div>
+      <div class="panel" id="notifPanel" data-roles="admin,head">
+        <h2>Notifications <span class="sub">what reaches people's phones, and which alerts buzz</span></h2>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <label style="display:flex;gap:8px;align-items:center;font-weight:650"><input type="checkbox" id="nfOn" style="width:18px;height:18px;accent-color:var(--brand)"> Phone notifications on</label>
+          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="nfQuiet" style="width:18px;height:18px;accent-color:var(--brand)"> Quiet hours (no buzzer) from <input id="nfQs" type="time" class="inp" style="width:110px"> to <input id="nfQe" type="time" class="inp" style="width:110px"></label>
+        </div>
+        <div id="nfCats"></div>
+        <p class="hint">“Buzzer” plays a loud alarm-style sound with strong vibration, even when the app is closed. During quiet hours buzzer alerts arrive as normal notifications. Changes apply immediately.</p>
+        <div style="margin-top:12px"><button class="btn" onclick="saveNotifSettings()">Save notifications</button> <button class="btn sec" onclick="notifTest()">Send test to my phone</button> <span id="msgNotif"></span></div>
+        <h3 style="margin:18px 0 8px;font-size:14px">Recent notifications</h3>
+        <div id="nfLog"><span class="muted">Loading…</span></div>
+      </div>
       <div class="panel">
         <h2>Billing request emails <span class="sub">who receives the invoice request when a salesperson submits it</span></h2>
         <div class="formgrid">
@@ -1382,8 +1394,58 @@ async function saveSetting(key, value, msgId) {
   if (error) { flash(msgId, error.message, false); return false; }
   SETTINGS[key] = value; flash(msgId, 'Saved ✓'); fillFilters(); return true;
 }
+const NOTIF_CATS = [
+  ['lead_assigned', 'New lead assigned', 'Salesperson the lead is assigned to'],
+  ['quote_request', 'Quote request', 'Quote team member assigned'],
+  ['quote_ready', 'Quotation ready', 'Salesperson who owns the deal'],
+  ['payment_submitted', 'Payment to verify', 'Branch manager, Head, Admin'],
+  ['payment_decision', 'Payment verified / rejected', 'Salesperson who added it'],
+  ['chat_message', 'Chat message', 'Direct & group chats; channels only when @mentioned'],
+  ['location_request', 'Site location change request', 'Branch manager, Head, Admin'],
+  ['location_decision', 'Site location approved / rejected', 'Person who asked'],
+  ['fuel_decision', 'Fuel claim approved / rejected / paid', 'Salesperson'],
+  ['followup_due', 'Follow-ups due (daily 9:30 AM)', 'Salesperson'],
+  ['deal_won', 'Deal won', 'Branch manager, Head, Admin'],
+];
+const NOTIF_STATUS = { sent: 'Delivered', queued: 'Sending…', no_device: 'App not installed / never opened', failed: 'Failed', not_configured: 'Firebase key not set' };
+function renderNotifSettings() {
+  if (!document.getElementById('nfCats')) return;
+  const n = S('notifications', {}), c = n.categories || {};
+  document.getElementById('nfOn').checked = n.enabled !== false;
+  document.getElementById('nfQuiet').checked = !!(n.quiet || {}).enabled;
+  document.getElementById('nfQs').value = (n.quiet || {}).start || '21:00';
+  document.getElementById('nfQe').value = (n.quiet || {}).end || '08:00';
+  const cb = (id, on) => `<input type="checkbox" id="${id}" ${on ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--brand)">`;
+  document.getElementById('nfCats').innerHTML = tbl(['Notification', 'Who gets it', 'On', 'Buzzer'],
+    NOTIF_CATS.map(([k, label, who]) => [`<b>${esc(label)}</b>`, `<span class="muted">${esc(who)}</span>`, cb('nfc_' + k, (c[k] || {}).on !== false), cb('nfb_' + k, !!(c[k] || {}).buzzer)]));
+  loadNotifLog();
+}
+async function saveNotifSettings() {
+  const categories = {};
+  NOTIF_CATS.forEach(([k]) => { categories[k] = { on: document.getElementById('nfc_' + k).checked, buzzer: document.getElementById('nfb_' + k).checked }; });
+  await saveSetting('notifications', { enabled: document.getElementById('nfOn').checked,
+    quiet: { enabled: document.getElementById('nfQuiet').checked, start: document.getElementById('nfQs').value || '21:00', end: document.getElementById('nfQe').value || '08:00' },
+    categories }, 'msgNotif');
+}
+async function notifTest() {
+  const { error } = await db.rpc('notify_test');
+  if (error) { flash('msgNotif', error.message, false); return; }
+  flash('msgNotif', 'Test sent — check your phone');
+  setTimeout(loadNotifLog, 3500);
+}
+async function loadNotifLog() {
+  const el = document.getElementById('nfLog'); if (!el) return;
+  const { data, error } = await db.from('notification_log').select('*').order('created_at', { ascending: false }).limit(30);
+  if (error) { el.innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
+  if (!(data || []).length) { el.innerHTML = '<span class="muted">No notifications sent yet.</span>'; return; }
+  const lbl = Object.fromEntries(NOTIF_CATS.map(x => [x[0], x[1]]));
+  el.innerHTML = tbl(['When', 'To', 'Type', 'Message', 'Status'], data.map(r => [fmtT(r.created_at) + ' <span class="muted">' + esc(String(r.created_at).slice(0, 10)) + '</span>', esc(uname(r.user_id)),
+    esc(lbl[r.category] || r.category) + (r.channel === 'buzzer' ? ' 🔔' : ''), `<b>${esc(r.title)}</b><br><span class="muted">${esc(r.body || '')}</span>`,
+    `<span class="${r.status === 'sent' ? '' : 'stale'}">${esc(NOTIF_STATUS[r.status] || r.status)}</span>${r.error && r.status === 'failed' ? `<br><span class="muted" style="font-size:11px">${esc(r.error.slice(0, 80))}</span>` : ''}`]));
+}
 function renderSettings() {
   loadCategories();
+  renderNotifSettings();
   renderBillingSettings();
   renderPaySettings();
   renderPipeSettings();
