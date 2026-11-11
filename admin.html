@@ -239,6 +239,14 @@
   .tl{border-left:2px solid #E2E8F0;margin-left:6px;padding-left:14px}.tl .ti{position:relative;margin-bottom:12px}
   .tl .ti:before{content:'';position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:#22779A}
   .tl .ti.deal:before{background:#7C3AED}.tl .ti.lead:before{background:#5B8DEF}.tl .ti.ref:before{background:#D97706}
+  .qtg2 { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; } .qtg3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 14px; }
+  @media (max-width:900px) { .qtg2, .qtg3 { grid-template-columns:1fr; } }
+  table.qtb { width:100%; border-collapse:collapse; min-width:980px; } table.qtb th { font-size:11.5px; text-align:left; padding:6px 5px; background:#F1F4FA; white-space:nowrap; }
+  table.qtb td { padding:3px 3px; border-bottom:1px solid #EEF1F7; vertical-align:top; } table.qtb td.r { text-align:right; padding:9px 6px; font-weight:650; white-space:nowrap; }
+  table.qtb input, table.qtb select, table.qtb textarea { border:1px solid var(--border); border-radius:7px; padding:6px 7px; font:inherit; font-size:13px; background:#fff; box-sizing:border-box; }
+  table.qtb textarea { resize:vertical; min-height:32px; } table.qtb .qi { background:#FFF8DC; } table.qtb th.qi { background:#FBE9A7; }
+  table.qtb tr.qhead td, table.qtb tr.qtext td { background:#FAFBFE; }
+  .qa a, .qx { cursor:pointer; padding:5px 5px; font-weight:700; color:var(--muted); user-select:none; display:inline-block; } .qa { white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -309,6 +317,9 @@
       <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
+      <div class="navlabel" data-perm="quote.create,quote.view_all,quote.master">Quotations</div>
+      <button data-v="quotes" data-perm="quote.create,quote.view_all" onclick="show('quotes')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Quotations</span></button>
+      <button data-v="quoteSetup" data-perm="quote.master" onclick="show('quoteSetup')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span>Quotation setup</span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
       <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
@@ -682,7 +693,7 @@
         <div class="toolbar">
           <input id="spName" placeholder="Full name *">
           <input id="spEmail" type="email" placeholder="Work email * (name@bne.org.in)" style="min-width:230px">
-          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="technician">Technician (service)</option><option value="service_manager">Service manager</option></select>
+          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="technician">Technician (service)</option><option value="service_manager">Service manager</option><option value="design_engineer">Design engineer</option></select>
           <select id="spBranch"></select>
           <input id="spMobile" placeholder="Mobile (optional)" maxlength="10" inputmode="numeric" style="max-width:150px">
           <input id="spTerritory" placeholder="Territory (optional)" style="max-width:150px">
@@ -699,6 +710,22 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= QUOTATIONS ================= -->
+    <div id="quotes" class="view">
+      <div class="kpis" id="qtKpis"></div>
+      <div class="panel"><h2>Quotations <span class="sub">VRF and DX offers – made here or converted from your Excel</span></h2>
+        <div class="toolbar"><div class="seg" id="qtSeg"><button data-f="open" onclick="qtSetFilter('open')">Open</button><button data-f="draft" onclick="qtSetFilter('draft')">Drafts</button><button data-f="sent" onclick="qtSetFilter('sent')">Sent</button><button data-f="approved" onclick="qtSetFilter('approved')">Approved</button><button data-f="lost" onclick="qtSetFilter('lost')">Lost</button><button data-f="all" onclick="qtSetFilter('all')">All</button></div>
+          <input id="qtQ" placeholder="Search reference, customer, project…" oninput="renderQuotes()" style="min-width:230px">
+          <select id="qtType" onchange="renderQuotes()"><option value="">VRF + DX</option><option value="vrf">VRF</option><option value="dx">DX</option></select><span style="flex:1"></span>
+          <button class="btn" data-perm="quote.create" onclick="qtNew('vrf')">+ VRF quotation</button><button class="btn" data-perm="quote.create" onclick="qtNew('dx')">+ DX quotation</button>
+          <label class="btn sec" data-perm="quote.create" style="cursor:pointer">Upload Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="qtImportFile(this)"></label></div>
+        <div id="qtTbl"></div></div>
+    </div>
+    <div id="quoteEdit" class="view"><div id="qtEditBody"></div></div>
+    <div id="quoteSetup" class="view">
+      <div class="panel"><div class="toolbar"><div class="seg" id="qtTabs"><button data-f="prices" onclick="qtTab('prices')">Price list</button><button data-f="lows" onclick="qtTab('lows')">Installation items</button><button data-f="brands" onclick="qtTab('brands')">Brands &amp; logos</button><button data-f="text" onclick="qtTab('text')">Standard text &amp; settings</button></div></div>
+        <div id="qtSetupBody"></div></div>
+    </div>
     <!-- ================= SERVICE ================= -->
     <div id="svcTickets" class="view">
       <div class="kpis" id="svcKpis"></div>
@@ -895,6 +922,9 @@
 </div>
 <div class="modal-bg" id="svcBg" onclick="if(event.target===this)closeModal('svcBg')">
   <div class="modal" style="max-width:920px"><div class="mb" id="svcBody"></div></div>
+</div>
+<div class="modal-bg" id="qtPickBg" onclick="if(event.target===this)closeModal('qtPickBg')">
+  <div class="modal" style="max-width:820px"><div class="mb" id="qtPickBody"></div></div>
 </div>
 <div class="modal-bg" id="htmlBg" onclick="if(event.target===this)closeModal('htmlBg')">
   <div class="modal" style="max-width:520px"><div class="mb" id="htmlBody"></div></div>
@@ -1420,7 +1450,8 @@ async function init() {
   document.getElementById('loginView').style.display = 'none';
   try { const { data: pp } = await db.rpc('my_perms'); PERMS = pp || {}; } catch (_) { PERMS = {}; }
   const svcDesk = can('svc.ticket.view_all') || can('svc.job.view_all') || can('svc.amc.view');
-  if (!ME || !ME.active || !(isStaff() || (svcDesk && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
+  const qtDesk = can('quote.create') || can('quote.view_all') || can('quote.master');
+  if (!ME || !ME.active || !(isStaff() || ((svcDesk || qtDesk) && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
   document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
   // role-based navigation
@@ -1449,7 +1480,7 @@ async function init() {
     Promise.all([loadCustomers(), loadOrders(), loadFollowUps()]);
     show('pipeline');
   } else if (!isStaff()) {
-    show('svcTickets');
+    show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quotes' : 'svcTickets');
   } else {
     show('leads');
   }
@@ -1489,6 +1520,8 @@ function show(v) {
   if (v === 'svcMachines') loadSvcMachines();
   if (v === 'svcAmc') loadSvcAmc();
   if (v === 'svcReports') loadSvcReports();
+  if (v === 'quotes') loadQuotes();
+  if (v === 'quoteSetup') loadQtSetup();
 }
 
 // ---------- settings ----------
@@ -2076,7 +2109,7 @@ async function loadUsers(onlyRender) {
   }
   const el = document.getElementById('teamTbl'); if (!el) return;
   renderAccess();
-  const roles = ['sales', 'manager', 'head', 'admin', 'coordinator', 'telecaller', 'quote', 'technician', 'service_manager'];
+  const roles = ['sales', 'manager', 'head', 'admin', 'coordinator', 'telecaller', 'quote', 'design_engineer', 'technician', 'service_manager'];
   const canEdit = isOwner();
   const q = (document.getElementById('teamSearch')?.value || '').toLowerCase();
   const rows = cache.users.filter(u => (!BRANCH || u.branch_id === BRANCH || (_mgrBranches[u.id] || []).includes(BRANCH)) && (!q || `${u.name || ''} ${u.mobile || ''} ${u.role} ${branchName(u.branch_id)}`.toLowerCase().includes(q)));
@@ -3891,8 +3924,8 @@ function setBranchFilter(v) {
   const cur = document.querySelector('.view.active')?.id;
   if (cur) show(cur);
 }
-const ROLE_LABEL = { admin: 'Admin', head: 'Head', manager: 'Branch manager', sales: 'Salesperson', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team', technician: 'Technician', service_manager: 'Service manager' };
-const ROLE_HELP = { admin: 'Full access incl. settings', head: 'Full access to all branches', manager: 'Only their branch(es)', sales: 'Own data only', coordinator: 'Lead desk — all leads', telecaller: 'Lead desk — all leads', quote: 'Quotations', technician: 'Service jobs in the app', service_manager: 'Runs the service desk' };
+const ROLE_LABEL = { admin: 'Admin', head: 'Head', manager: 'Branch manager', sales: 'Salesperson', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team', technician: 'Technician', service_manager: 'Service manager', design_engineer: 'Design engineer' };
+const ROLE_HELP = { admin: 'Full access incl. settings', head: 'Full access to all branches', manager: 'Only their branch(es)', sales: 'Own data only', coordinator: 'Lead desk — all leads', telecaller: 'Lead desk — all leads', quote: 'Quotations', technician: 'Service jobs in the app', service_manager: 'Runs the service desk', design_engineer: 'Makes quotations' };
 async function renderAccess() {
   await loadBranches();
   const el = document.getElementById('branchTbl'); if (!el) return;
@@ -4395,8 +4428,9 @@ const SVC_PERMS = [
   ['svc.ticket.create', 'Create tickets'], ['svc.ticket.view_all', 'See all tickets'], ['svc.ticket.manage', 'Edit / close tickets'],
   ['svc.job.create', 'Create jobs'], ['svc.job.assign', 'Assign technicians'], ['svc.job.view_all', 'See all jobs'],
   ['svc.machine.manage', 'Edit machines & warranty'], ['svc.amc.view', 'See AMC'], ['svc.amc.manage', 'Create / edit AMC'],
-  ['svc.tracking.view', 'Live location of technicians'], ['svc.reports', 'Service reports'], ['svc.warranty.override', 'Approve warranty overrides']];
-const SVC_ROLES = ['service_manager', 'manager', 'coordinator', 'telecaller', 'sales', 'quote', 'technician'];
+  ['svc.tracking.view', 'Live location of technicians'], ['svc.reports', 'Service reports'], ['svc.warranty.override', 'Approve warranty overrides'],
+  ['quote.create', 'Quotations: create and send'], ['quote.view_all', 'Quotations: see everyone’s'], ['quote.master', 'Quotations: price list, brands, standard text'], ['quote.approve', 'Quotations: approve high discounts']];
+const SVC_ROLES = ['service_manager', 'manager', 'coordinator', 'telecaller', 'sales', 'quote', 'design_engineer', 'technician'];
 const svcW = s => String(s || '').replace(/_/g, ' ');
 const svcChip = s => `<span class="chip svc-${esc(s)}">${esc(svcW(s))}</span>`;
 const svcCov = c => `<span class="chip svc-cov-${esc(c || 'chargeable')}">${({ warranty: 'Under warranty', amc: 'Under AMC', free: 'Free' })[c] || 'Chargeable'}</span>`;
@@ -4728,7 +4762,7 @@ async function renderSvcAccess() {
   const { data } = await db.from('app_settings').select('value').eq('key', 'permissions').maybeSingle(); const P = (data && data.value) || {}; _svc.rolePerms = P;
   const people = cache.users.filter(u => u.active);
   const cb = (on, js) => `<input type="checkbox" style="width:17px;height:17px;accent-color:var(--brand)" ${on ? 'checked' : ''} onchange="${js}">`;
-  el.innerHTML = `<b>What each role can do in Service</b> <span class="muted">(Admin and Head can do everything)</span>
+  el.innerHTML = `<b>What each role can do in Service and Quotations</b> <span class="muted">(Admin and Head can do everything)</span>
     <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>Permission</th>${SVC_ROLES.map(r => `<th style="text-align:center">${esc(ROLE_LABEL[r] || r)}</th>`).join('')}</tr></thead><tbody>
     ${SVC_PERMS.map(([k, l]) => `<tr><td>${l}</td>${SVC_ROLES.map(r => `<td style="text-align:center">${cb(P[r] && P[r][k], `svcSetRolePerm('${r}','${k}',this.checked)`)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
     <b style="display:block;margin-top:16px">Teams &amp; personal access</b><span class="muted">Tick “Service” for sales people who also do installation or service – they get a Jobs tab in the app. “Custom access” overrides the role defaults for one person.</span>
@@ -4752,6 +4786,728 @@ async function svcSaveUserPerms(uid) {
   const p = {}; document.querySelectorAll('.upSel').forEach(s => { if (s.value !== '') p[s.dataset.k] = s.value === '1'; });
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
 }
+
+// ================= QUOTATIONS: shared core (calc, document layout, Excel parser) =================
+// Pure functions – also run under Node for tests.
+const qtNum = v => { if (v == null || v === '') return null; const n = typeof v === 'number' ? v : Number(String(v).replace(/[,₹\s]/g, '')); return isFinite(n) ? n : null; };
+const qtEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const qtN0 = v => { const n = qtNum(v); return n == null ? '' : Math.round(n).toLocaleString('en-IN'); };
+const qtDate = d => { if (!d) return ''; const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}.${m[2]}.${m[1]}` : String(d); };
+
+function qtCalc(doc, gstPct) {
+  const g = Number(gstPct ?? 18) / 100, tables = ((doc || {}).tables || []).map(t => {
+    const sub = (t.rows || []).reduce((a, r) => a + (r.t === 'item' ? (qtNum(r.qty) || 0) * (qtNum(r.rate) || 0) : 0), 0);
+    return { sub, gst: sub * g, tot: sub * (1 + g) };
+  });
+  const sub = tables.reduce((a, t) => a + t.sub, 0);
+  return { tables, sub, gst: sub * g, total: sub * (1 + g) };
+}
+// rate from the internal price columns: list price less discount %, or MRP (GST included) back to basic
+function qtRateOf(r, gstPct) {
+  const b = qtNum(r.base); if (b == null) return qtNum(r.rate);
+  if (r.mode === 'disc') return Math.round(b * (1 - (qtNum(r.disc) || 0) / 100) * 100) / 100;
+  if (r.mode === 'mrp') return Math.round(b / (1 + Number(gstPct ?? 18) / 100) * 100) / 100;
+  return qtNum(r.rate);
+}
+
+const QT_DOC_CSS = `
+.qdoc { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; color: #000; line-height: 1.35; }
+.qdoc * { box-sizing: border-box; }
+.qpg { display: flex; flex-direction: column; background: #fff; }
+.qh { display: flex; justify-content: space-between; align-items: center; min-height: 20mm; margin-bottom: 4mm; }
+.qh img { max-height: 19mm; max-width: 62mm; object-fit: contain; }
+.qh .qco, .qh .qbr { font-size: 16pt; letter-spacing: .5px; }
+.qbody { flex: 1; }
+.qf { margin-top: auto; padding-top: 6mm; text-align: center; font-size: 8pt; color: #222; }
+.qf::before { content: ''; display: block; width: 62mm; border-top: 1px solid #000; margin: 0 auto 2mm; }
+.qbox { border: 1.6pt solid #000; padding: 6mm 2mm 8mm; }
+.qbox p { margin: 0 0 5mm; }
+.qrow { display: flex; justify-content: space-between; padding: 0 8mm 9mm; }
+table.qt { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+table.qt td, table.qt th { border: .6pt solid #000; padding: 1.1mm 1.6mm; vertical-align: middle; }
+table.qt th { background: #8DB4E2; font-weight: bold; text-align: center; }
+table.qt .ttl td { text-align: center; font-weight: bold; }
+table.qt .c { text-align: center; } table.qt .r { text-align: right; white-space: nowrap; }
+table.qt .hd td { font-weight: bold; }
+table.qt .sub td { background: #F2F2F2; font-weight: bold; }
+table.qt .gst td { background: #D9D9D9; }
+table.qt .tot td { background: #8DB4E2; font-weight: bold; }
+table.qt .grand td { background: #76933C; color: #fff; font-weight: bold; font-size: 10.5pt; }
+table.qt tr { page-break-inside: avoid; }
+.qnote { font-size: 8.8pt; margin-top: 2mm; } .qnote b { display: block; margin-bottom: 1mm; } .qnote div { margin-bottom: 1.2mm; }
+.qhead2 { text-align: center; font-weight: bold; text-decoration: underline; margin: 2mm 0 9mm; }
+table.qterm { width: 100%; border-collapse: collapse; } table.qterm td { padding: 2.2mm 2mm; vertical-align: top; } table.qterm td:first-child { width: 30%; }
+.qex { display: grid; grid-template-columns: 8mm 1fr; row-gap: 4.5mm; }
+`;
+const QT_PRINT_CSS = `@page { size: A4; margin: 10mm 12mm; } html, body { margin: 0; padding: 0; background: #fff; }
+.qpg { min-height: 275mm; page-break-after: always; } .qpg:last-child { page-break-after: auto; }
+@media screen { body { background: #E9EDF3; } .qpg { width: 210mm; min-height: 297mm; padding: 10mm 12mm; margin: 8mm auto; box-shadow: 0 4px 24px rgba(15,23,42,.15); } }`;
+
+// q: { ref_no, quote_date, gst_pct, doc, brand:{name,logo}, company:{name,logo,footer[]} }
+function qtDocHtml(q) {
+  const d = q.doc || {}, co = q.company || {}, br = q.brand || {}, gst = Number(q.gst_pct ?? 18), c = qtCalc(d, gst), e = qtEsc;
+  const ml = s => e(s || '').replace(/\n/g, '<br>');
+  const img = (src, alt, cls) => src && /^data:image\//.test(src) ? `<img src="${e(src)}" alt="${e(alt)}">` : `<b class="${cls}">${e(alt)}</b>`;
+  const hdr = `<div class="qh"><div>${img(co.logo, co.name || '', 'qco')}</div><div>${img(br.logo, br.name || '', 'qbr')}</div></div>`;
+  const ftr = `<div class="qf">${(co.footer || []).map(e).join('<br>')}</div>`;
+  const pg = body => `<section class="qpg">${hdr}<div class="qbody">${body}</div>${ftr}</section>`;
+  const terms = (d.terms || []).filter(t => t && (t[0] || t[1])), excl = (d.exclusions || []).filter(Boolean), notes = (d.notes || []).filter(Boolean);
+  const ann = [`ANNEXURE - I: &nbsp; ${e(d.annex1 || 'SCOPE OF SUPPLY PRICE.')}`];
+  if (terms.length) ann.push(`ANNEXURE - ${ann.length === 1 ? 'II' : 'III'}: &nbsp; TERMS AND CONDITIONS`);
+  if (excl.length) ann.push(`ANNEXURE - ${ann.length === 1 ? 'II' : 'III'}: &nbsp; EXCLUDED WORKS AND SERVICES`);
+  const toLines = String(d.to || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const letter = `<div class="qbox">
+    <div class="qrow"><b>${e(q.ref_no || '')}</b><b>Date : ${qtDate(q.quote_date)}</b></div>
+    <p>To<br><b>${toLines.map(e).join('<br>')}</b></p>
+    ${d.project ? `<p><b>${e(d.project)}</b></p>` : ''}
+    <p><b>Dear Sir,</b></p>
+    <p><b>Sub: ${e(d.subject || '')}</b></p>
+    <p><b>${e(d.intro || '')}${d.offer ? ` "${e(d.offer)}"` : ''}</b></p>
+    <p><b>${ann.join('<br>')}</b></p>
+    <p>Thanking you and assuring you of our best services and attention at all times</p>
+    <p>We now look forward to receive your most valued order.</p>
+    <p>Yours truly</p><p><b>For ${e(co.name || '')}</b></p><p>&nbsp;</p>
+    <p><b>${e(d.sign_name || '')}${d.sign_title ? '<br>' + e(d.sign_title) : ''}</b></p></div>`;
+  const tbls = (d.tables || []).map((t, ti) => {
+    const cap = !!t.cap, n = 6, rows = (t.rows || []).map(r => {
+      if (r.t === 'item') { const amt = (qtNum(r.qty) || 0) * (qtNum(r.rate) || 0);
+        return `<tr><td class="c">${e(r.sno)}</td><td>${ml(r.desc)}</td>${cap ? `<td class="c">${e(r.cap)}</td><td class="c">${e(r.qty)}</td>` : `<td class="c">${e(r.qty)}</td><td class="c">${e(r.unit)}</td>`}<td class="r">${qtN0(r.rate)}</td><td class="r">${qtN0(amt)}</td></tr>`; }
+      if (r.t === 'text' && r.wide) return `<tr><td colspan="${n}" style="padding:2.5mm 1.6mm">${ml(r.desc)}</td></tr>`;
+      return `<tr class="${r.t === 'head' ? 'hd' : ''}"><td class="c">${e(r.sno)}</td><td>${ml(r.desc)}</td><td></td><td></td><td></td><td></td></tr>`;
+    }).join('');
+    const x = c.tables[ti];
+    return `${ti === 0 ? `<tr class="ttl"><td colspan="${n}">ANNEXURE - I</td></tr>${d.title ? `<tr class="ttl"><td colspan="${n}">${e(d.title)}</td></tr>` : ''}` : ''}
+      ${t.title ? `<tr class="ttl"><td colspan="${n}">${e(t.title)}</td></tr>` : ''}
+      <tr><th style="width:9%">S.No</th><th>DESCRIPTION</th>${cap ? '<th style="width:12%">CAPACITY</th><th style="width:8%">QTY</th>' : '<th style="width:8%">QTY</th><th style="width:9%">UNIT</th>'}<th style="width:14%">Rate<br>INR</th><th style="width:16%">Amount<br>INR</th></tr>
+      ${rows}
+      <tr class="sub"><td colspan="${n - 1}" class="r">SUB TOTAL</td><td class="r">${qtN0(x.sub)}</td></tr>
+      <tr class="gst"><td colspan="${n - 1}" class="r">GST @ ${gst}%</td><td class="r">${qtN0(x.gst)}</td></tr>
+      <tr class="tot"><td colspan="${n - 1}" class="r">${e(t.total_label || 'TOTAL INCLUDING GST')}</td><td class="r">${qtN0(x.tot)}</td></tr>`;
+  }).join('');
+  const grand = (d.tables || []).length > 1 ? `<tr class="grand"><td colspan="5" class="r">TOTAL PROJECT COST IN INR - INCLUDING GST</td><td class="r">${qtN0(c.total)}</td></tr>` : '';
+  const price = `<table class="qt">${tbls}${grand}</table>${notes.length ? `<div class="qnote"><b>Note:</b>${notes.map((s, i) => `<div>${i + 1}. ${e(s)}</div>`).join('')}</div>` : ''}`;
+  let html = pg(letter) + pg(price);
+  if (terms.length) html += pg(`<div class="qhead2">ANNEXURE - II<br>TERMS AND CONDITIONS</div><table class="qterm">${terms.map(t => `<tr><td>${ml(t[0])}</td><td>${ml(t[1])}</td></tr>`).join('')}</table>`);
+  if (excl.length) html += pg(`<div class="qhead2">ANNEXURE - ${terms.length ? 'III' : 'II'}<br>EXCLUDED WORKS AND SERVICES</div><div class="qex">${excl.map((s, i) => `<div>${i + 1}</div><div>${e(s)}</div>`).join('')}</div>`);
+  return `<div class="qdoc">${html}</div>`;
+}
+
+// ---------- Excel -> standard structure. Reads only the print area; hidden rows / columns / sheets are skipped. ----------
+function qtSheetGrid(XLSX, wb, idx) {
+  const ws = wb.Sheets[wb.SheetNames[idx]]; if (!ws || !ws['!ref']) return [];
+  let g = XLSX.utils.decode_range(ws['!ref']);
+  const pa = (((wb.Workbook || {}).Names) || []).find(n => /print_area/i.test(n.Name || '') && n.Sheet === idx);
+  if (pa && pa.Ref) { try { const p = XLSX.utils.decode_range(pa.Ref.split('!').pop().replace(/\$/g, ''));
+    g = { s: { r: Math.max(p.s.r, g.s.r), c: Math.max(p.s.c, g.s.c) }, e: { r: Math.min(p.e.r, g.e.r), c: Math.min(p.e.c, g.e.c) } }; } catch (_) {} }
+  const rows = ws['!rows'] || [], cols = ws['!cols'] || [], out = [];
+  for (let r = g.s.r; r <= g.e.r; r++) {
+    if (rows[r] && rows[r].hidden) continue;
+    const line = [];
+    for (let c = g.s.c; c <= Math.min(g.e.c, g.s.c + 40); c++) {
+      const cell = (cols[c] && cols[c].hidden) ? null : ws[XLSX.utils.encode_cell({ r, c })];
+      let v = cell && cell.t !== 'e' ? cell.v : null;
+      if (typeof v === 'string') { v = v.replace(/[ \t ]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim(); if (!v) v = null; }
+      if (typeof v === 'boolean') v = null;
+      line.push(v ?? null);
+    }
+    if (line.some(v => v != null)) out.push(line);
+  }
+  return out;
+}
+function qtParseWorkbook(XLSX, wb, brandNames) {
+  const S = v => typeof v === 'string', hiddenSheet = i => (((wb.Workbook || {}).Sheets || [])[i] || {}).Hidden;
+  const out = { type: 'dx', brand: null, ref_no: '', quote_date: null, customer_name: '', excelTotal: null, warnings: [],
+    doc: { to: '', project: '', subject: '', intro: '', offer: '', annex1: '', sign_name: '', sign_title: '', title: '', tables: [], notes: [], terms: [], exclusions: [] } };
+  const d = out.doc; let allText = '', gotPrice = false, gotLetter = false;
+  wb.SheetNames.forEach((nm, i) => {
+    if (hiddenSheet(i)) return;
+    const grid = qtSheetGrid(XLSX, wb, i); if (!grid.length) return;
+    const text = grid.map(l => l.filter(S).join(' ')).join('\n'); allText += '\n' + text;
+    const isPrice = grid.some(l => l.some(v => S(v) && /^descri/i.test(v)) && l.some(v => S(v) && /^(rate|amount|total)/i.test(v)));
+    if (isPrice && !gotPrice) { gotPrice = true; qtParsePrice(grid, out); return; }
+    if (/dear\s+sir/i.test(text) && !gotLetter) { gotLetter = true; qtParseLetter(grid.map(l => l.filter(S).join(' ')).filter(Boolean), out); return; }
+    if (/excluded\s+works/i.test(text)) {
+      grid.forEach(l => { const k = l.findIndex(v => v != null); if (k >= 0 && qtNum(l[k]) != null && !S(l[k])) { const t = l.slice(k + 1).filter(S).join(' '); if (t) d.exclusions.push(t); } });
+      return;
+    }
+    if (/terms\s+and\s+conditions/i.test(text)) {
+      grid.forEach(l => { const a = S(l[0]) ? l[0] : null, b = l.slice(1).filter(S).join(' ') || null;
+        if (/^annexure/i.test(a || b || '') || /^terms and conditions$/i.test(a || b || '')) return;
+        if (a) d.terms.push([a.replace(/\n/g, ' '), b || '']); else if (b) { if (!d.terms.length) d.terms.push(['', b]); else { const t = d.terms[d.terms.length - 1]; t[1] = t[1] ? t[1] + '\n' + b : b; } } });
+    }
+  });
+  if (!gotPrice) out.warnings.push('Could not find the price table (a header row with DESCRIPTION and Rate / Amount).');
+  if (/\bvr[fv]\b/i.test(d.title + ' ' + d.subject + ' ' + d.offer)) out.type = 'vrf';
+  const hay = (d.title + ' ' + d.subject + ' ' + d.offer + ' ' + allText).toLowerCase();
+  out.brand = (brandNames || []).map(b => ({ b, i: hay.search(new RegExp('(^|[^a-z])' + b.toLowerCase().replace(/[^a-z0-9]+/g, '.?') + '([^a-z]|$)')) })).filter(x => x.i >= 0).sort((a, b) => a.i - b.i).map(x => x.b)[0] || null;
+  return out;
+}
+function qtParsePrice(grid, out) {
+  const d = out.doc, S = v => typeof v === 'string', find = (l, re) => l.findIndex(v => S(v) && re.test(v));
+  let cm = null, cur = null, inNotes = false, pend = null, grand = null; const tots = [];
+  for (const l of grid) {
+    const strs = l.filter(S), joined = l.filter(v => v != null).map(String).join(' ');
+    if (inNotes) { strs.forEach(s => s.split('\n').forEach(x => { x = x.replace(/^\s*\d+\s*[.)]\s*/, '').trim(); if (x) d.notes.push(x); })); continue; }
+    if (/^note\s*:?$/i.test(joined)) { inNotes = true; continue; }
+    const di = find(l, /^descri/i);
+    if (di >= 0 && find(l, /^(rate|amount|total)/i) >= 0) {
+      cm = { sno: find(l, /^s[l.]*\s*\.?\s*no/i), desc: di, cap: find(l, /^capacity/i), qty: find(l, /^qty/i), unit: find(l, /^unit/i), rate: find(l, /^rate/i), amt: find(l, /^(amount|total)/i) };
+      cur = { kind: d.tables.length ? 'lowside' : 'supply', title: pend || '', cap: cm.cap >= 0, total_label: '', rows: [] }; d.tables.push(cur); pend = null; continue;
+    }
+    if (!cur) { if (!/^annexure/i.test(joined) && !d.title && strs.length) d.title = strs[0]; continue; }
+    if (strs.length && strs.every(v => /^inr$/i.test(v))) continue;
+    const at = k => k >= 0 ? l[k] : null, rate = S(at(cm.rate)) ? null : qtNum(at(cm.rate)), amt = S(at(cm.amt)) ? null : qtNum(at(cm.amt));
+    const a = at(cm.qty), b = at(cm.unit), qty = !S(a) && qtNum(a) != null ? qtNum(a) : (!S(b) && qtNum(b) != null ? qtNum(b) : null), unit = S(a) ? a : S(b) ? b : '';
+    let sno = at(cm.sno), desc = at(cm.desc);
+    if (S(sno) && /mailto:|gst\s*@/i.test(sno) && S(desc)) sno = null;
+    if (amt != null && rate == null && qty == null) {            // sub-total / GST / total rows
+      const label = strs[0] || '';
+      if (/gst/i.test(label)) continue;
+      if (/sub.?\s*total/i.test(label)) continue;
+      if (/project|grand/i.test(label)) { grand = amt; continue; }
+      if (/total/i.test(label)) { cur.total_label = label.replace(/\s+/g, ' '); tots.push(amt); continue; }
+      continue;
+    }
+    if (strs.length === 1 && l.filter(v => v != null).length === 1 && /boq|low\s*side|high\s*side|annexure/i.test(strs[0])) { pend = strs[0]; continue; }
+    if (rate != null && qty != null && (rate !== 0 || desc != null)) {
+      cur.rows.push({ t: 'item', sno: sno == null ? '' : String(sno), desc: desc == null ? '' : String(desc), cap: cm.cap >= 0 && at(cm.cap) != null ? String(at(cm.cap)) : '', unit: unit || (cur.cap ? '' : 'Nos'), qty, rate: Math.round(rate * 100) / 100 });
+      continue;
+    }
+    if (desc == null && S(sno) && sno.length > 40) { cur.rows.push({ t: 'text', wide: true, desc: sno }); continue; }
+    if (S(desc)) { const hasNo = sno != null && String(sno).trim() !== '';
+      cur.rows.push({ t: hasNo && desc.length <= 90 ? 'head' : 'text', sno: hasNo ? String(sno) : '', desc }); }
+  }
+  out.excelTotal = grand != null ? grand : (tots.length ? tots.reduce((x, y) => x + y, 0) : null);
+}
+function qtParseLetter(lines, out) {
+  const d = out.doc; let mode = '', sign = 0;
+  for (let raw of lines) {
+    let s = raw.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim(); if (!s) continue;
+    const dm = s.match(/date\s*[:\-]+\s*(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})/i);
+    if (dm) { out.quote_date = `${dm[3].length === 2 ? '20' + dm[3] : dm[3]}-${dm[2].padStart(2, '0')}-${dm[1].padStart(2, '0')}`;
+      s = s.slice(0, dm.index).trim(); if (/\/.*\d/.test(s)) { out.ref_no = s; continue; } if (!s) continue; }
+    if (/^to\s*,?$/i.test(s)) { mode = 'to'; continue; }
+    if (/^project\b/i.test(s)) { d.project = s; mode = ''; continue; }
+    if (/^dear\b/i.test(s)) { mode = ''; continue; }
+    if (/^sub\s*:/i.test(s)) { d.subject = s.replace(/^sub\s*:\s*/i, ''); mode = ''; continue; }
+    if (/thank you for inviting/i.test(s)) { const m = s.match(/^(.*?)\s*["“](.+?)["”]\s*$/); if (m) { d.intro = m[1]; d.offer = m[2]; } else d.intro = s; continue; }
+    if (/^annexure/i.test(s)) { if (!d.annex1 && /^annexure\s*-?\s*(i|1)\s*:/i.test(s)) d.annex1 = s.replace(/^annexure[^:]*:\s*/i, ''); continue; }
+    if (/^for\s+b\s*\.?\s*n/i.test(s)) { sign = 1; continue; }
+    if (sign === 1) { d.sign_name = s; sign = 2; continue; }
+    if (sign === 2) { d.sign_title = s; sign = 3; continue; }
+    if (mode === 'to') { d.to = d.to ? d.to + '\n' + s : s; if (!out.customer_name) out.customer_name = s; }
+  }
+}
+if (typeof module !== 'undefined') module.exports = { qtCalc, qtDocHtml, qtParseWorkbook, QT_DOC_CSS, QT_PRINT_CSS, qtRateOf, qtNum };
+
+// ================= QUOTATIONS: dashboard =================
+const QT = { list: [], brands: [], prices: [], lows: [], cfg: {}, customers: null, cur: null, filter: 'open', tab: 'prices', dirty: false, loaded: false };
+const QT_STATUS = { draft: ['Draft', 'pending'], sent: ['Sent', 'scheduled'], approved: ['Approved', 'won'], rejected: ['Changes asked', 'overdue'], lost: ['Lost', 'lost'], superseded: ['Old revision', ''] };
+const QT_CATS = [['outdoor', 'Outdoor unit'], ['indoor', 'Indoor unit'], ['accessory', 'Accessory'], ['other', 'Other']];
+const QT_HEADS = { outdoor: 'OUTDOOR UNIT', indoor: 'INDOOR UNITS', accessory: 'ACCESSORIES' };
+const qtChip = s => `<span class="chip ${(QT_STATUS[s] || [])[1] || ''}">${(QT_STATUS[s] || [s])[0]}</span>`;
+const qtBrand = id => QT.brands.find(b => b.id === id) || {};
+const qtGst = () => Number(QT.cfg.gst_pct ?? 18);
+const qtCanEdit = () => can('quote.create');
+function qtToast(msg, bad) {
+  let el = document.getElementById('qtToast'); if (!el) { el = document.createElement('div'); el.id = 'qtToast'; document.body.appendChild(el); }
+  el.textContent = msg; el.style.cssText = `position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:${bad ? '#B91C1C' : '#0F172A'};color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;z-index:200;box-shadow:0 10px 30px rgba(15,23,42,.3);max-width:90vw`;
+  clearTimeout(qtToast._t); qtToast._t = setTimeout(() => el.remove(), bad ? 6000 : 2600);
+}
+async function qtLoadMasters(force) {
+  if (QT.loaded && !force) return;
+  const [b, p, l, s] = await Promise.all([
+    db.from('quote_brands').select('*').order('sort').order('name'),
+    db.from('quote_price_items').select('*').order('category').order('name').limit(5000),
+    db.from('quote_lowside_items').select('*').order('sort').order('name'),
+    db.from('app_settings').select('value').eq('key', 'quote').maybeSingle()]);
+  QT.brands = b.data || []; QT.prices = p.data || []; QT.lows = l.data || []; QT.cfg = (s.data && s.data.value) || {}; QT.loaded = true;
+}
+async function qtCustomers() {
+  if (!QT.customers) { const { data } = await db.from('customers').select('id, name, company, mobile, city, address').order('name').limit(3000); QT.customers = data || []; }
+  return QT.customers;
+}
+const qtCustLabel = c => c ? [c.company || c.name, c.company && c.name ? c.name : '', c.city, c.mobile].filter(Boolean).join(' · ') : '';
+
+// ---------- list ----------
+async function loadQuotes() {
+  await qtLoadMasters();
+  const { data, error } = await db.from('quotations').select('id, quote_no, ref_no, revision, type, brand_id, customer_name, project, quote_date, status, total, needs_approval, discount_approved_by, viewed_at, sent_at, responded_at, source, created_by, created_at, updated_at').order('created_at', { ascending: false }).limit(1500);
+  if (error) { document.getElementById('qtTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  QT.list = data || []; renderQuotes();
+}
+function qtSetFilter(f) { QT.filter = f; renderQuotes(); }
+function renderQuotes() {
+  const L = QT.list, m0 = todayStr().slice(0, 7), live = L.filter(q => q.status !== 'superseded');
+  document.getElementById('qtKpis').innerHTML =
+    kpi(live.filter(q => q.status === 'draft').length, 'Drafts', 'orange', '✎', "qtSetFilter('draft')") +
+    kpi(live.filter(q => q.status === 'sent').length, 'Sent, waiting for customer', 'blue', '➜', "qtSetFilter('sent')") +
+    kpi(live.filter(q => q.status === 'approved' && (q.responded_at || '').slice(0, 7) === m0).length, 'Approved this month', 'green', '✓', "qtSetFilter('approved')") +
+    kpi(rsShort(live.filter(q => q.status === 'sent').reduce((a, q) => a + Number(q.total || 0), 0)), 'Value waiting', 'purple', '₹', "qtSetFilter('sent')") +
+    kpi(live.filter(q => q.needs_approval && !q.discount_approved_by && q.status === 'draft').length, 'Discount approval needed', 'red', '%', "qtSetFilter('approval')");
+  const f = QT.filter, q = (document.getElementById('qtQ').value || '').toLowerCase(), ty = document.getElementById('qtType').value;
+  document.querySelectorAll('#qtSeg button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  const rows = L.filter(x => (f === 'open' ? ['draft', 'sent', 'rejected'].includes(x.status) : f === 'approval' ? (x.needs_approval && !x.discount_approved_by && x.status === 'draft') : f === 'all' ? true : x.status === f)
+    && (!ty || x.type === ty) && (!q || `${x.quote_no} ${x.ref_no || ''} ${x.customer_name || ''} ${x.project || ''} ${qtBrand(x.brand_id).name || ''}`.toLowerCase().includes(q)));
+  document.getElementById('qtTbl').innerHTML = tbl(['Reference', 'Customer', 'Type', 'Total incl. GST', 'Status', 'Made by', 'Date'],
+    rows.map(x => [`<b>${esc(x.ref_no || x.quote_no)}</b><div class="muted" style="font-size:11.5px">${esc(x.quote_no)}${x.source === 'excel' ? ' · from Excel' : ''}</div>`,
+      `${esc(x.customer_name || '—')}${x.project ? `<div class="muted" style="font-size:11.5px">${esc(x.project)}</div>` : ''}`,
+      `${x.type.toUpperCase()} · ${esc(qtBrand(x.brand_id).name || '—')}`, `<b>${rs(Math.round(x.total || 0))}</b>`,
+      qtChip(x.status) + (x.needs_approval && !x.discount_approved_by && x.status === 'draft' ? ' <span class="chip overdue">discount approval</span>' : '') + (x.status === 'sent' ? `<div class="muted" style="font-size:11.5px">${x.viewed_at ? 'opened ' + fmtDT(x.viewed_at) : 'not opened yet'}</div>` : ''),
+      esc(uname(x.created_by)), fmtD(x.quote_date)]),
+    i => `style="cursor:pointer" onclick="qtOpen('${rows[i].id}')"`);
+}
+
+// ---------- new / open ----------
+function qtFill(s, brand) { return String(s || '').replace(/\{brand\}/g, brand || '').replace(/\{order_to\}/g, (QT.cfg.company || {}).order_to || ''); }
+async function qtNew(type, parsed) {
+  await qtLoadMasters();
+  if (!QT.brands.filter(b => b.active).length) { qtToast('Add a brand first (Quotation setup → Brands)', true); return; }
+  const D = (QT.cfg.defaults || {})[type] || {}, pb = parsed && parsed.brand ? QT.brands.find(b => b.name.toLowerCase() === parsed.brand.toLowerCase()) : null;
+  const brand = pb || QT.brands.find(b => b.active), bn = brand.name, F = s => qtFill(s, bn);
+  const doc = { to: '', project: '', subject: F(D.subject), intro: D.intro || '', offer: F(D.offer), annex1: F(D.annex1), sign_name: (ME.name || '').toUpperCase(), sign_title: (ME.designation || '').toUpperCase(),
+    title: F(D.title), notes: (D.notes || []).slice(), terms: (D.terms || []).map(t => [t[0], F(t[1])]), exclusions: (D.exclusions || []).slice(),
+    tables: type === 'vrf'
+      ? [{ kind: 'supply', title: '', cap: false, total_label: D.supply_total_label || '', rows: [{ t: 'head', sno: 'A', desc: 'AIRCONDITIONER EQUIPMENTS - MAKE : ' + bn.toUpperCase() }] }]
+      : [{ kind: 'supply', title: '', cap: true, total_label: D.supply_total_label || '', rows: [{ t: 'text', sno: 'A', desc: F(D.supply_text) }] },
+         { kind: 'lowside', title: 'LOW SIDE BOQ', cap: false, total_label: D.lowside_total_label || '', rows: [] }] };
+  QT.cur = { id: null, type, brand_id: brand.id, customer_id: null, order_id: null, customer_name: '', project: '', quote_date: todayStr(), ref_no: '', status: 'draft', source: 'manual', doc };
+  if (parsed) {
+    const p = parsed.doc; QT.cur.source = 'excel'; QT.cur.ref_no = parsed.ref_no || ''; QT.cur.customer_name = parsed.customer_name || ''; QT.cur.project = p.project || '';
+    if (parsed.quote_date) QT.cur.quote_date = parsed.quote_date;
+    for (const k of ['to', 'project', 'subject', 'intro', 'offer', 'annex1', 'sign_name', 'sign_title', 'title']) if (p[k]) doc[k] = p[k];
+    if (p.tables.length) doc.tables = p.tables.map((t, i) => ({ ...t, total_label: t.total_label || (i ? D.lowside_total_label : D.supply_total_label) || '' }));
+    if (p.notes.length) doc.notes = p.notes; if (p.terms.length) doc.terms = p.terms; if (p.exclusions.length) doc.exclusions = p.exclusions;
+  }
+  QT.dirty = !!parsed; QT.orders = []; show('quoteEdit'); qtRender();
+}
+async function qtOpen(id) {
+  await qtLoadMasters();
+  const { data, error } = await db.from('quotations').select('*').eq('id', id).maybeSingle();
+  if (error || !data) { qtToast('Could not open this quotation', true); return; }
+  QT.cur = data; QT.dirty = false; QT.orders = []; show('quoteEdit'); qtRender();
+  if (data.customer_id) qtLoadOrders();
+}
+async function qtLoadOrders() {
+  const { data } = await db.from('orders').select('id, title, stage').eq('customer_id', QT.cur.customer_id).order('created_at', { ascending: false }).limit(30);
+  QT.orders = data || []; qtOrderBox();
+}
+function qtOrderBox() {
+  const el = document.getElementById('qtOrderBox');
+  if (el) el.innerHTML = QT.orders.length ? `<label>Link to deal</label><select ${QT.cur.status !== 'draft' ? 'disabled' : ''} onchange="QT.cur.order_id=this.value||null;QT.dirty=true"><option value="">— not linked —</option>${QT.orders.map(o => `<option value="${o.id}" ${QT.cur.order_id === o.id ? 'selected' : ''}>${esc(o.title || 'Deal')} (${esc(o.stage)})</option>`).join('')}</select>` : '';
+}
+function qtBack() { if (QT.dirty && !confirm('You have changes that are not saved. Leave anyway?')) return; QT.dirty = false; show('quotes'); }
+
+// ---------- builder ----------
+function qtRender() {
+  const q = QT.cur, d = q.doc, ro = q.status !== 'draft' || !qtCanEdit(), R = ro ? 'disabled' : '', gst = qtGst();
+  const keep = document.scrollingElement ? document.scrollingElement.scrollTop : 0;
+  const fld = (label, k, ph) => `<div class="field"><label>${label}</label><input ${R} value="${esc(d[k] || '')}" placeholder="${ph || ''}" oninput="qtSet('${k}',this.value)"></div>`;
+  const shareUrl = q.share_token ? 'https://bneone.com/?quote=' + q.share_token : '';
+  const actions = [];
+  if (!ro) actions.push(`<button class="btn" onclick="qtSave()">Save</button>`);
+  actions.push(`<button class="btn sec" onclick="qtPreview()">Preview / PDF</button>`);
+  if (q.id && q.status === 'draft' && qtCanEdit()) actions.push(q.needs_approval && !q.discount_approved_by
+    ? (can('quote.approve') ? `<button class="btn sec" onclick="qtApproveDisc()">Approve discount</button>` : `<span class="chip overdue">Waiting for discount approval</span>`)
+    : `<button class="btn sec" onclick="qtSend()">Mark as sent &amp; get link</button>`);
+  if (q.id && ['sent', 'approved', 'rejected', 'lost'].includes(q.status) && qtCanEdit()) actions.push(`<button class="btn sec" onclick="qtRevise()">Make revision R${(q.revision || 0) + 1}</button>`);
+  if (q.id && q.status === 'sent' && qtCanEdit()) actions.push(`<button class="btn sec" onclick="qtMark('approved')">Customer approved</button><button class="btn sec" onclick="qtMark('lost')">Lost</button>`);
+  if (q.id && q.status === 'draft' && qtCanEdit()) actions.push(`<button class="btn danger" onclick="qtDelete()">Delete</button>`);
+  const info = q.status === 'draft' ? '' : `<div class="panel" style="background:#F8FAFE">
+      <b>${qtChip(q.status)}</b> ${q.sent_at ? ' Sent ' + fmtDT(q.sent_at) : ''}${q.viewed_at ? ' · customer opened it ' + fmtDT(q.viewed_at) : (q.status === 'sent' ? ' · not opened yet' : '')}
+      ${q.responded_at ? `<div style="margin-top:6px">${q.status === 'approved' ? 'Approved' : q.status === 'rejected' ? 'Changes asked' : 'Closed'} by <b>${esc(q.response_name || '')}</b> on ${fmtDT(q.responded_at)}${q.response_note ? ' — “' + esc(q.response_note) + '”' : ''}</div>` : ''}
+      ${shareUrl && q.status !== 'superseded' ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input readonly class="inp" value="${shareUrl}" style="flex:1;min-width:260px" onclick="this.select()">
+        <button class="btn sec" onclick="navigator.clipboard.writeText('${shareUrl}');qtToast('Link copied')">Copy link</button>
+        <a class="btn sec" target="_blank" href="https://wa.me/?text=${encodeURIComponent(`Dear Sir, please find our quotation ${q.ref_no || ''} here: ${shareUrl}\n- B N Enterprises`)}">WhatsApp</a>
+        <a class="btn sec" href="mailto:?subject=${encodeURIComponent('Quotation ' + (q.ref_no || ''))}&body=${encodeURIComponent(`Dear Sir,\n\nPlease find our quotation here:\n${shareUrl}\n\nYou can view, download and approve it from this link.\n\nRegards,\nB N Enterprises`)}">Email</a></div>
+        <div class="hint">The customer can read the quotation, download the PDF and approve it or ask for changes from this link. Internal prices are never shown there.</div>` : ''}
+      ${ro && q.status !== 'superseded' ? '<div class="hint">This quotation is locked because it has been sent. Use “Make revision” to change it.</div>' : ''}</div>`;
+  document.getElementById('qtEditBody').innerHTML = `
+    <div class="toolbar" style="position:sticky;top:0;z-index:5;background:var(--bg,#F4F6FA);padding:8px 0"><button class="btn sec" onclick="qtBack()">← All quotations</button>
+      <b style="font-size:16px">${q.type.toUpperCase()} quotation ${q.id ? '· ' + esc(q.quote_no) : '(new)'}</b>${q.source === 'excel' ? '<span class="chip">from Excel</span>' : ''}<span style="flex:1"></span>${actions.join(' ')}</div>
+    ${QT.importMsg ? `<div class="panel" style="background:${QT.importMsg.ok ? '#E6F6EC' : '#FFF4E5'}">${QT.importMsg.html}</div>` : ''}${info}
+    <div class="panel"><h2>Cover letter</h2>
+      <div class="qtg3"><div class="field"><label>Brand</label><select ${R} onchange="qtTop('brand_id',this.value)">${QT.brands.filter(b => b.active || b.id === q.brand_id).map(b => `<option value="${b.id}" ${b.id === q.brand_id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Date</label><input type="date" ${R} value="${q.quote_date || ''}" onchange="qtTop('quote_date',this.value)"></div>
+        <div class="field"><label>Reference no.</label><input ${R} value="${esc(q.ref_no || '')}" placeholder="Made automatically when you save" oninput="qtTop('ref_no',this.value)"></div></div>
+      <div class="qtg2"><div><div class="field"><label>Customer <span class="muted">(pick from the list or just type below)</span></label><input ${R} id="qtCustQ" list="qtCusts" placeholder="Search customer…" onfocus="qtFillCusts()" onchange="qtPickCust(this.value)"><datalist id="qtCusts"></datalist></div>
+          <div class="field"><label>To (name and address, one per line)</label><textarea ${R} rows="3" oninput="qtSet('to',this.value);QT.cur.customer_name=this.value.split('\\n')[0].trim()">${esc(d.to || '')}</textarea></div><div class="field" id="qtOrderBox"></div></div>
+        <div>${fld('Project line', 'project', 'PROJECT at …')}${fld('Subject', 'subject')}${fld('Offer for (shown in quotes in the letter)', 'offer')}</div></div>
+      <div class="qtg3">${fld('Annexure I name', 'annex1')}${fld('Signed by', 'sign_name')}${fld('Designation', 'sign_title')}</div>
+      <div class="field"><label>Opening line</label><textarea ${R} rows="2" oninput="qtSet('intro',this.value)">${esc(d.intro || '')}</textarea></div></div>
+    <div class="panel"><h2>Annexure I – price <span class="sub">yellow columns are internal and never printed</span></h2>
+      ${fld('Heading of the price table', 'title')}
+      ${d.tables.map((t, ti) => qtTableHtml(t, ti, ro)).join('')}
+      ${ro ? '' : `<div class="toolbar" style="margin-top:10px"><button class="btn sec" onclick="qtAddTable()">+ Add ${d.tables.length ? 'installation / low side' : 'price'} table</button></div>`}
+      <div id="qtTotals" style="margin-top:12px"></div>
+      <div class="field" style="margin-top:14px"><label>Notes under the table (one per line)</label><textarea ${R} rows="5" oninput="qtSet('notes',this.value.split('\\n').map(s=>s.trim()).filter(Boolean))">${esc((d.notes || []).join('\n'))}</textarea></div></div>
+    <div class="qtg2"><div class="panel"><h2>Annexure II – terms and conditions</h2>
+        ${(d.terms || []).map((t, i) => `<div style="display:grid;grid-template-columns:200px 1fr 26px;gap:8px;margin-bottom:8px"><input class="inp" ${R} value="${esc(t[0])}" oninput="QT.cur.doc.terms[${i}][0]=this.value;QT.dirty=true"><textarea class="inp" ${R} rows="${Math.min(6, String(t[1] || '').split('\n').length + 1)}" oninput="QT.cur.doc.terms[${i}][1]=this.value;QT.dirty=true">${esc(t[1])}</textarea>${ro ? '' : `<a class="qx" onclick="QT.cur.doc.terms.splice(${i},1);QT.dirty=true;qtRender()">×</a>`}</div>`).join('')}
+        ${ro ? '' : `<button class="btn sec" onclick="QT.cur.doc.terms.push(['','']);qtRender()">+ Add term</button>`}</div>
+      <div class="panel"><h2>Annexure III – excluded works and services</h2>
+        <div class="field"><label>One per line</label><textarea ${R} rows="14" oninput="qtSet('exclusions',this.value.split('\\n').map(s=>s.trim()).filter(Boolean))">${esc((d.exclusions || []).join('\n'))}</textarea></div></div></div>`;
+  qtTotals(); if (document.scrollingElement) document.scrollingElement.scrollTop = keep;
+  qtOrderBox();
+}
+function qtTableHtml(t, ti, ro) {
+  const R = ro ? 'disabled' : '', gst = qtGst();
+  const I = (r, ri, k, w, x) => `<input ${R} ${x || ''} value="${esc(r[k] ?? '')}" style="width:${w}" oninput="qtRow(${ti},${ri},'${k}',this)">`;
+  const acts = ri => ro ? '<td></td>' : `<td class="qa"><a title="Move up" onclick="qtMove(${ti},${ri},-1)">↑</a><a title="Move down" onclick="qtMove(${ti},${ri},1)">↓</a><a title="Remove" style="color:var(--red)" onclick="qtDel(${ti},${ri})">×</a></td>`;
+  const rows = t.rows.map((r, ri) => {
+    if (r.t !== 'item') return `<tr class="q${r.t}"><td>${r.wide ? '' : I(r, ri, 'sno', '100%')}</td><td colspan="7"><textarea ${R} rows="${r.t === 'head' ? 1 : Math.max(2, Math.ceil(String(r.desc || '').length / 110))}" style="width:100%;font-weight:${r.t === 'head' ? 700 : 400}" placeholder="${r.t === 'head' ? 'Heading' : 'Description text'}" oninput="qtRow(${ti},${ri},'desc',this)">${esc(r.desc || '')}</textarea></td>${acts(ri)}</tr>`;
+    return `<tr><td>${I(r, ri, 'sno', '100%')}</td><td><textarea ${R} rows="1" style="width:100%" oninput="qtRow(${ti},${ri},'desc',this)">${esc(r.desc || '')}</textarea></td>
+      <td>${t.cap ? I(r, ri, 'cap', '100%') : I(r, ri, 'unit', '100%')}</td><td>${I(r, ri, 'qty', '100%', 'type="number" step="any" min="0"')}</td>
+      <td class="qi">${I(r, ri, 'base', '100%', 'type="number" step="any" placeholder="—"')}</td>
+      <td class="qi"><select ${R} id="qm_${ti}_${ri}" style="width:${r.mode === 'disc' ? '56%' : '100%'}" onchange="qtRow(${ti},${ri},'mode',this)"><option value="">Typed rate</option><option value="disc" ${r.mode === 'disc' ? 'selected' : ''}>Less disc %</option><option value="mrp" ${r.mode === 'mrp' ? 'selected' : ''}>MRP ÷ ${(1 + gst / 100).toFixed(2)}</option></select>${r.mode === 'disc' ? I(r, ri, 'disc', '40%', `type="number" step="any" min="0" max="100" placeholder="%" id="qd_${ti}_${ri}"`) : ''}</td>
+      <td>${I(r, ri, 'rate', '100%', `type="number" step="any" id="qr_${ti}_${ri}"`)}</td><td class="r" id="qam_${ti}_${ri}"></td>${acts(ri)}</tr>`;
+  }).join('');
+  return `<div class="qtt"><div class="toolbar" style="margin:14px 0 6px"><b>${ti === 0 ? 'Equipment' : 'Installation / low side'}</b>
+      <input class="inp" ${R} style="width:210px" placeholder="Table title (optional)" value="${esc(t.title || '')}" oninput="QT.cur.doc.tables[${ti}].title=this.value;QT.dirty=true">
+      <label style="font-size:12.5px"><input type="checkbox" ${R} ${t.cap ? 'checked' : ''} onchange="QT.cur.doc.tables[${ti}].cap=this.checked;QT.dirty=true;qtRender()"> Capacity column instead of Unit</label><span style="flex:1"></span>
+      ${ro ? '' : `<button class="btn sec" onclick="qtPick(${ti})">+ From price list</button>${t.kind === 'lowside' || ti > 0 ? `<button class="btn sec" onclick="qtPickLow(${ti})">+ Standard items</button>` : ''}
+        <button class="btn sec" onclick="qtAdd(${ti},'item')">+ Line</button><button class="btn sec" onclick="qtAdd(${ti},'head')">+ Heading</button><button class="btn sec" onclick="qtAdd(${ti},'text')">+ Text</button>
+        <button class="btn sec" title="Number the rows 1, 1.1, 1.2 …" onclick="qtRenumber(${ti});qtRender()">Renumber</button>${ti > 0 ? `<button class="btn danger" onclick="qtDelTable(${ti})">Remove table</button>` : ''}`}</div>
+    ${ro ? '' : `<div class="toolbar" style="margin:0 0 6px;font-size:12.5px"><span class="muted">Set discount for</span><select id="qbc_${ti}"><option value="">all price-list rows</option>${QT_CATS.map(c => `<option value="${c[0]}">${c[1]}s</option>`).join('')}</select><input id="qbd_${ti}" type="number" min="0" max="100" step="any" placeholder="%" style="width:80px"><button class="btn sec" onclick="qtBulkDisc(${ti})">Apply</button></div>`}
+    <div style="overflow-x:auto"><table class="qtb"><thead><tr><th style="width:62px">S.No</th><th>Description</th><th style="width:86px">${t.cap ? 'Capacity' : 'Unit'}</th><th style="width:74px">Qty</th><th class="qi" style="width:110px">List price / MRP</th><th class="qi" style="width:178px">How the rate is made</th><th style="width:118px">Rate ₹</th><th style="width:112px">Amount ₹</th><th style="width:66px"></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="9" class="muted" style="text-align:center;padding:14px">No rows yet. Use the buttons above.</td></tr>`}</tbody></table></div>
+    <div class="field" style="margin-top:6px;max-width:520px"><label>Label of the total row</label><input ${R} value="${esc(t.total_label || '')}" oninput="QT.cur.doc.tables[${ti}].total_label=this.value;QT.dirty=true"></div></div>`;
+}
+function qtTotals() {
+  const q = QT.cur, c = qtCalc(q.doc, qtGst());
+  q.doc.tables.forEach((t, ti) => t.rows.forEach((r, ri) => { const el = document.getElementById(`qam_${ti}_${ri}`); if (el) el.textContent = r.t === 'item' ? qtN0((qtNum(r.qty) || 0) * (qtNum(r.rate) || 0)) : ''; }));
+  const discs = []; q.doc.tables.forEach(t => t.rows.forEach(r => { if (r.t === 'item' && r.mode === 'disc' && qtNum(r.disc) != null) discs.push(qtNum(r.disc)); }));
+  const lim = qtNum(QT.cfg.max_discount), over = lim != null && discs.some(x => x > lim);
+  document.getElementById('qtTotals').innerHTML = `<div style="display:flex;gap:26px;flex-wrap:wrap;justify-content:flex-end;font-size:14px">
+    ${c.tables.length > 1 ? c.tables.map((t, i) => `<span>${i ? 'Low side' : 'Equipment'}: <b>${rs(Math.round(t.tot))}</b></span>`).join('') : ''}
+    <span>Sub total: <b>${rs(Math.round(c.sub))}</b></span><span>GST ${qtGst()}%: <b>${rs(Math.round(c.gst))}</b></span><span style="font-size:17px">Total: <b>${rs(Math.round(c.total))}</b></span></div>
+    ${over ? `<div class="hint" style="color:var(--red);text-align:right">A discount is above the ${lim}% limit — this quotation will need approval before it can be sent.</div>` : ''}`;
+}
+function qtSet(k, v) { QT.cur.doc[k] = v; QT.dirty = true; }
+function qtTop(k, v) { QT.cur[k] = v; QT.dirty = true; }
+function qtRow(ti, ri, k, el) {
+  const r = QT.cur.doc.tables[ti].rows[ri], num = ['qty', 'base', 'disc', 'rate'].includes(k);
+  r[k] = num ? (el.value === '' ? null : Number(el.value)) : el.value; QT.dirty = true;
+  if (k === 'mode') { if (r.mode === 'disc' && r.disc == null) r.disc = 0; if (r.mode && r.base == null && r.rate != null && r.mode === 'mrp') r.base = Math.round(r.rate * (1 + qtGst() / 100)); r.rate = qtRateOf(r, qtGst()); qtRender(); return; }
+  if (k === 'base' || k === 'disc') { if (r.mode) { r.rate = qtRateOf(r, qtGst()); const x = document.getElementById(`qr_${ti}_${ri}`); if (x) x.value = r.rate ?? ''; } }
+  if (k === 'rate' && r.mode) { r.mode = ''; const m = document.getElementById(`qm_${ti}_${ri}`), dd = document.getElementById(`qd_${ti}_${ri}`); if (m) { m.value = ''; m.style.width = '100%'; } if (dd) dd.remove(); }
+  qtTotals();
+}
+function qtAdd(ti, kind) { QT.cur.doc.tables[ti].rows.push(kind === 'item' ? { t: 'item', sno: '', desc: '', cap: '', unit: 'Nos', qty: 1, rate: null } : { t: kind, sno: '', desc: '' }); QT.dirty = true; qtRender(); }
+function qtDel(ti, ri) { QT.cur.doc.tables[ti].rows.splice(ri, 1); QT.dirty = true; qtRender(); }
+function qtMove(ti, ri, dir) { const a = QT.cur.doc.tables[ti].rows, j = ri + dir; if (j < 0 || j >= a.length) return; [a[ri], a[j]] = [a[j], a[ri]]; QT.dirty = true; qtRender(); }
+function qtAddTable() { const D = (QT.cfg.defaults || {})[QT.cur.type] || {}, n = QT.cur.doc.tables.length; QT.cur.doc.tables.push({ kind: n ? 'lowside' : 'supply', title: n ? 'LOW SIDE BOQ' : '', cap: false, total_label: (n ? D.lowside_total_label : D.supply_total_label) || '', rows: [] }); QT.dirty = true; qtRender(); }
+function qtDelTable(ti) { if (!confirm('Remove this whole table?')) return; QT.cur.doc.tables.splice(ti, 1); QT.dirty = true; qtRender(); }
+function qtBulkDisc(ti) {
+  const cat = document.getElementById('qbc_' + ti).value, v = document.getElementById('qbd_' + ti).value; if (v === '') return; let n = 0;
+  QT.cur.doc.tables[ti].rows.forEach(r => { if (r.t === 'item' && qtNum(r.base) != null && r.mode !== 'mrp' && (!cat || r.cat === cat)) { r.mode = 'disc'; r.disc = Number(v); r.rate = qtRateOf(r, qtGst()); n++; } });
+  QT.dirty = true; qtRender(); qtToast(n ? `Discount set on ${n} row${n > 1 ? 's' : ''}` : 'No rows with a list price in that group');
+}
+function qtRenumber(ti) {
+  const t = QT.cur.doc.tables[ti], low = t.kind === 'lowside'; let top = 0, sub = 0;
+  t.rows.forEach(r => {
+    if (r.t === 'head') { if (/^[A-Z]$/.test(r.sno || '') && !low) return; top++; sub = 0; r.sno = String(top); return; }
+    if (r.t !== 'item') return;
+    const isSub = r.sub != null ? r.sub : /^([a-z]|\d+\.\d+)$/i.test(r.sno || '');
+    if (isSub && top) { sub++; r.sno = low ? String.fromCharCode(96 + sub) : `${top}.${sub}`; } else { top++; sub = 0; r.sno = String(top); }
+  });
+}
+// ----- pick machines from the price list -----
+function qtPick(ti) {
+  const q = QT.cur, items = QT.prices.filter(p => p.active && p.brand_id === q.brand_id && (p.system === 'any' || p.system === q.type));
+  QT.pick = { ti, items, sel: {} };
+  document.getElementById('qtPickBody').innerHTML = `<h3 style="margin-bottom:10px">${esc(qtBrand(q.brand_id).name || '')} price list</h3>
+    ${items.length ? `<div class="toolbar"><input id="qpQ" placeholder="Search model, name, capacity…" oninput="qtPickRender()" style="flex:1"><select id="qpC" onchange="qtPickRender()"><option value="">All</option>${QT_CATS.map(c => `<option value="${c[0]}">${c[1]}s</option>`).join('')}</select></div>
+      <div id="qpList" style="max-height:52vh;overflow:auto"></div>
+      <div style="text-align:right;margin-top:12px"><button class="btn sec" onclick="closeModal('qtPickBg')">Cancel</button> <button class="btn" onclick="qtPickAdd()">Add to quotation</button></div>`
+      : `<div class="empty">No ${q.type.toUpperCase()} prices saved for this brand yet.<br>Upload the price list under <b>Quotation setup → Price list</b>, or close this and use <b>+ Line</b> to type the item and its price by hand.</div><div style="text-align:right"><button class="btn sec" onclick="closeModal('qtPickBg')">Close</button></div>`}`;
+  openModal('qtPickBg'); if (items.length) qtPickRender();
+}
+function qtPickRender() {
+  const s = (document.getElementById('qpQ').value || '').toLowerCase(), c = document.getElementById('qpC').value, P = QT.pick;
+  const rows = P.items.filter(p => (!c || p.category === c) && (!s || `${p.name} ${p.model || ''} ${p.capacity || ''}`.toLowerCase().includes(s))).slice(0, 300);
+  document.getElementById('qpList').innerHTML = rows.length ? `<table><thead><tr><th>Item</th><th>Capacity</th><th style="text-align:right">List price</th><th style="text-align:right">MRP</th><th style="width:90px">Qty</th></tr></thead><tbody>${rows.map(p => `<tr><td><b>${esc(p.name)}</b>${p.model ? `<div class="muted" style="font-size:11.5px">${esc(p.model)}</div>` : ''}</td><td>${esc(p.capacity || '')}</td><td style="text-align:right">${p.base_price != null ? qtN0(p.base_price) : ''}${p.discount_pct != null ? `<div class="muted" style="font-size:11.5px">less ${p.discount_pct}%</div>` : ''}</td><td style="text-align:right">${p.mrp != null ? qtN0(p.mrp) : ''}</td>
+      <td><input type="number" min="0" step="any" class="inp" style="width:80px" value="${P.sel[p.id] || ''}" placeholder="0" oninput="QT.pick.sel['${p.id}']=Number(this.value)||0"></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nothing matches.</div>';
+}
+function qtPickAdd() {
+  const P = QT.pick, t = QT.cur.doc.tables[P.ti], vrf = QT.cur.type === 'vrf'; let n = 0;
+  P.items.filter(p => P.sel[p.id] > 0).forEach(p => {
+    const useMrp = p.mrp != null && (p.base_price == null || !vrf);
+    const r = { t: 'item', sno: '', desc: p.name + (p.model ? ' - ' + p.model : '') + (!t.cap && p.capacity ? '  ' + p.capacity : ''), cap: p.capacity || '', unit: p.unit || 'Nos', qty: P.sel[p.id], pid: p.id, cat: p.category,
+      base: useMrp ? Number(p.mrp) : (p.base_price != null ? Number(p.base_price) : null), mode: useMrp ? 'mrp' : (p.base_price != null ? 'disc' : ''), disc: useMrp ? null : (p.discount_pct != null ? Number(p.discount_pct) : 0), rate: null };
+    r.rate = qtRateOf(r, qtGst());
+    if (vrf && P.ti === 0 && QT_HEADS[p.category]) {
+      r.sub = true; let h = t.rows.findIndex(x => x.t === 'head' && x.cat === p.category);
+      if (h < 0) { t.rows.push({ t: 'head', sno: '', desc: QT_HEADS[p.category], cat: p.category }); h = t.rows.length - 1; }
+      let e = h + 1; while (e < t.rows.length && t.rows[e].t !== 'head') e++; t.rows.splice(e, 0, r);
+    } else t.rows.push(r);
+    n++;
+  });
+  if (!n) { qtToast('Enter a quantity against the items you want', true); return; }
+  qtRenumber(P.ti); QT.dirty = true; closeModal('qtPickBg'); qtRender();
+}
+// ----- standard installation items -----
+function qtPickLow(ti) {
+  const items = QT.lows.filter(l => l.active && (l.system === 'any' || l.system === QT.cur.type));
+  QT.pick = { ti, items, sel: {}, rate: {} };
+  document.getElementById('qtPickBody').innerHTML = `<h3 style="margin-bottom:10px">Standard installation items</h3>
+    ${items.length ? `<div style="max-height:56vh;overflow:auto"><table><thead><tr><th>Item</th><th>Unit</th><th style="width:110px">Rate ₹</th><th style="width:90px">Qty</th></tr></thead><tbody>${items.map(l => `<tr><td>${l.group_name ? `<div class="muted" style="font-size:11.5px">${esc(l.group_name)}</div>` : ''}<b>${esc(l.name)}</b></td><td>${esc(l.unit)}</td>
+      <td><input type="number" class="inp" style="width:100px" step="any" value="${l.rate ?? ''}" oninput="QT.pick.rate['${l.id}']=this.value"></td><td><input type="number" class="inp" style="width:80px" min="0" step="any" placeholder="0" oninput="QT.pick.sel['${l.id}']=Number(this.value)||0"></td></tr>`).join('')}</tbody></table></div>
+      <div class="hint">Rates here are your usual ones — change them for this quotation as needed.</div>
+      <div style="text-align:right;margin-top:12px"><button class="btn sec" onclick="closeModal('qtPickBg')">Cancel</button> <button class="btn" onclick="qtPickLowAdd()">Add to quotation</button></div>`
+      : `<div class="empty">No standard ${QT.cur.type.toUpperCase()} items saved yet. Add them under <b>Quotation setup → Installation items</b>, or use <b>+ Line</b>.</div><div style="text-align:right"><button class="btn sec" onclick="closeModal('qtPickBg')">Close</button></div>`}`;
+  openModal('qtPickBg');
+}
+function qtPickLowAdd() {
+  const P = QT.pick, t = QT.cur.doc.tables[P.ti]; let n = 0;
+  P.items.filter(l => P.sel[l.id] > 0).forEach(l => {
+    const rate = P.rate[l.id] != null && P.rate[l.id] !== '' ? Number(P.rate[l.id]) : (l.rate != null ? Number(l.rate) : null);
+    const r = { t: 'item', sno: '', desc: l.name, cap: '', unit: l.unit || 'Nos', qty: P.sel[l.id], rate };
+    if (l.group_name) {
+      r.sub = true; let h = t.rows.findIndex(x => x.t === 'head' && x.desc === l.group_name);
+      if (h < 0) { t.rows.push({ t: 'head', sno: '', desc: l.group_name }); h = t.rows.length - 1; if (l.description) t.rows.push({ t: 'text', sno: '', desc: l.description }); }
+      let e = h + 1; while (e < t.rows.length && t.rows[e].t !== 'head' && (t.rows[e].t !== 'item' || t.rows[e].sub)) e++; t.rows.splice(e, 0, r);
+    } else t.rows.push(r);
+    n++;
+  });
+  if (!n) { qtToast('Enter a quantity against the items you want', true); return; }
+  qtRenumber(P.ti); QT.dirty = true; closeModal('qtPickBg'); qtRender();
+}
+// ----- customer -----
+async function qtFillCusts() { const el = document.getElementById('qtCusts'); if (el.dataset.done) return; el.dataset.done = 1; el.innerHTML = (await qtCustomers()).map(c => `<option value="${esc(qtCustLabel(c))}">`).join(''); }
+async function qtPickCust(v) {
+  const c = (await qtCustomers()).find(x => qtCustLabel(x) === v); if (!c) return;
+  const q = QT.cur; q.customer_id = c.id; q.order_id = null; q.customer_name = c.company || c.name;
+  q.doc.to = [c.company && c.name ? 'Mr. ' + c.name : '', c.company || c.name, c.address, c.city].filter(Boolean).join('\n'); QT.dirty = true; qtRender(); qtLoadOrders();
+}
+// ----- save / status -----
+async function qtSave(quiet) {
+  const q = QT.cur; if (!String(q.doc.to || '').trim()) { qtToast('Enter the customer name in “To”', true); return false; }
+  q.customer_name = q.customer_name || q.doc.to.split('\n')[0].trim(); q.project = q.doc.project || '';
+  const { data, error } = await db.rpc('quote_save', { p: { id: q.id, type: q.type, brand_id: q.brand_id, customer_id: q.customer_id, order_id: q.order_id, customer_name: q.customer_name, project: q.project, quote_date: q.quote_date, ref_no: q.ref_no, doc: q.doc, source: q.source } });
+  if (error) { qtToast(error.message, true); return false; }
+  QT.cur = data; QT.dirty = false; QT.importMsg = null; qtRender(); if (!quiet) qtToast('Saved · ' + (data.ref_no || data.quote_no)); return true;
+}
+function qtView() { const q = QT.cur, b = qtBrand(q.brand_id); return { ...q, gst_pct: q.gst_pct ?? qtGst(), brand: { name: b.name, logo: b.logo }, company: QT.cfg.company || {} }; }
+function qtPrintWin(v) {
+  const w = window.open('', '_blank'); if (!w) { qtToast('Allow pop-ups for bneone.com to see the preview', true); return; }
+  const name = `${v.customer_name || 'Quotation'} ${(v.brand || {}).name || ''} ${String(v.type || '').toUpperCase()} BOQ - ${qtDate(v.quote_date).replace(/\./g, '-')}`;
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${qtEsc(name)}</title><style>${QT_DOC_CSS}${QT_PRINT_CSS}
+    .bar{position:sticky;top:0;background:#0F172A;color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;font:14px Arial;z-index:9}.bar button{padding:8px 16px;border:0;border-radius:8px;background:#22779A;color:#fff;font-weight:700;cursor:pointer}@media print{.bar{display:none}}</style></head>
+    <body><div class="bar"><b style="flex:1">${qtEsc(name)}</b><span>In the print window choose “Save as PDF”, A4, margins Default.</span><button onclick="print()">Print / Save as PDF</button></div>${qtDocHtml(v)}</body></html>`);
+  w.document.close();
+}
+function qtPreview() { qtPrintWin(qtView()); }
+async function qtSend() {
+  if (QT.dirty && !(await qtSave(true))) return;
+  const { data, error } = await db.rpc('quote_set_status', { p_id: QT.cur.id, p_status: 'sent' }); if (error) { qtToast(error.message, true); return; }
+  QT.cur = data; qtRender(); qtToast('Marked as sent. Share the link below with the customer.');
+}
+async function qtMark(st) {
+  const note = st === 'lost' ? prompt('Why was it lost? (optional)') : prompt('Any note? e.g. PO number (optional)'); if (note === null) return;
+  const { data, error } = await db.rpc('quote_set_status', { p_id: QT.cur.id, p_status: st, p_note: note }); if (error) { qtToast(error.message, true); return; }
+  QT.cur = data; qtRender();
+}
+async function qtRevise() {
+  if (!confirm('Make a new revision? The current one will be kept as an old revision and its customer link will show that a newer version exists.')) return;
+  const { data, error } = await db.rpc('quote_revise', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; }
+  QT.cur = data; QT.dirty = false; qtRender(); qtToast('Revision R' + data.revision + ' created – edit and send');
+}
+async function qtApproveDisc() { const { data, error } = await db.rpc('quote_approve_discount', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; } QT.cur = data; qtRender(); qtToast('Discount approved'); }
+async function qtDelete() { if (!confirm('Delete this draft?')) return; const { error } = await db.rpc('quote_delete', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; } QT.dirty = false; show('quotes'); }
+
+// ---------- Excel upload -> quotation ----------
+async function qtImportFile(inp) {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  try { await loadXlsx(); await qtLoadMasters(); } catch (_) { qtToast('Could not load the Excel reader. Check the internet connection.', true); return; }
+  let p; try { p = qtParseWorkbook(XLSX, XLSX.read(await f.arrayBuffer(), { type: 'array', cellStyles: true }), QT.brands.map(b => b.name)); } catch (e) { qtToast('Could not read this file: ' + e.message, true); return; }
+  const c = qtCalc(p.doc, qtGst()), items = p.doc.tables.reduce((a, t) => a + t.rows.filter(r => r.t === 'item').length, 0);
+  const match = p.excelTotal != null && Math.abs(c.total - p.excelTotal) < 1.5;
+  QT.importMsg = { ok: match && !p.warnings.length, html: `<b>Read from ${esc(f.name)}</b>: ${items} priced line${items === 1 ? '' : 's'} in ${p.doc.tables.length} table${p.doc.tables.length === 1 ? '' : 's'}, ${p.doc.terms.length} terms, ${p.doc.exclusions.length} exclusions. Hidden rows and columns outside the print area were left out.<br>
+    ${p.excelTotal == null ? 'The Excel has no total row to compare with — please check the amounts.' : match ? `Total matches the Excel: <b>${rs(Math.round(c.total))}</b>.` : `<b style="color:#B45309">Total here is ${rs(Math.round(c.total))} but the Excel shows ${rs(Math.round(p.excelTotal))} — please check the rows.</b>`}
+    ${p.brand ? '' : '<br>Brand was not recognised — choose it below.'}${p.warnings.map(w => '<br>' + esc(w)).join('')}<br>Check everything below, then press <b>Save</b>.` };
+  await qtNew(p.type, p);
+}
+
+// ---------- setup: price list, installation items, brands, standard text ----------
+async function loadQtSetup() { await qtLoadMasters(true); renderQtSetup(); }
+function qtTab(t) { QT.tab = t; renderQtSetup(); }
+function renderQtSetup() {
+  document.querySelectorAll('#qtTabs button').forEach(b => b.classList.toggle('active', b.dataset.f === QT.tab));
+  const el = document.getElementById('qtSetupBody'), bo = sel => QT.brands.map(b => `<option value="${b.id}" ${sel === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+  if (QT.tab === 'prices') {
+    const bf = QT.pBrand || '', sf = QT.pSys || '', s = (QT.pQ || '').toLowerCase();
+    const rows = QT.prices.filter(p => (!bf || p.brand_id === bf) && (!sf || p.system === sf) && (!s || `${p.name} ${p.model || ''} ${p.capacity || ''}`.toLowerCase().includes(s)));
+    el.innerHTML = `<div class="toolbar"><select onchange="QT.pBrand=this.value;renderQtSetup()"><option value="">All brands</option>${bo(bf)}</select>
+      <select onchange="QT.pSys=this.value;renderQtSetup()"><option value="">VRF + DX</option><option value="vrf" ${sf === 'vrf' ? 'selected' : ''}>VRF</option><option value="dx" ${sf === 'dx' ? 'selected' : ''}>DX</option></select>
+      <input placeholder="Search…" value="${esc(QT.pQ || '')}" onchange="QT.pQ=this.value;renderQtSetup()"><span style="flex:1"></span>
+      <button class="btn sec" onclick="qtPriceTemplate()">Download Excel format</button><label class="btn sec" style="cursor:pointer">Upload price list<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="qtPriceUpload(this)"></label><button class="btn" onclick="qtPriceForm()">+ Add item</button></div>
+      <p class="hint">${QT.prices.length} items saved. List price is the brand's price before your discount (used for VRF). MRP includes GST (used for DX – the rate becomes MRP ÷ ${(1 + qtGst() / 100).toFixed(2)}). These prices are internal and never printed.</p>
+      ${tbl(['Brand', 'For', 'Group', 'Item', 'Model', 'Capacity', 'Unit', 'List price', 'Usual disc %', 'MRP', ''], rows.slice(0, 600).map(p => [esc(qtBrand(p.brand_id).name || ''), p.system === 'any' ? 'VRF + DX' : p.system.toUpperCase(), esc((QT_CATS.find(c => c[0] === p.category) || [0, p.category])[1]), `<b>${esc(p.name)}</b>${p.active ? '' : ' <span class="chip">off</span>'}`, esc(p.model || ''), esc(p.capacity || ''), esc(p.unit || ''), p.base_price != null ? qtN0(p.base_price) : '', p.discount_pct ?? '', p.mrp != null ? qtN0(p.mrp) : '', `<a href="#" onclick="qtPriceForm('${p.id}');return false">Edit</a>`]))}`;
+  } else if (QT.tab === 'lows') {
+    el.innerHTML = `<div class="toolbar"><span class="muted">Your usual installation / low side items. In a quotation you tick the ones needed and can change the rate.</span><span style="flex:1"></span><button class="btn" onclick="qtLowForm()">+ Add item</button></div>
+      ${tbl(['For', 'Group', 'Item', 'Unit', 'Usual rate', ''], QT.lows.map(l => [l.system === 'any' ? 'VRF + DX' : l.system.toUpperCase(), esc(l.group_name || '—'), `<b>${esc(l.name)}</b>${l.active ? '' : ' <span class="chip">off</span>'}${l.description ? `<div class="muted" style="font-size:11.5px">${esc(l.description)}</div>` : ''}`, esc(l.unit), l.rate != null ? qtN0(l.rate) : '', `<a href="#" onclick="qtLowForm('${l.id}');return false">Edit</a>`]))}`;
+  } else if (QT.tab === 'brands') {
+    el.innerHTML = `<div class="toolbar"><span class="muted">The brand logo is printed on the top right of every page of the quotation.</span><span style="flex:1"></span><button class="btn" onclick="qtBrandForm()">+ Add brand</button></div>
+      ${tbl(['Logo', 'Brand', 'Short code (used in reference no.)', 'Status', ''], QT.brands.map(b => [b.logo ? `<img src="${esc(b.logo)}" style="max-height:38px;max-width:130px">` : '<span class="muted">no logo yet</span>', `<b>${esc(b.name)}</b>`, esc(b.code || ''), b.active ? '<span class="chip won">in use</span>' : '<span class="chip">off</span>', `<a href="#" onclick="qtBrandForm('${b.id}');return false">Edit / upload logo</a>`]))}`;
+  } else {
+    const C = QT.cfg, co = C.company || {}, D = C.defaults || {};
+    const blk = ty => { const d = D[ty] || {}; const f = (l, k) => `<div class="field"><label>${l}</label><input id="qs_${ty}_${k}" value="${esc(d[k] || '')}"></div>`;
+      return `<div class="panel"><h2>${ty.toUpperCase()} quotation – standard text <span class="sub">{brand} is replaced by the brand name</span></h2><div class="qtg2"><div>${f('Subject', 'subject')}${f('Offer for', 'offer')}${f('Annexure I name', 'annex1')}</div><div>${f('Price table heading', 'title')}${f('Equipment total label', 'supply_total_label')}${f('Low side total label', 'lowside_total_label')}</div></div>
+        ${ty === 'dx' ? `<div class="field"><label>Equipment description (first row of the table)</label><textarea id="qs_dx_supply_text" rows="3">${esc(d.supply_text || '')}</textarea></div>` : ''}
+        <div class="field"><label>Notes under the price table (one per line)</label><textarea id="qs_${ty}_notes" rows="5">${esc((d.notes || []).join('\n'))}</textarea></div>
+        <div class="field"><label>Terms and conditions – one term per block, first line is the label, blank line between terms. {order_to} is replaced by the address below.</label><textarea id="qs_${ty}_terms" rows="12">${esc((d.terms || []).map(t => t[0] + '\n' + t[1]).join('\n\n'))}</textarea></div>
+        <div class="field"><label>Excluded works and services (one per line)</label><textarea id="qs_${ty}_exclusions" rows="9">${esc((d.exclusions || []).join('\n'))}</textarea></div></div>`; };
+    el.innerHTML = `<div class="panel"><h2>Company details on the quotation</h2><div class="qtg2"><div>
+        <div class="field"><label>Company name</label><input id="qsName" value="${esc(co.name || '')}"></div>
+        <div class="field"><label>Company logo (top left of every page)</label><div style="display:flex;gap:12px;align-items:center">${co.logo ? `<img id="qsLogoImg" src="${esc(co.logo)}" style="max-height:46px;max-width:160px">` : '<span class="muted" id="qsLogoImg">no logo yet</span>'}<label class="btn sec" style="cursor:pointer">Upload logo<input type="file" id="qsLogoFile" accept="image/*" style="display:none" onchange="qtLogoPick(this,'co')"></label></div></div>
+        <div class="field"><label>Footer of every page (one line each)</label><textarea id="qsFooter" rows="3">${esc((co.footer || []).join('\n'))}</textarea></div></div><div>
+        <div class="field"><label>“Payment &amp; order to be placed on” address</label><textarea id="qsOrderTo" rows="4">${esc(co.order_to || '')}</textarea></div>
+        <div class="qtg3"><div class="field"><label>GST %</label><input id="qsGst" type="number" value="${C.gst_pct ?? 18}"></div>
+          <div class="field"><label>Discount limit % <span class="muted">(blank = none)</span></label><input id="qsMax" type="number" value="${C.max_discount ?? ''}"></div>
+          <div class="field"><label>Next quotation serial</label><input id="qsSerial" type="number" value="${QT.nextSerial || ''}"></div></div>
+        <p class="hint">A quotation with a discount above the limit cannot be sent until someone with “Approve high discounts” access approves it. The serial is the last number in the reference, e.g. BN/LG/KK/R0/26-27/<b>4224</b>.</p></div></div></div>
+      ${blk('vrf')}${blk('dx')}<div style="text-align:right"><button class="btn" onclick="qtSaveCfg()">Save standard text &amp; settings</button></div>`;
+    if (!QT.nextSerial) db.rpc('quote_next_serial').then(({ data }) => { QT.nextSerial = data; const x = document.getElementById('qsSerial'); if (x && data) x.value = data; });
+  }
+}
+function qtImgToDataUrl(file, maxW, maxH) {
+  return new Promise((res, rej) => { const im = new Image(), u = URL.createObjectURL(file);
+    im.onload = () => { const k = Math.min(1, maxW / im.width, maxH / im.height), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/png')); };
+    im.onerror = () => rej(new Error('This file is not an image')); im.src = u; });
+}
+async function qtLogoPick(inp, key) {
+  const f = inp.files[0]; if (!f) return;
+  try { QT['logo_' + key] = await qtImgToDataUrl(f, 520, 200); } catch (e) { qtToast(e.message, true); return; }
+  const el = document.getElementById(key === 'co' ? 'qsLogoImg' : 'qbLogoImg'); if (el) el.outerHTML = `<img id="${el.id}" src="${QT['logo_' + key]}" style="max-height:46px;max-width:160px">`;
+  if (key === 'co') qtToast('Logo ready – press “Save standard text & settings”');
+}
+async function qtSaveCfg() {
+  const v = id => (document.getElementById(id) || {}).value || '', lines = id => v(id).split('\n').map(s => s.trim()).filter(Boolean), C = JSON.parse(JSON.stringify(QT.cfg));
+  C.company = { ...(C.company || {}), name: v('qsName').trim(), footer: lines('qsFooter'), order_to: v('qsOrderTo').trim() }; if (QT.logo_co) C.company.logo = QT.logo_co;
+  C.gst_pct = Number(v('qsGst')) || 18; C.max_discount = v('qsMax') === '' ? null : Number(v('qsMax')); C.defaults = C.defaults || {};
+  for (const ty of ['vrf', 'dx']) { const d = C.defaults[ty] = { ...(C.defaults[ty] || {}) };
+    for (const k of ['subject', 'offer', 'annex1', 'title', 'supply_total_label', 'lowside_total_label']) d[k] = v(`qs_${ty}_${k}`).trim();
+    if (ty === 'dx') d.supply_text = v('qs_dx_supply_text').trim();
+    d.notes = lines(`qs_${ty}_notes`); d.exclusions = lines(`qs_${ty}_exclusions`);
+    d.terms = v(`qs_${ty}_terms`).split(/\n\s*\n/).map(b => b.trim()).filter(Boolean).map(b => { const i = b.indexOf('\n'); return i < 0 ? [b, ''] : [b.slice(0, i).trim(), b.slice(i + 1).trim()]; }); }
+  const ns = v('qsSerial'), p = { ...C }; if (ns && Number(ns) !== Number(QT.nextSerial)) p.next_serial = Number(ns);
+  const { error } = await db.rpc('quote_settings_save', { p }); if (error) { qtToast(error.message, true); return; }
+  QT.cfg = C; QT.logo_co = null; QT.nextSerial = null; qtToast('Saved'); renderQtSetup();
+}
+function qtModal(html) { document.getElementById('qtPickBody').innerHTML = html; openModal('qtPickBg'); }
+const qtOpt = (arr, v) => arr.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('');
+const QT_SYS = [['vrf', 'VRF'], ['dx', 'DX'], ['any', 'VRF + DX']];
+function qtPriceForm(id) {
+  const p = id ? QT.prices.find(x => x.id === id) : { brand_id: QT.pBrand || (QT.brands[0] || {}).id, system: QT.pSys || 'vrf', category: 'outdoor', unit: 'Nos', active: true };
+  qtModal(`<h3 style="margin-bottom:10px">${id ? 'Edit price' : 'Add price list item'}</h3><div class="qtg3">
+    <div class="field"><label>Brand</label><select id="pfBrand">${QT.brands.map(b => `<option value="${b.id}" ${b.id === p.brand_id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Used in</label><select id="pfSys">${qtOpt(QT_SYS, p.system)}</select></div><div class="field"><label>Group</label><select id="pfCat">${qtOpt(QT_CATS, p.category)}</select></div></div>
+    <div class="field"><label>Item name * <span class="muted">(as it should print)</span></label><input id="pfName" value="${esc(p.name || '')}" placeholder="e.g. 12 HP TOP DISCHARGE"></div>
+    <div class="qtg3"><div class="field"><label>Model</label><input id="pfModel" value="${esc(p.model || '')}"></div><div class="field"><label>Capacity</label><input id="pfCap" value="${esc(p.capacity || '')}" placeholder="2.0 TR"></div><div class="field"><label>Unit</label><input id="pfUnit" value="${esc(p.unit || 'Nos')}"></div></div>
+    <div class="qtg3"><div class="field"><label>List price ₹ (before discount)</label><input id="pfBase" type="number" step="any" value="${p.base_price ?? ''}"></div><div class="field"><label>Usual discount %</label><input id="pfDisc" type="number" step="any" value="${p.discount_pct ?? ''}"></div><div class="field"><label>MRP ₹ (incl. GST)</label><input id="pfMrp" type="number" step="any" value="${p.mrp ?? ''}"></div></div>
+    <label style="font-size:13px"><input type="checkbox" id="pfActive" ${p.active ? 'checked' : ''}> In use</label>
+    <div style="text-align:right;margin-top:14px">${id ? `<button class="btn danger" style="float:left" onclick="qtMasterDel('quote_price_items','${id}')">Delete</button>` : ''}<button class="btn sec" onclick="closeModal('qtPickBg')">Cancel</button> <button class="btn" onclick="qtPriceSave('${id || ''}')">Save</button></div>`);
+}
+async function qtPriceSave(id) {
+  const v = i => document.getElementById(i).value.trim(), n = i => v(i) === '' ? null : Number(v(i));
+  if (!v('pfName')) { qtToast('Enter the item name', true); return; }
+  const row = { brand_id: v('pfBrand'), system: v('pfSys'), category: v('pfCat'), name: v('pfName'), model: v('pfModel') || null, capacity: v('pfCap') || null, unit: v('pfUnit') || 'Nos', base_price: n('pfBase'), discount_pct: n('pfDisc'), mrp: n('pfMrp'), active: document.getElementById('pfActive').checked, updated_by: ME.id, updated_at: new Date().toISOString() };
+  const { error } = id ? await db.from('quote_price_items').update(row).eq('id', id) : await db.from('quote_price_items').insert(row);
+  if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup();
+}
+async function qtMasterDel(table, id) { if (!confirm('Delete this? Quotations already made are not affected.')) return; const { error } = await db.from(table).delete().eq('id', id); if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup(); }
+async function qtPriceTemplate() {
+  await loadXlsx(); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Brand', 'Type (VRF/DX)', 'Group (Outdoor/Indoor/Accessory/Other)', 'Item name', 'Model', 'Capacity', 'Unit', 'List price', 'Discount %', 'MRP'],
+    ['LG', 'VRF', 'Outdoor', '12 HP TOP DISCHARGE', '', '12 HP', 'Nos', 409600, 52, ''], ['LG', 'VRF', 'Indoor', '4 WAY CASSETTE UNITS', '', '1.0 TR', 'Nos', 46600, 50, ''], ['LG', 'DX', 'Indoor', 'INVERTER HIWALL SPLIT UNIT-3 STAR', '', '1.0 TR', 'Nos', '', '', 35000]]), 'Price list');
+  XLSX.writeFile(wb, 'price_list_format.xlsx');
+}
+async function qtPriceUpload(inp) {
+  const f = inp.files[0]; inp.value = ''; if (!f) return; await loadXlsx();
+  let rows; try { const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' }); rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: null }); } catch (e) { qtToast('Could not read this file', true); return; }
+  const hi = rows.findIndex(r => r && r.some(c => typeof c === 'string' && /item|descri|name|model/i.test(c)) && r.some(c => typeof c === 'string' && /price|mrp|rate/i.test(c)));
+  if (hi < 0) { qtToast('No header row found. Use “Download Excel format” to see the columns.', true); return; }
+  const H = rows[hi].map(c => String(c || '').toLowerCase()), col = re => H.findIndex(h => re.test(h));
+  const ix = { brand: col(/brand|make/), sys: col(/type|system|vrf/), cat: col(/group|categor/), name: col(/item|descri|name/), model: col(/model/), cap: col(/capacity|tr\b|hp\b/), unit: col(/unit|uom/), base: col(/list|base|bp|basic|price/), disc: col(/disc/), mrp: col(/mrp/) };
+  if (ix.base === ix.mrp) ix.base = H.findIndex((h, i) => i !== ix.mrp && /list|base|bp|basic|price/.test(h));
+  if (ix.name < 0) ix.name = ix.model;
+  const out = [], bad = []; const g = (r, k) => ix[k] >= 0 ? r[ix[k]] : null;
+  rows.slice(hi + 1).forEach((r, i) => { if (!r || !r.some(c => c != null && c !== '')) return;
+    const bn = String(g(r, 'brand') || '').trim().toLowerCase(), b = bn ? QT.brands.find(x => x.name.toLowerCase() === bn || (x.code || '').toLowerCase() === bn) : QT.brands.find(x => x.id === QT.pBrand);
+    const name = String(g(r, 'name') || '').trim(), base = qtNum(g(r, 'base')), mrp = qtNum(g(r, 'mrp'));
+    if (!b || !name || (base == null && mrp == null)) { if (name || bn) bad.push(hi + i + 2); return; }
+    const st = String(g(r, 'sys') || '').toLowerCase(), ct = String(g(r, 'cat') || '').toLowerCase();
+    out.push({ brand_id: b.id, system: /vrf|vrv/.test(st) ? 'vrf' : /dx|split|ductable/.test(st) ? 'dx' : (QT.pSys || 'any'), category: /out|odu/.test(ct) ? 'outdoor' : /in|idu/.test(ct) ? 'indoor' : /acc/.test(ct) ? 'accessory' : 'other',
+      name, model: g(r, 'model') != null ? String(g(r, 'model')).trim() || null : null, capacity: g(r, 'cap') != null ? String(g(r, 'cap')).trim() || null : null, unit: String(g(r, 'unit') || 'Nos').trim() || 'Nos', base_price: base, discount_pct: (d => d != null && d > 0 && d < 1 ? d * 100 : d)(qtNum(g(r, 'disc'))), mrp, updated_by: ME.id }); });
+  if (!out.length) { qtToast('No usable rows. Each row needs a brand (or choose a brand filter first), an item name and a List price or MRP.', true); return; }
+  const key = p => `${p.brand_id}|${p.system}|${(p.name || '').toLowerCase()}|${(p.model || '').toLowerCase()}|${(p.capacity || '').toLowerCase()}`, have = new Map(QT.prices.map(p => [key(p), p.id]));
+  const upd = out.filter(p => have.has(key(p))), ins = out.filter(p => !have.has(key(p)));
+  if (!confirm(`${ins.length} new item(s) and ${upd.length} price update(s) found${bad.length ? `, ${bad.length} row(s) skipped (rows ${bad.slice(0, 8).join(', ')}${bad.length > 8 ? '…' : ''})` : ''}.\n\nSave them?`)) return;
+  let err = null; for (let i = 0; i < ins.length && !err; i += 400) err = (await db.from('quote_price_items').insert(ins.slice(i, i + 400))).error;
+  for (const p of upd) { if (err) break; err = (await db.from('quote_price_items').update({ base_price: p.base_price, discount_pct: p.discount_pct, mrp: p.mrp, unit: p.unit, category: p.category, updated_by: ME.id, updated_at: new Date().toISOString() }).eq('id', have.get(key(p)))).error; }
+  if (err) qtToast(err.message, true); else qtToast(`Price list saved: ${ins.length} added, ${upd.length} updated`); loadQtSetup();
+}
+function qtLowForm(id) {
+  const l = id ? QT.lows.find(x => x.id === id) : { system: 'dx', unit: 'Nos', active: true, sort: (QT.lows.length + 1) * 10 };
+  qtModal(`<h3 style="margin-bottom:10px">${id ? 'Edit' : 'Add'} installation item</h3><div class="qtg3"><div class="field"><label>Used in</label><select id="lfSys">${qtOpt(QT_SYS, l.system)}</select></div><div class="field"><label>Unit</label><input id="lfUnit" value="${esc(l.unit || 'Nos')}" placeholder="Nos / RMT / Sqft"></div><div class="field"><label>Usual rate ₹</label><input id="lfRate" type="number" step="any" value="${l.rate ?? ''}"></div></div>
+    <div class="field"><label>Item name *</label><input id="lfName" value="${esc(l.name || '')}"></div>
+    <div class="field"><label>Group heading <span class="muted">(optional – items with the same heading are listed together, e.g. Refrigerant Piping)</span></label><input id="lfGroup" value="${esc(l.group_name || '')}"></div>
+    <div class="field"><label>Description printed under the group heading (optional)</label><textarea id="lfDesc" rows="2">${esc(l.description || '')}</textarea></div>
+    <div class="qtg3"><div class="field"><label>Order in the list</label><input id="lfSort" type="number" value="${l.sort ?? 0}"></div><label style="font-size:13px;align-self:center"><input type="checkbox" id="lfActive" ${l.active ? 'checked' : ''}> In use</label></div>
+    <div style="text-align:right;margin-top:14px">${id ? `<button class="btn danger" style="float:left" onclick="qtMasterDel('quote_lowside_items','${id}')">Delete</button>` : ''}<button class="btn sec" onclick="closeModal('qtPickBg')">Cancel</button> <button class="btn" onclick="qtLowSave('${id || ''}')">Save</button></div>`);
+}
+async function qtLowSave(id) {
+  const v = i => document.getElementById(i).value.trim(); if (!v('lfName')) { qtToast('Enter the item name', true); return; }
+  const row = { system: v('lfSys'), unit: v('lfUnit') || 'Nos', rate: v('lfRate') === '' ? null : Number(v('lfRate')), name: v('lfName'), group_name: v('lfGroup') || null, description: v('lfDesc') || null, sort: Number(v('lfSort')) || 0, active: document.getElementById('lfActive').checked };
+  const { error } = id ? await db.from('quote_lowside_items').update(row).eq('id', id) : await db.from('quote_lowside_items').insert(row);
+  if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup();
+}
+function qtBrandForm(id) {
+  const b = id ? QT.brands.find(x => x.id === id) : { active: true, sort: QT.brands.length + 1 }; QT.logo_br = null;
+  qtModal(`<h3 style="margin-bottom:10px">${id ? 'Edit brand' : 'Add brand'}</h3><div class="qtg2"><div class="field"><label>Brand name *</label><input id="bfName" value="${esc(b.name || '')}"></div><div class="field"><label>Short code <span class="muted">(for the reference no.)</span></label><input id="bfCode" maxlength="6" value="${esc(b.code || '')}"></div></div>
+    <div class="field"><label>Logo</label><div style="display:flex;gap:12px;align-items:center">${b.logo ? `<img id="qbLogoImg" src="${esc(b.logo)}" style="max-height:46px;max-width:160px">` : '<span class="muted" id="qbLogoImg">no logo yet</span>'}<label class="btn sec" style="cursor:pointer">Upload logo<input type="file" id="bfLogoFile" accept="image/*" style="display:none" onchange="qtLogoPick(this,'br')"></label></div><div class="hint">PNG or JPG. A wide logo on a white or transparent background prints best.</div></div>
+    <label style="font-size:13px"><input type="checkbox" id="bfActive" ${b.active ? 'checked' : ''}> In use</label>
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('qtPickBg')">Cancel</button> <button class="btn" onclick="qtBrandSave('${id || ''}')">Save</button></div>`);
+}
+async function qtBrandSave(id) {
+  const name = document.getElementById('bfName').value.trim(); if (!name) { qtToast('Enter the brand name', true); return; }
+  const row = { name, code: document.getElementById('bfCode').value.trim().toUpperCase() || null, active: document.getElementById('bfActive').checked }; if (QT.logo_br) row.logo = QT.logo_br;
+  const { error } = id ? await db.from('quote_brands').update(row).eq('id', id) : await db.from('quote_brands').insert({ ...row, sort: QT.brands.length + 1 });
+  if (error) { qtToast(/duplicate/i.test(error.message) ? 'This brand already exists' : error.message, true); return; } closeModal('qtPickBg'); loadQtSetup();
+}
+
+// ---------- public page for the customer: bneone.com/?quote=TOKEN ----------
+async function qtPublicPage(token) {
+  document.title = 'Quotation – B N Enterprises';
+  document.body.innerHTML = `<style>${QT_DOC_CSS} body{background:#E9EDF3;margin:0;font-family:Arial,Helvetica,sans-serif}
+    .pbar{position:sticky;top:0;z-index:5;background:#0F172A;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}.pbar button{padding:9px 16px;border:0;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
+    .pwrap{overflow-x:auto;padding:10px}.qpg{width:210mm;min-height:297mm;padding:10mm 12mm;margin:0 auto 12px;box-shadow:0 4px 24px rgba(15,23,42,.15)}
+    .pmsg{max-width:440px;margin:12vh auto;background:#fff;border-radius:18px;padding:28px;text-align:center;box-shadow:0 12px 40px rgba(15,23,42,.12)}
+    @media print{.pbar,.pform{display:none!important}body{background:#fff}.pwrap{padding:0;overflow:visible}.qpg{width:auto;min-height:275mm;padding:0;margin:0;box-shadow:none;page-break-after:always}.qpg:last-child{page-break-after:auto}@page{size:A4;margin:10mm 12mm}}
+    @media screen and (max-width:820px){.qdoc{zoom:.46}}</style><div id="pubRoot"><div class="pmsg">Loading…</div></div>`;
+  const root = document.getElementById('pubRoot'), { data: q } = await db.rpc('quote_public', { p_token: token });
+  if (!q) { root.innerHTML = '<div class="pmsg"><h2>Link not valid</h2><p style="color:#64748B">This quotation link is not active. Please ask us for a fresh link.</p></div>'; return; }
+  document.title = `${q.customer_name || 'Quotation'} ${(q.brand || {}).name || ''} ${String(q.type).toUpperCase()} BOQ - ${qtDate(q.quote_date).replace(/\./g, '-')}`;
+  const st = q.status, msg = st === 'approved' ? `✓ Approved by ${qtEsc(q.response_name || '')}` : st === 'rejected' ? 'Changes requested – we will send a revised quotation' : st === 'superseded' ? 'A newer revision of this quotation has been issued' : st === 'lost' ? 'This quotation is closed' : `Total ₹${qtN0(q.total)} incl. GST`;
+  root.innerHTML = `<div class="pbar"><b style="flex:1;min-width:150px">${qtEsc(q.ref_no || q.quote_no)}<span style="font-weight:400;opacity:.8"> · ${msg}</span></b>
+      <button style="background:#fff;color:#0F172A" onclick="print()">Download / Print</button>
+      ${st === 'sent' ? `<button style="background:#16A34A;color:#fff" onclick="qtPubAsk('approve')">Approve</button><button style="background:#334155;color:#fff" onclick="qtPubAsk('reject')">Ask for changes</button>` : ''}</div>
+    <div class="pform" id="pubForm" style="display:none;background:#fff;padding:14px;border-bottom:1px solid #E4E8F0"></div><div class="pwrap">${qtDocHtml(q)}</div>`;
+  window.qtPubAsk = a => { const f = document.getElementById('pubForm'); f.style.display = 'block';
+    f.innerHTML = `<div style="max-width:520px;margin:0 auto"><b>${a === 'approve' ? 'Approve this quotation' : 'What would you like changed?'}</b>
+      <input id="pubName" placeholder="Your name *" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:inherit;box-sizing:border-box">
+      <textarea id="pubNote" rows="3" placeholder="${a === 'approve' ? 'PO number or remarks (optional)' : 'Tell us what to change *'}" style="display:block;width:100%;margin-top:8px;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:inherit;box-sizing:border-box"></textarea>
+      <div id="pubErr" style="color:#DC2626;font-size:13px;margin-top:6px"></div>
+      <button id="pubGo" style="margin-top:8px;padding:11px 18px;border:0;border-radius:9px;background:${a === 'approve' ? '#16A34A' : '#334155'};color:#fff;font:inherit;font-weight:700;cursor:pointer">${a === 'approve' ? 'Confirm approval' : 'Send request'}</button></div>`;
+    f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('pubGo').onclick = async () => { const name = document.getElementById('pubName').value.trim(), note = document.getElementById('pubNote').value.trim(), er = document.getElementById('pubErr');
+      if (name.length < 2) { er.textContent = 'Please enter your name.'; return; } if (a === 'reject' && !note) { er.textContent = 'Please tell us what to change.'; return; }
+      const { data: ok, error } = await db.rpc('quote_respond', { p_token: token, p_action: a, p_name: name, p_note: note });
+      if (error || !ok) { er.textContent = 'Could not save. Please try again or call us.'; return; } qtPublicPage(token); }; };
+}
+
+window.addEventListener('beforeunload', e => { if (QT.dirty && document.getElementById('quoteEdit') && document.getElementById('quoteEdit').classList.contains('active')) { e.preventDefault(); e.returnValue = ''; } });
 
 // ---------- public rating page: bneone.com/?rate=TOKEN ----------
 async function svcRatingPage(token) {
@@ -4798,7 +5554,8 @@ function exportCsv(kind) {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show')); });
 const _rateTok = new URLSearchParams(location.search).get('rate');
-if (_rateTok) svcRatingPage(_rateTok); else init();
+const _quoteTok = new URLSearchParams(location.search).get('quote');
+if (_rateTok) svcRatingPage(_rateTok); else if (_quoteTok) qtPublicPage(_quoteTok); else init();
 </script>
 <style>.ch { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; font-weight:700; }</style>
 </body>
