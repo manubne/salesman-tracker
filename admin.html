@@ -714,7 +714,7 @@
     <!-- ================= STOCK CHECK ================= -->
     <div id="stock" class="view">
       <div class="panel"><h2>Stock check <span class="sub">free to use right now, live from Odoo</span></h2>
-        <div style="position:relative;max-width:640px"><div class="toolbar" style="margin-bottom:0"><input id="stkQ" autocomplete="off" placeholder="Type model or item name, e.g. 22HP, cassette, AJU32452014" style="flex:1;min-width:260px" oninput="stkTyped()" onkeydown="if(event.key==='Enter')stkSearch();if(event.key==='Escape')stkHideSug()"><button class="btn" onclick="stkSearch()">Check stock</button></div>
+        <div style="position:relative;max-width:640px"><div class="toolbar" style="margin-bottom:0"><input id="stkQ" autocomplete="off" placeholder="Type model no. or product name, e.g. ZTNQ18, 22HP, cassette" style="flex:1;min-width:260px" oninput="stkTyped()" onkeydown="if(event.key==='Enter')stkSearch();if(event.key==='Escape')stkHideSug()"><button class="btn" onclick="stkSearch()">Check stock</button></div>
           <div id="stkSug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.14);margin-top:4px;max-height:360px;overflow:auto"></div></div>
         <p class="hint">Suggestions appear after 3 letters. Free to use = quantity in the warehouse minus what is already reserved for other orders.</p>
         <div id="stkOut" style="margin-top:14px"></div></div>
@@ -4810,10 +4810,10 @@ function stkTyped() {
   if (q.length < 3) { stkHideSug(); return; }
   STK.t = setTimeout(async () => { const my = ++STK.seq, r = await stkCall({ action: 'suggest', q }); if (my !== STK.seq) return;
     STK.sug = r.items || []; const el = document.getElementById('stkSug');
-    el.innerHTML = STK.sug.length ? `<div class="pickrow" style="padding:9px 12px;color:var(--brand);font-weight:650" onclick="stkSearch()">Show all matching “${esc(q)}”</div>` + STK.sug.map((s, i) => `<div class="pickrow" style="padding:9px 12px" onclick="stkPick(${i})"><span><b>${esc(s.name)}</b>${s.model ? `<div class="muted" style="font-size:11.5px">${esc(s.model)}</div>` : ''}</span></div>`).join('') : '<div class="muted" style="padding:10px 12px">No item with that name.</div>';
+    el.innerHTML = STK.sug.length ? `<div class="pickrow" style="padding:9px 12px;color:var(--brand);font-weight:650" onclick="stkSearch()">Show all matching “${esc(q)}”</div>` + STK.sug.map((s, i) => `<div class="pickrow" style="padding:9px 12px" onclick="stkPick(${i})"><span><b>${esc(s.model || s.name)}</b>${s.model ? `<div class="muted" style="font-size:11.5px">${esc(s.name)}</div>` : ''}</span></div>`).join('') : '<div class="muted" style="padding:10px 12px">No item with that name.</div>';
     el.style.display = 'block'; }, 280);
 }
-function stkPick(i) { const s = STK.sug[i]; document.getElementById('stkQ').value = s.name; stkSearch([s.id], s.name); }
+function stkPick(i) { const s = STK.sug[i]; document.getElementById('stkQ').value = s.model || s.name; stkSearch([s.id], s.model || s.name); }
 async function stkSearch(ids, label) {
   clearTimeout(STK.t); STK.seq++; stkHideSug();
   const q = label || document.getElementById('stkQ').value.trim(), out = document.getElementById('stkOut');
@@ -4824,7 +4824,7 @@ async function stkSearch(ids, label) {
   const n = v => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }), items = r.items || [];
   if (!items.length) { out.innerHTML = '<div class="empty">No item found with that name.</div>'; return; }
   out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} item${items.length === 1 ? '' : 's'}${items.length >= 40 ? ' (first 40 – type more to narrow down)' : ''} · live from Odoo at ${new Date(r.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>` +
-    tbl(['Item', 'Category', 'Free to use', 'In warehouse', 'Reserved', 'Where'], items.map(it => [`<b>${esc(it.name)}</b>${it.model ? `<div class="muted" style="font-size:11.5px">${esc(it.model)}</div>` : ''}`, esc(it.category),
+    tbl(['Model no.', 'Product', 'Category', 'Free to use', 'In warehouse', 'Reserved', 'Where'], items.map(it => [`<b>${esc(it.model || '—')}</b>`, esc(it.name), esc(it.category),
       `<b style="font-size:17px;color:${it.free > 0 ? 'var(--green)' : 'var(--red)'}">${n(it.free)}</b> <span class="muted" style="font-size:11.5px">${esc(it.unit)}</span>`, n(it.on_hand), n(it.reserved),
       it.places.length ? it.places.map(w => `<div style="font-size:12.5px;white-space:nowrap">${esc(w.warehouse)}${w.location ? ` <span class="muted">· ${esc(w.location)}</span>` : ''}: <b>${n(w.free)}</b> free${w.reserved ? ` <span class="muted">(${n(w.reserved)} reserved)</span>` : ''}</div>`).join('') : '<span class="muted">—</span>']));
 }
