@@ -4813,6 +4813,7 @@ function qtRateOf(r, gstPct) {
 const QT_DOC_CSS = `
 .qdoc { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; color: #000; line-height: 1.35; }
 .qdoc * { box-sizing: border-box; }
+.qdoc table { table-layout: fixed; } .qdoc td, .qdoc th { color: #000; text-transform: none; letter-spacing: 0; font-size: inherit; text-align: left; border: 0; background: none; white-space: normal; }
 .qpg { display: flex; flex-direction: column; background: #fff; }
 .qh { display: flex; justify-content: space-between; align-items: center; min-height: 20mm; margin-bottom: 4mm; }
 .qh img { max-height: 19mm; max-width: 62mm; object-fit: contain; }
@@ -4825,7 +4826,7 @@ const QT_DOC_CSS = `
 .qrow { display: flex; justify-content: space-between; padding: 0 8mm 9mm; }
 table.qt { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
 table.qt td, table.qt th { border: .6pt solid #000; padding: 1.1mm 1.6mm; vertical-align: middle; }
-table.qt th { background: #8DB4E2; font-weight: bold; text-align: center; }
+table.qt th { background: #8DB4E2; font-weight: bold; text-align: center; font-size: 9.5pt; }
 table.qt .ttl td { text-align: center; font-weight: bold; }
 table.qt .c { text-align: center; } table.qt .r { text-align: right; white-space: nowrap; }
 table.qt .hd td { font-weight: bold; }
@@ -4836,7 +4837,7 @@ table.qt .grand td { background: #76933C; color: #fff; font-weight: bold; font-s
 table.qt tr { page-break-inside: avoid; }
 .qnote { font-size: 8.8pt; margin-top: 2mm; } .qnote b { display: block; margin-bottom: 1mm; } .qnote div { margin-bottom: 1.2mm; }
 .qhead2 { text-align: center; font-weight: bold; text-decoration: underline; margin: 2mm 0 9mm; }
-table.qterm { width: 100%; border-collapse: collapse; } table.qterm td { padding: 2.2mm 2mm; vertical-align: top; } table.qterm td:first-child { width: 30%; }
+table.qterm { width: 100%; border-collapse: collapse; } table.qterm td { padding: 2.2mm 2mm; vertical-align: top; font-size: 10.5pt; } table.qterm td:first-child { width: 30%; }
 .qex { display: grid; grid-template-columns: 8mm 1fr; row-gap: 4.5mm; }
 `;
 const QT_PRINT_CSS = `@page { size: A4; margin: 10mm 12mm; } html, body { margin: 0; padding: 0; background: #fff; }
@@ -4873,19 +4874,20 @@ function qtDocHtml(q) {
       if (r.t === 'item') { const amt = (qtNum(r.qty) || 0) * (qtNum(r.rate) || 0);
         return `<tr><td class="c">${e(r.sno)}</td><td>${ml(r.desc)}</td>${cap ? `<td class="c">${e(r.cap)}</td><td class="c">${e(r.qty)}</td>` : `<td class="c">${e(r.qty)}</td><td class="c">${e(r.unit)}</td>`}<td class="r">${qtN0(r.rate)}</td><td class="r">${qtN0(amt)}</td></tr>`; }
       if (r.t === 'text' && r.wide) return `<tr><td colspan="${n}" style="padding:2.5mm 1.6mm">${ml(r.desc)}</td></tr>`;
-      return `<tr class="${r.t === 'head' ? 'hd' : ''}"><td class="c">${e(r.sno)}</td><td>${ml(r.desc)}</td><td></td><td></td><td></td><td></td></tr>`;
+      if (r.t === 'text') return `<tr><td class="c">${e(r.sno)}</td><td colspan="${n - 1}">${ml(r.desc)}</td></tr>`;
+      return `<tr class="hd"><td class="c">${e(r.sno)}</td><td>${ml(r.desc)}</td><td></td><td></td><td></td><td></td></tr>`;
     }).join('');
     const x = c.tables[ti];
     return `${ti === 0 ? `<tr class="ttl"><td colspan="${n}">ANNEXURE - I</td></tr>${d.title ? `<tr class="ttl"><td colspan="${n}">${e(d.title)}</td></tr>` : ''}` : ''}
       ${t.title ? `<tr class="ttl"><td colspan="${n}">${e(t.title)}</td></tr>` : ''}
-      <tr><th style="width:9%">S.No</th><th>DESCRIPTION</th>${cap ? '<th style="width:12%">CAPACITY</th><th style="width:8%">QTY</th>' : '<th style="width:8%">QTY</th><th style="width:9%">UNIT</th>'}<th style="width:14%">Rate<br>INR</th><th style="width:16%">Amount<br>INR</th></tr>
+      <tr><th>S.No</th><th>DESCRIPTION</th>${cap ? '<th>CAPACITY</th><th>QTY</th>' : '<th>QTY</th><th>UNIT</th>'}<th>Rate<br>INR</th><th>Amount<br>INR</th></tr>
       ${rows}
       <tr class="sub"><td colspan="${n - 1}" class="r">SUB TOTAL</td><td class="r">${qtN0(x.sub)}</td></tr>
       <tr class="gst"><td colspan="${n - 1}" class="r">GST @ ${gst}%</td><td class="r">${qtN0(x.gst)}</td></tr>
       <tr class="tot"><td colspan="${n - 1}" class="r">${e(t.total_label || 'TOTAL INCLUDING GST')}</td><td class="r">${qtN0(x.tot)}</td></tr>`;
   }).join('');
   const grand = (d.tables || []).length > 1 ? `<tr class="grand"><td colspan="5" class="r">TOTAL PROJECT COST IN INR - INCLUDING GST</td><td class="r">${qtN0(c.total)}</td></tr>` : '';
-  const price = `<table class="qt">${tbls}${grand}</table>${notes.length ? `<div class="qnote"><b>Note:</b>${notes.map((s, i) => `<div>${i + 1}. ${e(s)}</div>`).join('')}</div>` : ''}`;
+  const price = `<table class="qt"><colgroup><col style="width:7%"><col style="width:48%"><col style="width:10%"><col style="width:9%"><col style="width:12%"><col style="width:14%"></colgroup>${tbls}${grand}</table>${notes.length ? `<div class="qnote"><b>Note:</b>${notes.map((s, i) => `<div>${i + 1}. ${e(s)}</div>`).join('')}</div>` : ''}`;
   let html = pg(letter) + pg(price);
   if (terms.length) html += pg(`<div class="qhead2">ANNEXURE - II<br>TERMS AND CONDITIONS</div><table class="qterm">${terms.map(t => `<tr><td>${ml(t[0])}</td><td>${ml(t[1])}</td></tr>`).join('')}</table>`);
   if (excl.length) html += pg(`<div class="qhead2">ANNEXURE - ${terms.length ? 'III' : 'II'}<br>EXCLUDED WORKS AND SERVICES</div><div class="qex">${excl.map((s, i) => `<div>${i + 1}</div><div>${e(s)}</div>`).join('')}</div>`);
@@ -4962,8 +4964,8 @@ function qtParsePrice(grid, out) {
     if (S(sno) && /mailto:|gst\s*@/i.test(sno) && S(desc)) sno = null;
     if (amt != null && rate == null && qty == null) {            // sub-total / GST / total rows
       const label = strs[0] || '';
-      if (/gst/i.test(label)) continue;
       if (/sub.?\s*total/i.test(label)) continue;
+      if (/gst/i.test(label) && !/total/i.test(label)) continue;
       if (/project|grand/i.test(label)) { grand = amt; continue; }
       if (/total/i.test(label)) { cur.total_label = label.replace(/\s+/g, ' '); tots.push(amt); continue; }
       continue;
@@ -5076,6 +5078,7 @@ async function qtNew(type, parsed) {
     const p = parsed.doc; QT.cur.source = 'excel'; QT.cur.ref_no = parsed.ref_no || ''; QT.cur.customer_name = parsed.customer_name || ''; QT.cur.project = p.project || '';
     if (parsed.quote_date) QT.cur.quote_date = parsed.quote_date;
     for (const k of ['to', 'project', 'subject', 'intro', 'offer', 'annex1', 'sign_name', 'sign_title', 'title']) if (p[k]) doc[k] = p[k];
+    if (p.sign_name) doc.sign_title = p.sign_title || '';
     if (p.tables.length) doc.tables = p.tables.map((t, i) => ({ ...t, total_label: t.total_label || (i ? D.lowside_total_label : D.supply_total_label) || '' }));
     if (p.notes.length) doc.notes = p.notes; if (p.terms.length) doc.terms = p.terms; if (p.exclusions.length) doc.exclusions = p.exclusions;
   }
@@ -5230,7 +5233,8 @@ function qtPickRender() {
 }
 function qtPickAdd() {
   const P = QT.pick, t = QT.cur.doc.tables[P.ti], vrf = QT.cur.type === 'vrf'; let n = 0;
-  P.items.filter(p => P.sel[p.id] > 0).forEach(p => {
+  const rank = c => { const i = ['outdoor', 'indoor', 'accessory'].indexOf(c); return i < 0 ? 9 : i; };
+  P.items.filter(p => P.sel[p.id] > 0).sort((a, b) => rank(a.category) - rank(b.category)).forEach(p => {
     const useMrp = p.mrp != null && (p.base_price == null || !vrf);
     const r = { t: 'item', sno: '', desc: p.name + (p.model ? ' - ' + p.model : '') + (!t.cap && p.capacity ? '  ' + p.capacity : ''), cap: p.capacity || '', unit: p.unit || 'Nos', qty: P.sel[p.id], pid: p.id, cat: p.category,
       base: useMrp ? Number(p.mrp) : (p.base_price != null ? Number(p.base_price) : null), mode: useMrp ? 'mrp' : (p.base_price != null ? 'disc' : ''), disc: useMrp ? null : (p.discount_pct != null ? Number(p.discount_pct) : 0), rate: null };
