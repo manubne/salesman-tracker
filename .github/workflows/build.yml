@@ -82,6 +82,11 @@ jobs:
           fi
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.VIBRATE"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.RECORD_AUDIO"/>' $M
+          # chat voice messages (record plugin) need Android 6.0+
+          for g in android/app/build.gradle.kts android/app/build.gradle; do
+            [ -f $g ] && sed -i -E 's#minSdk(Version)? *=? *flutter\.minSdkVersion#minSdk = 23#' $g && grep -n "minSdk" $g || true
+          done
           sed -i 's#</application>#        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="bne_general_v1"/>\n    </application>#' $M
           python3 - <<'PY'
           import os
