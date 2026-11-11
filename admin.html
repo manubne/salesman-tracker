@@ -107,6 +107,17 @@
   #chatComposer textarea { width:100%; resize:none; border:none; background:#F4F6FA; border-radius:18px; padding:10px 14px; font:inherit; font-size:14px; min-height:40px; max-height:140px; }
   #mentionBox { position:absolute; bottom:100%; left:10px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.1); z-index:5; min-width:220px; }
   #mentionBox div { display:flex; gap:8px; align-items:center; padding:7px 10px; cursor:pointer; } #mentionBox div:hover { background:#F4F6FA; }
+  .chatpin { display:flex; gap:8px; align-items:center; padding:7px 14px; background:#FFFBEB; border-bottom:1px solid #FDE68A; cursor:pointer; font-size:13px; }
+  .chatpoll { min-width:240px; } .chatpoll .opt { display:block; padding:5px 0; cursor:pointer; } .chatpoll .bar { height:5px; border-radius:4px; background:rgba(0,0,0,.12); overflow:hidden; margin-top:3px; }
+  .chatpoll .bar i { display:block; height:100%; background:var(--brand); } .chatmsg.mine .chatpoll .bar { background:rgba(255,255,255,.25); } .chatmsg.mine .chatpoll .bar i { background:#fff; }
+  .chatcard { display:flex; gap:8px; align-items:center; padding:8px 10px; border-left:3px solid var(--brand); background:rgba(34,119,154,.08); border-radius:8px; cursor:pointer; min-width:220px; margin-bottom:4px; }
+  .chatmsg.mine .chatcard { border-left-color:#fff; background:rgba(255,255,255,.15); }
+  .chatlink { display:block; margin-top:6px; border-radius:8px; overflow:hidden; background:rgba(0,0,0,.05); max-width:300px; text-decoration:none; color:inherit; }
+  .chatlink img { width:100%; max-height:150px; object-fit:cover; display:block; } .chatlink div { padding:6px 9px; font-size:12.5px; }
+  .chatmsg.mine .chatlink { background:rgba(255,255,255,.14); }
+  .chatack { font-size:11.5px; font-weight:700; color:#059669; margin-top:4px; cursor:pointer; } .chatmsg.mine .chatack { color:#C7F9E0; } .chatack button { font-size:12px; padding:2px 10px; border-radius:12px; border:1px solid #059669; background:#fff; color:#059669; cursor:pointer; font-weight:700; }
+  .onl { position:relative; } .onl::after { content:''; position:absolute; right:-1px; bottom:-1px; width:10px; height:10px; border-radius:50%; background:#22C55E; border:2px solid #fff; }
+  .chatrow .rowacts { display:none; } .chatrow:hover .rowacts { display:inline-flex; gap:2px; } .chatrow .rowacts span { cursor:pointer; padding:0 3px; font-size:13px; }
   .chatq { font-size:12.5px; background:#F4F6FA; border-left:3px solid var(--brand); padding:5px 8px; border-radius:6px; margin-bottom:6px; }
   .pickrow { display:flex; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid #F1F3F8; cursor:pointer; }
   .chip { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:650; white-space:nowrap; text-transform:capitalize; }
@@ -521,18 +532,24 @@
             <div class="toolbar" style="margin:0 0 6px"><input id="chatSearch" placeholder="Search chats" oninput="renderChatInbox()" style="flex:1;min-width:0">
               <div class="dd"><button class="btn sm" onclick="this.nextElementSibling.classList.toggle('show')">+ New</button>
                 <div class="ddm"><a onclick="chatNew('dm')">Message someone</a><a onclick="chatNew('group')">New group</a><a onclick="chatNew('channel')">New channel</a><a onclick="chatNew('browse')">Browse channels</a></div></div></div>
-            <div class="seg" style="width:100%"><button class="active" onclick="chatFilter('',this)">All</button><button onclick="chatFilter('unread',this)">Unread</button><button onclick="chatFilter('dm',this)">Direct</button><button onclick="chatFilter('ch',this)">Channels</button></div>
+            <div class="seg" style="width:100%"><button class="active" onclick="chatFilter('',this)">All</button><button onclick="chatFilter('unread',this)">Unread</button><button onclick="chatFilter('dm',this)">Direct</button><button onclick="chatFilter('ch',this)">Channels</button><button onclick="chatFilter('arch',this)" title="Archived chats">🗄</button></div>
+            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sec sm" style="flex:1" onclick="chatSearchMsgs()">🔎 Search messages</button><button class="btn sec sm" style="flex:1" onclick="chatShowStarred()">⭐ Starred</button></div>
           </div>
           <div id="chatList" style="flex:1;overflow-y:auto"></div>
         </div>
         <div class="chatmain">
           <div id="chatHead"></div>
+          <div id="chatPinBar"></div>
           <div id="chatBox"></div>
+          <div id="chatNoPost" class="muted" style="display:none;padding:14px;text-align:center;border-top:1px solid var(--border)">📢 Only admins can post in this announcement channel</div>
           <div id="chatComposer" style="display:none">
             <div id="mentionBox" style="display:none"></div>
             <div id="chatExtra"></div>
             <div style="display:flex;gap:8px;align-items:flex-end">
               <label class="btn sec sm" style="cursor:pointer" title="Attach files">📎<input type="file" multiple style="display:none" onchange="chatPickFiles(this)"></label>
+              <div class="dd"><button class="btn sec sm" title="More" onclick="this.nextElementSibling.classList.toggle('show')">＋</button>
+                <div class="ddm" style="bottom:36px;top:auto"><a onclick="chatShareCard()">🔗 Lead, deal or customer</a><a id="chatPollItem" onclick="chatNewPoll()">📊 Poll</a><a onclick="chatShareLocation()">📍 My location</a></div></div>
+              <button class="btn sec sm" id="chatMic" title="Record a voice message" onclick="chatToggleRecord()">🎤</button>
               <textarea id="chatInput" rows="1" placeholder="Message · @ to mention · Enter to send, Shift+Enter for a new line" onkeydown="chatKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
               <button class="btn" onclick="sendChat()">Send</button>
             </div>
@@ -3857,6 +3874,8 @@ const avatarHtml = (u, size = 28) => {
 };
 
 // ---------- chat (channels, DMs, groups) ----------
+const CHAT_SEL = '*, chat_attachments(*), chat_reactions(user_id, emoji), chat_mentions(user_id), chat_poll_votes(user_id, option), chat_acks(user_id)';
+let _chatRead = {}, _chatSeen = {}, _chatStars = new Set(), _chatPinned = [], _chatBeat = null, _chatRec = null;
 let _chatInbox = [], _chatPeople = {}, _chatCur = null, _chatMsgs = [], _chatMembers = {}, _chatRt = null, _chatReply = null, _chatEdit = null, _chatFiles = [], _chatMentions = {}, _chatFilter = '';
 async function loadChat() {
   const [inbox, people] = await Promise.all([db.rpc('chat_inbox'), db.rpc('chat_people')]);
@@ -3867,8 +3886,13 @@ async function loadChat() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, p => onChatInsert(p.new))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, p => onChatUpdate(p.new))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_reactions' }, p => onChatReaction(p))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_members' }, p => { if (_chatCur && p.new.channel_id === _chatCur.id && p.new.user_id !== ME.id) { _chatRead[p.new.user_id] = p.new.last_read_at; renderChatRoom(true); } })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_poll_votes' }, p => chatRefreshMsg((p.new && p.new.message_id) || (p.old && p.old.message_id)))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_acks' }, p => chatRefreshMsg(p.new.message_id))
       .subscribe();
   }
+  if (!_chatBeat) { db.rpc('chat_heartbeat'); _chatBeat = setInterval(() => { db.rpc('chat_heartbeat'); if (_chatCur) chatLoadReadState(); }, 60000); }
+  db.from('chat_stars').select('message_id').then(({ data }) => { _chatStars = new Set((data || []).map(x => x.message_id)); });
   if (_chatCur) openChat(_chatCur.id, true);
 }
 function updateChatBadge() {
@@ -3879,13 +3903,13 @@ const pName = id => { const p = id === ME.id ? ME : _chatPeople[id]; return p ? 
 function renderChatInbox() {
   const q = (document.getElementById('chatSearch')?.value || '').toLowerCase();
   const el = document.getElementById('chatList'); if (!el) return;
-  const rows = _chatInbox.filter(c => (!_chatFilter || (_chatFilter === 'unread' ? (c.unread || c.mentions) : (_chatFilter === 'dm' ? c.kind === 'dm' : c.kind !== 'dm'))) && (!q || `${c.name || ''} ${c.last_body || ''}`.toLowerCase().includes(q)));
+  const rows = _chatInbox.filter(c => (_chatFilter === 'arch' ? c.hidden : !c.hidden) && (!_chatFilter || _chatFilter === 'arch' || (_chatFilter === 'unread' ? (c.unread || c.mentions) : (_chatFilter === 'dm' ? c.kind === 'dm' : c.kind !== 'dm'))) && (!q || `${c.name || ''} ${c.last_body || ''}`.toLowerCase().includes(q)));
   el.innerHTML = rows.map(c => {
     const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
     const bold = (c.unread || 0) + (c.mentions || 0) > 0;
     return `<div class="chatrow ${_chatCur && _chatCur.id === c.id ? 'on' : ''}" onclick="openChat('${c.id}')">
-      ${c.kind === 'dm' ? avatarHtml(other, 36) : `<span class="avatar" style="width:36px;height:36px;background:${c.kind === 'group' ? '#EDE9FE' : '#E6F1F6'};color:${c.kind === 'group' ? '#7C3AED' : '#22779A'}">${c.kind === 'group' ? '👥' : (c.is_private ? '🔒' : '#')}</span>`}
-      <div style="flex:1;min-width:0"><div style="display:flex;gap:6px"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? '' : 'font-weight:600'}">${esc(c.name || 'Chat')}</b><span class="muted" style="font-size:11px">${c.last_message_at ? ago(c.last_message_at) : ''}</span></div>
+      ${c.kind === 'dm' ? `<span class="${chatOnline(c.other_last_seen) ? 'onl' : ''}" style="display:inline-flex">${avatarHtml(other, 36)}</span>` : `<span class="avatar" style="width:36px;height:36px;background:${c.kind === 'group' ? '#EDE9FE' : '#E6F1F6'};color:${c.kind === 'group' ? '#7C3AED' : '#22779A'}">${c.kind === 'group' ? '👥' : (c.admins_only ? '📢' : (c.is_private ? '🔒' : '#'))}</span>`}
+      <div style="flex:1;min-width:0"><div style="display:flex;gap:6px"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? '' : 'font-weight:600'}">${c.pinned ? '📌 ' : ''}${esc(c.name || 'Chat')}</b><span class="rowacts" onclick="event.stopPropagation()"><span title="${c.pinned ? 'Unpin' : 'Pin to top'}" onclick="chatPref('${c.id}',{p_pinned:${!c.pinned}})">📌</span><span title="${c.hidden ? 'Unarchive' : 'Archive'}" onclick="chatPref('${c.id}',{p_hidden:${!c.hidden}})">🗄</span></span><span class="muted" style="font-size:11px">${c.last_message_at ? ago(c.last_message_at) : ''}</span></div>
       <div style="display:flex;gap:6px;align-items:center"><span class="muted" style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${bold ? 'color:var(--text);font-weight:600' : ''}">${c.muted ? '🔕 ' : ''}${c.last_body ? esc((c.last_user === ME.id ? 'You: ' : (c.kind === 'dm' ? '' : pName(c.last_user).split(' ')[0] + ': ')) + c.last_body) : 'No messages yet'}</span>
       ${c.mentions ? `<span class="badge" style="background:var(--red)">@${c.mentions}</span>` : (c.unread ? `<span class="badge">${c.unread}</span>` : '')}</div></div></div>`;
   }).join('') || '<div class="empty">No chats. Start one with “New”.</div>';
@@ -3895,19 +3919,30 @@ async function openChat(id, keep) {
   if (!keep) { _chatReply = null; _chatEdit = null; _chatFiles = []; _chatMentions = {}; document.getElementById('chatInput').value = ''; }
   renderChatInbox();
   const [{ data: msgs }, { data: mem }] = await Promise.all([
-    db.from('chat_messages').select('*, chat_attachments(*), chat_reactions(user_id, emoji), chat_mentions(user_id)').eq('channel_id', id).order('created_at', { ascending: false }).limit(80),
+    db.from('chat_messages').select(CHAT_SEL).eq('channel_id', id).order('created_at', { ascending: false }).limit(80),
     db.from('chat_members').select('*, users(id, name, mobile, role, designation, avatar_path)').eq('channel_id', id)]);
   _chatMsgs = (msgs || []).reverse(); _chatMembers = {}; (mem || []).forEach(m => { _chatMembers[m.user_id] = { ...(m.users || {}), _role: m.role, _muted: m.muted }; });
+  { const { data: ch } = await db.from('chat_channels').select('admins_only, require_ack, kind, archived').eq('id', id).maybeSingle(); if (ch && _chatCur) Object.assign(_chatCur, ch); }
+  chatLoadReadState(); chatLoadPinned();
   renderChatRoom(); db.rpc('chat_mark_read', { p_channel: id }).then(() => { const c = _chatInbox.find(x => x.id === id); if (c) { c.unread = 0; c.mentions = 0; } renderChatInbox(); updateChatBadge(); });
 }
-function renderChatRoom() {
+function renderChatRoom(keepScroll) {
   const c = _chatCur, head = document.getElementById('chatHead'), box = document.getElementById('chatBox'), comp = document.getElementById('chatComposer');
-  if (!c) { head.innerHTML = '<span class="muted">Pick a chat on the left, or start a new one.</span>'; box.innerHTML = ''; comp.style.display = 'none'; return; }
-  comp.style.display = c.archived ? 'none' : '';
+  const noPost = document.getElementById('chatNoPost');
+  if (!c) { head.innerHTML = '<span class="muted">Pick a chat on the left, or start a new one.</span>'; box.innerHTML = ''; comp.style.display = 'none'; noPost.style.display = 'none'; document.getElementById('chatPinBar').innerHTML = ''; return; }
+  const canPost = !c.admins_only || chatCanManage();
+  comp.style.display = c.archived || !canPost ? 'none' : '';
+  noPost.style.display = !c.archived && !canPost ? '' : 'none';
+  const pollItem = document.getElementById('chatPollItem'); if (pollItem) pollItem.style.display = c.kind === 'dm' ? 'none' : '';
   const other = c.kind === 'dm' ? _chatPeople[c.other_user] : null;
+  const pres = c.kind === 'dm' ? chatPresence(_chatSeen[c.other_user] || c.other_last_seen) : '';
+  const onlineN = c.kind === 'dm' ? 0 : Object.values(_chatSeen).filter(chatOnline).length;
+  const prevScroll = box.scrollTop;
   head.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">${c.kind === 'dm' ? avatarHtml(other, 34) : `<span class="avatar" style="width:34px;height:34px;background:#E6F1F6;color:#22779A">${c.kind === 'group' ? '👥' : '#'}</span>`}
-    <div style="min-width:0"><b>${esc(c.name || 'Chat')}</b><div class="muted" style="font-size:12px">${c.kind === 'dm' ? esc([other?.designation, ROLE_LABEL[other?.role]].filter(Boolean).join(' · ')) : `${Object.keys(_chatMembers).length} members${c.description ? ' · ' + esc(c.description) : ''}`}</div></div></div>
+    <div style="min-width:0"><b>${esc(c.name || 'Chat')}</b><div class="muted" style="font-size:12px;${pres === 'online' ? 'color:#059669;font-weight:600' : ''}">${c.kind === 'dm' ? esc(pres || [other?.designation, ROLE_LABEL[other?.role]].filter(Boolean).join(' · ')) : `${Object.keys(_chatMembers).length} members${onlineN ? ` · ${onlineN} online` : ''}${c.admins_only ? ' · 📢 announcements' : ''}${c.description ? ' · ' + esc(c.description) : ''}`}</div></div></div>
     <div class="toolbar" style="margin:0">
+      <button class="btn sec sm" onclick="chatMedia()" title="Photos, files & voice">🖼 Media</button>
+      ${c.kind === 'channel' && chatCanManage() ? `<button class="btn sec sm" onclick="chatAnnounceSettings()" title="Announcement settings">📢</button>` : ''}
       ${c.kind !== 'dm' ? `<button class="btn sec sm" onclick="chatAddPeople()">+ People</button>` : ''}
       <button class="btn sec sm" onclick="chatMembersSheet()">Members</button>
       <button class="btn sec sm" onclick="chatToggleMute()">${c.muted ? 'Unmute' : 'Mute'}</button>
@@ -3922,24 +3957,26 @@ function renderChatRoom() {
     html += chatMsgHtml(m, cont); lastUser = m.user_id; lastT = t;
   });
   box.innerHTML = html || '<div class="empty">Say hello 👋</div>';
-  box.scrollTop = box.scrollHeight;
-  renderComposerExtras();
+  box.scrollTop = keepScroll ? prevScroll : box.scrollHeight;
+  renderComposerExtras(); renderChatPinBar(); chatHydrateLinks();
 }
 function chatMsgHtml(m, cont) {
   const mine = m.user_id === ME.id, u = _chatMembers[m.user_id] || _chatPeople[m.user_id];
   const reacts = {}; (m.chat_reactions || []).forEach(r => (reacts[r.emoji] ||= []).push(r.user_id));
   const mentionsMe = (m.chat_mentions || []).some(x => x.user_id === ME.id);
   const reply = m.reply_to ? _chatMsgs.find(x => x.id === m.reply_to) : null;
-  const body = m.deleted_at ? '<i class="muted">Message deleted</i>' : chatRich(m.body || '');
-  const atts = m.deleted_at ? '' : (m.chat_attachments || []).map(a => `<div class="chatatt" data-path="${esc(a.storage_path)}" data-mime="${esc(a.mime || '')}" data-name="${esc(a.name || 'file')}">${(a.mime || '').startsWith('image/') ? `<img alt="" style="max-width:260px;max-height:220px;border-radius:8px;display:block;cursor:zoom-in">` : `📎 <a href="#" onclick="return false">${esc(a.name || 'file')}</a> <span class="muted" style="font-size:11px">${fmtSize(a.size)}</span>`}</div>`).join('');
+  const body = m.deleted_at ? '<i class="muted">Message deleted</i>' : chatKindHtml(m, mine) + chatRich(m.body || '') + chatLinkSlot(m);
+  const atts = m.deleted_at || m.kind === 'voice' ? '' : (m.chat_attachments || []).map(a => `<div class="chatatt" data-path="${esc(a.storage_path)}" data-mime="${esc(a.mime || '')}" data-name="${esc(a.name || 'file')}">${(a.mime || '').startsWith('image/') ? `<img alt="" style="max-width:260px;max-height:220px;border-radius:8px;display:block;cursor:zoom-in">` : `📎 <a href="#" onclick="return false">${esc(a.name || 'file')}</a> <span class="muted" style="font-size:11px">${fmtSize(a.size)}</span>`}</div>`).join('');
   return `<div class="chatmsg ${mine ? 'mine' : ''} ${cont ? 'cont' : ''}" data-id="${m.id}">
     ${mine ? '' : (cont ? '<span style="width:30px"></span>' : avatarHtml(u, 30))}
     <div class="bubble ${mentionsMe ? 'mention' : ''}">
       ${mine || cont ? '' : `<div class="who">${esc(pName(m.user_id))}</div>`}
-      ${reply ? `<div class="replyq"><b>${esc(reply.user_id === ME.id ? 'You' : pName(reply.user_id))}</b><br>${reply.deleted_at ? 'Message deleted' : esc(reply.body || '📎 attachment')}</div>` : ''}
+      ${m.forwarded && !m.deleted_at ? '<div style="font-size:11.5px;font-style:italic;opacity:.7;margin-bottom:2px">↪ Forwarded</div>' : ''}
+      ${reply ? `<div class="replyq"><b>${esc(reply.user_id === ME.id ? 'You' : pName(reply.user_id))}</b><br>${reply.deleted_at ? 'Message deleted' : esc(chatPreview(reply))}</div>` : ''}
       ${atts}${body}
-      <div class="meta">${m.edited_at ? 'edited · ' : ''}${fmtT(m.created_at)}</div>
-      ${m.deleted_at ? '' : `<div class="acts">${['👍', '❤️', '😂', '🎉', '✅'].map(e => `<span onclick="chatReact('${m.id}','${e}')">${e}</span>`).join('')}<span onclick="chatSetReply('${m.id}')" title="Reply">↩</span>${mine ? `<span onclick="chatSetEdit('${m.id}')" title="Edit">✎</span>` : ''}${mine || isManager() ? `<span onclick="chatDelete('${m.id}')" title="Delete">🗑</span>` : ''}</div>`}
+      <div class="meta">${_chatStars.has(m.id) ? '⭐ ' : ''}${m.pinned_at ? '📌 ' : ''}${m.edited_at ? 'edited · ' : ''}${fmtT(m.created_at)}${mine && !m.deleted_at ? ' ' + chatTicks(m) : ''}</div>
+      ${_chatCur?.require_ack && !m.deleted_at ? chatAckHtml(m, mine) : ''}
+      ${m.deleted_at ? '' : `<div class="acts">${['👍', '❤️', '😂', '🎉', '✅'].map(e => `<span onclick="chatReact('${m.id}','${e}')">${e}</span>`).join('')}${(!_chatCur?.admins_only || chatCanManage()) ? `<span onclick="chatSetReply('${m.id}')" title="Reply">↩</span>` : ''}<span onclick="chatForward('${m.id}')" title="Forward">↪</span><span onclick="chatStar('${m.id}')" title="${_chatStars.has(m.id) ? 'Unstar' : 'Star'}">${_chatStars.has(m.id) ? '★' : '☆'}</span>${_chatCur?.kind !== 'channel' || chatCanManage() ? `<span onclick="chatPin('${m.id}',${!m.pinned_at})" title="${m.pinned_at ? 'Unpin' : 'Pin'}">📌</span>` : ''}<span onclick="chatMakeTask('${m.id}')" title="Make a follow-up">📅</span>${mine || chatCanManage() ? `<span onclick="chatInfo('${m.id}')" title="Seen by">ℹ</span>` : ''}${mine && (m.kind || 'text') === 'text' && m.body ? `<span onclick="chatSetEdit('${m.id}')" title="Edit">✎</span>` : ''}${mine || isManager() ? `<span onclick="chatDelete('${m.id}')" title="Delete">🗑</span>` : ''}</div>`}
     </div>
     ${Object.keys(reacts).length ? `<div class="reacts ${mine ? 'mine' : ''}">${Object.entries(reacts).map(([e, us]) => `<span class="${us.includes(ME.id) ? 'me' : ''}" onclick="chatReact('${m.id}','${e}')" title="${esc(us.map(pName).join(', '))}">${e} ${us.length}</span>`).join('')}</div>` : ''}
   </div>`;
@@ -3962,7 +3999,7 @@ new MutationObserver(() => {
 async function onChatInsert(rec) {
   if (_chatCur && rec.channel_id === _chatCur.id) {
     if (_chatMsgs.some(m => m.id === rec.id)) return;
-    const { data } = await db.from('chat_messages').select('*, chat_attachments(*), chat_reactions(user_id, emoji), chat_mentions(user_id)').eq('id', rec.id).maybeSingle();
+    const { data } = await db.from('chat_messages').select(CHAT_SEL).eq('id', rec.id).maybeSingle();
     if (data && !_chatMsgs.some(m => m.id === rec.id)) { _chatMsgs.push(data); renderChatRoom(); if (rec.user_id !== ME.id) db.rpc('chat_mark_read', { p_channel: rec.channel_id }); }
   }
   const { data: inbox } = await db.rpc('chat_inbox'); _chatInbox = inbox || [];
@@ -3985,7 +4022,7 @@ function renderComposerExtras() {
   const el = document.getElementById('chatExtra'); if (!el) return;
   let h = '';
   if (_chatEdit) h += `<div class="chatq">✎ Editing message <a href="#" onclick="chatCancelExtra();return false">cancel</a></div>`;
-  else if (_chatReply) h += `<div class="chatq">↩ Replying to <b>${esc(_chatReply.user_id === ME.id ? 'you' : pName(_chatReply.user_id))}</b>: ${esc((_chatReply.body || '📎').slice(0, 80))} <a href="#" onclick="chatCancelExtra();return false">cancel</a></div>`;
+  else if (_chatReply) h += `<div class="chatq">↩ Replying to <b>${esc(_chatReply.user_id === ME.id ? 'you' : pName(_chatReply.user_id))}</b>: ${esc(chatPreview(_chatReply).slice(0, 80))} <a href="#" onclick="chatCancelExtra();return false">cancel</a></div>`;
   if (_chatFiles.length) h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${_chatFiles.map((f, i) => `<span class="chip">${esc(f.name)} <a href="#" onclick="_chatFiles.splice(${i},1);renderComposerExtras();return false">×</a></span>`).join('')}</div>`;
   el.innerHTML = h;
 }
@@ -4065,6 +4102,247 @@ function chatMembersSheet() {
 }
 function alertHtml(html) { document.getElementById('htmlBody').innerHTML = html; openModal('htmlBg'); }
 function chatFilter(f, btn) { _chatFilter = f; btn.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn)); renderChatInbox(); }
+// ---------- chat: advanced (receipts, presence, pins, stars, polls, cards, voice, search, announcements) ----------
+function chatToast(t) { const d = document.createElement('div'); d.textContent = t; d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16181D;color:#fff;padding:10px 16px;border-radius:10px;z-index:9999;font-size:14px'; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+const chatCanManage = () => isOwner() || ['owner', 'admin'].includes(_chatMembers[ME.id]?._role);
+function chatPresence(t) {
+  if (!t) return ''; const d = (Date.now() - new Date(t)) / 1000;
+  if (d < 150) return 'online'; if (d < 3600) return `last seen ${Math.round(d / 60)} min ago`;
+  const dt = new Date(t), today = new Date().toDateString() === dt.toDateString();
+  return 'last seen ' + (today ? 'today at ' + fmtT(t) : dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' + fmtT(t));
+}
+const chatOnline = t => chatPresence(t) === 'online';
+const chatPreview = m => ({ voice: '🎤 Voice message', location: '📍 Location', poll: '📊 ' + (m.meta?.question || 'Poll'), card: '🔗 ' + (m.meta?.title || 'Card') })[m.kind] || m.body || '📎 attachment';
+async function chatLoadReadState() {
+  if (!_chatCur) return; const id = _chatCur.id;
+  const { data } = await db.rpc('chat_read_state', { p_channel: id }); if (!_chatCur || _chatCur.id !== id) return;
+  _chatRead = {}; _chatSeen = {}; (data || []).forEach(r => { _chatRead[r.user_id] = r.last_read_at; _chatSeen[r.user_id] = r.last_seen_at; });
+  renderChatRoom(true);
+}
+async function chatLoadPinned() {
+  if (!_chatCur) return;
+  const { data } = await db.from('chat_messages').select(CHAT_SEL).eq('channel_id', _chatCur.id).not('pinned_at', 'is', null).is('deleted_at', null).order('pinned_at', { ascending: false }).limit(20);
+  _chatPinned = data || []; renderChatPinBar();
+}
+function renderChatPinBar() {
+  const el = document.getElementById('chatPinBar'); if (!el) return;
+  if (!_chatCur || !_chatPinned.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="chatpin" onclick="chatPinnedList()">📌 <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${esc(chatPreview(_chatPinned[0]))}</span>${_chatPinned.length > 1 ? `<span class="muted">+${_chatPinned.length - 1}</span>` : ''}</div>`;
+}
+function chatPinnedList() {
+  const canUnpin = _chatCur.kind !== 'channel' || chatCanManage();
+  alertHtml(`<h3 style="margin-bottom:10px">📌 Pinned · ${_chatPinned.length}</h3>` + _chatPinned.map(m => `<div class="pickrow"><span style="flex:1"><b>${esc(m.user_id === ME.id ? 'You' : pName(m.user_id))}</b> <span class="muted" style="font-size:11px">${new Date(m.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span><br>${esc(chatPreview(m))}</span>${canUnpin ? `<button class="btn sec sm" onclick="chatPin('${m.id}',false).then(()=>closeModal('htmlBg'))">Unpin</button>` : ''}</div>`).join(''));
+}
+async function chatRefreshMsg(id) {
+  if (!id) return; const i = _chatMsgs.findIndex(m => m.id === id); if (i < 0) return;
+  const { data } = await db.from('chat_messages').select(CHAT_SEL).eq('id', id).maybeSingle();
+  const j = _chatMsgs.findIndex(m => m.id === id); if (data && j >= 0) { _chatMsgs[j] = data; renderChatRoom(true); }
+}
+async function chatPref(id, prefs) { const { error } = await db.rpc('chat_set_pref', { p_channel: id, p_pinned: null, p_hidden: null, ...prefs }); if (error) alert(error.message); else loadChat(); }
+function chatTicks(m) {
+  const others = Object.keys(_chatMembers).filter(k => k !== ME.id); const at = new Date(m.created_at);
+  const seen = others.filter(o => _chatRead[o] && new Date(_chatRead[o]) >= at).length;
+  if (!others.length || !seen) return '<span title="Sent">✓</span>';
+  return seen === others.length ? '<span title="Seen by everyone" style="color:#9BE7FF;font-weight:700">✓✓</span>' : `<span title="Seen by ${seen} of ${others.length}">✓✓</span>`;
+}
+function chatAckHtml(m, mine) {
+  const acks = m.chat_acks || [], total = Object.keys(_chatMembers).length - 1;
+  if (mine || chatCanManage()) return `<div class="chatack" onclick="chatInfo('${m.id}')">✓ ${acks.length} of ${total} acknowledged</div>`;
+  return acks.some(a => a.user_id === ME.id) ? '<div class="chatack">✓ You acknowledged</div>' : `<div class="chatack"><button onclick="chatAck('${m.id}')">Acknowledge</button></div>`;
+}
+async function chatAck(id) { const { error } = await db.rpc('chat_ack', { p_message: id }); if (error) alert(error.message); else chatRefreshMsg(id); }
+function chatKindHtml(m, mine) {
+  const meta = m.meta || {};
+  if (m.kind === 'voice') { const a = (m.chat_attachments || [])[0]; return a ? `<div style="display:flex;align-items:center;gap:6px">🎤<audio class="chataud" data-path="${esc(a.storage_path)}" controls preload="none" style="height:34px;max-width:260px"></audio>${meta.duration_ms ? `<span style="font-size:11px;opacity:.7">${Math.floor(meta.duration_ms / 60000)}:${String(Math.round(meta.duration_ms / 1000) % 60).padStart(2, '0')}</span>` : ''}</div>` : ''; }
+  if (m.kind === 'location') return `<a href="https://www.google.com/maps/search/?api=1&query=${Number(meta.lat)},${Number(meta.lng)}" target="_blank" style="display:block;text-decoration:none;color:inherit"><div style="height:80px;width:230px;border-radius:8px;background:linear-gradient(135deg,#DDEFF5,#E9F5E9);display:flex;align-items:center;justify-content:center;font-size:34px">📍</div><b>Current location</b><div style="font-size:11.5px;opacity:.7">${Number(meta.lat).toFixed(5)}, ${Number(meta.lng).toFixed(5)}${meta.accuracy ? ' · ±' + meta.accuracy + ' m' : ''}</div><u style="font-size:12.5px">Open in Maps</u></a>`;
+  if (m.kind === 'card') return `<div class="chatcard" onclick="chatOpenCard('${esc(meta.type)}','${esc(meta.id)}')"><span style="font-size:20px">${{ lead: '🧲', deal: '🤝' }[meta.type] || '🏪'}</span><span style="flex:1;min-width:0"><span style="font-size:10px;letter-spacing:.6px;font-weight:800;opacity:.65">${({ lead: 'LEAD', deal: 'DEAL' })[meta.type] || 'CUSTOMER'}</span><br><b>${esc(meta.title || '')}</b>${meta.subtitle ? `<br><span style="font-size:12px;opacity:.8">${esc(meta.subtitle)}</span>` : ''}</span>›</div>`;
+  if (m.kind === 'poll') {
+    const opts = meta.options || [], votes = m.chat_poll_votes || [], voters = new Set(votes.map(v => v.user_id)).size, my = new Set(votes.filter(v => v.user_id === ME.id).map(v => v.option));
+    return `<div class="chatpoll"><b>📊 ${esc(meta.question || 'Poll')}</b><div style="font-size:11.5px;opacity:.7">${meta.closed ? 'Poll closed' : (meta.multi ? 'Pick one or more' : 'Pick one')}</div>` +
+      opts.map((o, i) => { const n = votes.filter(v => v.option === i).length, pct = voters ? Math.round(n * 100 / voters) : 0;
+        return `<label class="opt" ${meta.closed ? '' : `onclick="chatVote('${m.id}',${i})"`} title="${esc(votes.filter(v => v.option === i).map(v => pName(v.user_id)).join(', '))}">${my.has(i) ? (meta.multi ? '☑' : '◉') : (meta.multi ? '☐' : '○')} ${esc(o)} <b style="float:right">${n}</b><div class="bar"><i style="width:${pct}%"></i></div></label>`; }).join('') +
+      `<div style="font-size:11.5px;opacity:.7;margin-top:3px">${voters} of ${Object.keys(_chatMembers).length} voted${m.user_id === ME.id && !meta.closed ? ` · <a href="#" style="color:inherit" onclick="chatPollClose('${m.id}');return false">Close poll</a>` : ''}</div></div>`;
+  }
+  return '';
+}
+async function chatVote(id, i) {
+  const m = _chatMsgs.find(x => x.id === id); if (!m) return;
+  const my = new Set((m.chat_poll_votes || []).filter(v => v.user_id === ME.id).map(v => v.option));
+  let next; if (m.meta?.multi) { my.has(i) ? my.delete(i) : my.add(i); next = [...my]; } else next = my.has(i) ? [] : [i];
+  const { error } = await db.rpc('chat_vote', { p_message: id, p_options: next }); if (error) alert(error.message); else chatRefreshMsg(id);
+}
+async function chatPollClose(id) { const { error } = await db.rpc('chat_poll_close', { p_message: id }); if (error) alert(error.message); }
+async function chatOpenCard(type, id) {
+  try {
+    if (type === 'deal') return openOpp(id);
+    if (type === 'customer') return openCustomer(id);
+    if (!cache.leads.some(l => l.id === id)) await loadLeads();
+    if (!cache.leads.some(l => l.id === id)) { alert("You don't have access to this lead."); return; }
+    openLead(id);
+  } catch (e) { alert(e.message || e); }
+}
+// link previews
+const _chatPrev = {};
+function chatLinkSlot(m) {
+  if (m.kind && m.kind !== 'text') return ''; if ((m.chat_attachments || []).length) return '';
+  const u = (m.body || '').match(/https?:\/\/[^\s<]+/); return u ? `<span class="chatlinkslot" data-url="${esc(u[0])}"></span>` : '';
+}
+function chatHydrateLinks() {
+  document.querySelectorAll('.chatlinkslot:not([data-done])').forEach(async el => {
+    el.dataset.done = 1; const url = el.dataset.url;
+    if (!(url in _chatPrev)) { _chatPrev[url] = db.functions.invoke('link-preview', { body: { url } }).then(r => (r.data && !r.data.error && (r.data.title || r.data.description)) ? r.data : null).catch(() => null); }
+    const d = await _chatPrev[url]; if (!d) return;
+    el.outerHTML = `<a class="chatlink" href="${esc(url)}" target="_blank">${d.image ? `<img src="${esc(d.image)}" alt="" onerror="this.remove()">` : ''}<div>${d.site ? `<span style="opacity:.6;font-size:11px">${esc(d.site)}</span><br>` : ''}${d.title ? `<b>${esc(d.title)}</b><br>` : ''}${d.description ? `<span style="opacity:.75">${esc(String(d.description).slice(0, 160))}</span>` : ''}</div></a>`;
+  });
+}
+new MutationObserver(() => {
+  document.querySelectorAll('audio.chataud:not([data-done])').forEach(async el => {
+    el.dataset.done = 1; const { data } = await db.storage.from('chat').createSignedUrl(el.dataset.path, 3600 * 4); if (data) el.src = data.signedUrl;
+  });
+}).observe(document.body, { childList: true, subtree: true });
+async function chatSendKind(kind, meta, atts = [], body = null) {
+  const { error } = await db.rpc('chat_send', { p_channel: _chatCur.id, p_body: body, p_reply_to: _chatReply?.id || null, p_attachments: atts, p_mentions: [], p_kind: kind, p_meta: meta });
+  if (error) { alert(error.message); return false; } _chatReply = null; renderComposerExtras(); return true;
+}
+function chatCloseDd() { document.querySelectorAll('.ddm.show').forEach(x => x.classList.remove('show')); }
+function chatNewPoll() {
+  chatCloseDd();
+  alertHtml(`<h3 style="margin-bottom:10px">📊 New poll</h3><label>Question</label><input id="pollQ" style="width:100%" placeholder="e.g. Which day for the team review?">
+    <div id="pollOpts" style="margin-top:8px">${[1, 2, 3].map(i => `<input class="pollO" style="width:100%;margin-top:6px" placeholder="Option ${i}">`).join('')}</div>
+    <a href="#" onclick="document.getElementById('pollOpts').insertAdjacentHTML('beforeend','<input class=&quot;pollO&quot; style=&quot;width:100%;margin-top:6px&quot; placeholder=&quot;Another option&quot;>');return false">+ Add option</a>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="pollMulti" style="width:auto"> Allow more than one answer</label>
+    <div style="text-align:right;margin-top:12px"><button class="btn" onclick="chatSendPoll()">Send poll</button></div>`);
+  setTimeout(() => document.getElementById('pollQ')?.focus(), 50);
+}
+async function chatSendPoll() {
+  const q = document.getElementById('pollQ').value.trim(), opts = [...document.querySelectorAll('.pollO')].map(i => i.value.trim()).filter(Boolean);
+  if (!q || opts.length < 2) { alert('Add a question and at least 2 options'); return; }
+  if (await chatSendKind('poll', { question: q, options: opts.slice(0, 10), multi: document.getElementById('pollMulti').checked })) closeModal('htmlBg');
+}
+let _cardRows = {};
+function chatShareCard() {
+  chatCloseDd();
+  alertHtml(`<h3 style="margin-bottom:10px">🔗 Share a lead, deal or customer</h3>
+    <div class="seg" id="cardSeg"><button class="active" onclick="chatCardType('deal',this)">Deal</button><button onclick="chatCardType('lead',this)">Lead</button><button onclick="chatCardType('customer',this)">Customer</button></div>
+    <input id="cardQ" placeholder="Search" style="width:100%;margin-top:8px" oninput="chatCardList()"><div id="cardList" style="max-height:52vh;overflow:auto;margin-top:6px"><div class="empty">Loading…</div></div>`);
+  window._cardType = 'deal'; chatCardLoad();
+}
+function chatCardType(t, btn) { window._cardType = t; btn.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn)); chatCardLoad(); }
+async function chatCardLoad() {
+  const t = window._cardType; if (_cardRows[t]) return chatCardList();
+  let rows = [];
+  if (t === 'deal') { const { data } = await db.from('orders').select('id, title, stage, order_value, quote_total, est_value, customers(name, company), leads(name, company)').order('stage_changed_at', { ascending: false }).limit(1000);
+    rows = (data || []).map(o => { const p = o.customers || o.leads || {}; const v = o.order_value || o.quote_total || o.est_value; return { type: 'deal', id: o.id, title: o.title || p.company || p.name || 'Deal', subtitle: [p.company || p.name, o.stage, v ? '₹' + Number(v).toLocaleString('en-IN') : ''].filter(Boolean).join(' · ') }; }); }
+  else if (t === 'lead') { const { data } = await db.from('leads').select('id, name, company, status, city').order('last_activity_at', { ascending: false }).limit(1000);
+    rows = (data || []).map(l => ({ type: 'lead', id: l.id, title: [l.name, l.company].filter(Boolean).join(' · '), subtitle: [l.status, l.city].filter(Boolean).join(' · ') })); }
+  else { const { data } = await db.from('customers').select('id, name, company, city, mobile').order('name').limit(1000);
+    rows = (data || []).map(c => ({ type: 'customer', id: c.id, title: c.company || c.name, subtitle: [c.name, c.city, c.mobile].filter(Boolean).join(' · ') })); }
+  _cardRows[t] = rows; chatCardList();
+}
+function chatCardList() {
+  const q = (document.getElementById('cardQ')?.value || '').toLowerCase(), rows = (_cardRows[window._cardType] || []).filter(r => !q || `${r.title} ${r.subtitle}`.toLowerCase().includes(q)).slice(0, 150);
+  window._cardPick = rows;
+  document.getElementById('cardList').innerHTML = rows.map((r, i) => `<div class="pickrow" style="cursor:pointer" onclick="chatSendCard(${i})"><span style="flex:1"><b>${esc(r.title)}</b><br><span class="muted" style="font-size:12px">${esc(r.subtitle)}</span></span></div>`).join('') || '<div class="empty">Nothing found</div>';
+}
+async function chatSendCard(i) { const r = window._cardPick[i]; if (r && await chatSendKind('card', r)) closeModal('htmlBg'); }
+function chatShareLocation() {
+  chatCloseDd();
+  if (!navigator.geolocation) { alert('Location is not available in this browser'); return; }
+  if (!confirm('Share your current location in this chat?')) return;
+  navigator.geolocation.getCurrentPosition(p => chatSendKind('location', { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Math.round(p.coords.accuracy) }), e => alert('Could not get your location: ' + e.message), { enableHighAccuracy: true, timeout: 15000 });
+}
+async function chatToggleRecord() {
+  const btn = document.getElementById('chatMic');
+  if (_chatRec) { _chatRec.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { alert('Voice recording is not supported in this browser'); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert('Allow the microphone to record voice messages'); return; }
+  const type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+  const rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined), chunks = [], start = Date.now();
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const tick = setInterval(() => { const s = Math.round((Date.now() - start) / 1000); btn.textContent = `⏹ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (s >= 300) rec.stop(); }, 500);
+  rec.onstop = async () => {
+    clearInterval(tick); stream.getTracks().forEach(t => t.stop()); _chatRec = null; btn.textContent = '🎤'; btn.classList.remove('danger');
+    const ms = Date.now() - start; if (ms < 800) return;
+    const mime = (rec.mimeType || type || 'audio/webm').split(';')[0], ext = mime.includes('mp4') ? 'm4a' : 'webm';
+    const blob = new Blob(chunks, { type: mime }), path = `${ME.id}/${Date.now()}_voice.${ext}`;
+    const { error } = await db.storage.from('chat').upload(path, blob, { contentType: mime }); if (error) { alert(error.message); return; }
+    chatSendKind('voice', { duration_ms: ms }, [{ path, name: 'voice.' + ext, mime, size: blob.size }]);
+  };
+  _chatRec = rec; rec.start(); btn.classList.add('danger'); btn.textContent = '⏹ 0:00'; btn.title = 'Click to stop and send';
+}
+async function chatForward(id) {
+  const rows = _chatInbox.filter(c => !c.archived && !(c.admins_only && !(isOwner() || ['owner', 'admin'].includes(c.my_role))));
+  alertHtml(`<h3 style="margin-bottom:10px">↪ Forward to…</h3><div style="max-height:55vh;overflow:auto">${rows.map(c => `<label class="pickrow"><input type="checkbox" class="fwdC" value="${c.id}" style="width:auto"><span>${c.kind === 'dm' ? '👤' : (c.kind === 'group' ? '👥' : '#')} <b>${esc(c.name || 'Chat')}</b></span></label>`).join('')}</div>
+    <div style="text-align:right;margin-top:10px"><button class="btn" onclick="chatDoForward('${id}')">Forward</button></div>`);
+}
+async function chatDoForward(id) {
+  const ids = [...document.querySelectorAll('.fwdC:checked')].map(i => i.value); if (!ids.length) return;
+  const { data, error } = await db.rpc('chat_forward', { p_message: id, p_channels: ids }); if (error) { alert(error.message); return; }
+  closeModal('htmlBg'); chatToast(`Forwarded to ${data} chat${data === 1 ? '' : 's'}`);
+}
+async function chatStar(id) {
+  const on = !_chatStars.has(id); const { error } = await db.rpc('chat_star', { p_message: id, p_star: on }); if (error) { alert(error.message); return; }
+  on ? _chatStars.add(id) : _chatStars.delete(id); renderChatRoom(true);
+}
+async function chatPin(id, on) { const { error } = await db.rpc('chat_pin', { p_message: id, p_pin: on }); if (error) alert(error.message); else chatLoadPinned(); }
+function chatMakeTask(id) {
+  const m = _chatMsgs.find(x => x.id === id); if (!m) return;
+  const d = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  alertHtml(`<h3 style="margin-bottom:10px">📅 Make a follow-up</h3><label>What to do</label><textarea id="mtNote" rows="3" style="width:100%">${esc('From chat: ' + chatPreview(m))}</textarea>
+    <label style="margin-top:8px;display:block">For</label><select id="mtWho" style="width:100%">${Object.entries(_chatMembers).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '')).map(([uid, u]) => `<option value="${uid}" ${uid === ME.id ? 'selected' : ''}>${esc(uid === ME.id ? 'Me' : (u.name || u.mobile))}</option>`).join('')}</select>
+    <label style="margin-top:8px;display:block">Due</label><input type="date" id="mtDue" value="${d}" style="width:100%">
+    <div style="text-align:right;margin-top:12px"><button class="btn" onclick="chatDoTask('${id}')">Create</button></div>`);
+}
+async function chatDoTask(id) {
+  const { error } = await db.rpc('chat_make_task', { p_message: id, p_due: document.getElementById('mtDue').value, p_user: document.getElementById('mtWho').value, p_note: document.getElementById('mtNote').value.trim() || null });
+  if (error) { alert(error.message); return; } closeModal('htmlBg'); chatToast('Follow-up created');
+}
+async function chatInfo(id) {
+  alertHtml('<div class="empty">Loading…</div>');
+  const { data, error } = await db.rpc('chat_receipts', { p_message: id }); if (error) { alertHtml(esc(error.message)); return; }
+  const f = t => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const read = data.filter(r => r.read_at), unread = data.filter(r => !r.read_at), acked = data.filter(r => r.acked_at).length;
+  const row = r => `<div class="pickrow"><span style="flex:1"><b>${esc(r.name)}</b><br><span class="muted" style="font-size:12px">${[r.read_at ? 'Seen ' + f(r.read_at) : '', r.acked_at ? '✅ Acknowledged ' + f(r.acked_at) : ''].filter(Boolean).join(' · ')}</span></span></div>`;
+  alertHtml(`<h3 style="margin-bottom:6px">Message info</h3>${_chatCur?.require_ack ? `<div class="muted" style="margin-bottom:8px">${acked} of ${data.length} acknowledged</div>` : ''}<b style="color:var(--brand)">✓✓ Seen by ${read.length}</b>${read.map(row).join('')}<div style="margin-top:10px"><b class="muted">Not seen yet · ${unread.length}</b></div>${unread.map(row).join('')}`);
+}
+async function chatMedia() {
+  alertHtml('<div class="empty">Loading…</div>');
+  const { data } = await db.from('chat_attachments').select('*, chat_messages!inner(channel_id, created_at, deleted_at, kind)').eq('chat_messages.channel_id', _chatCur.id).is('chat_messages.deleted_at', null).limit(500);
+  const rows = (data || []).sort((a, b) => String(b.chat_messages?.created_at).localeCompare(String(a.chat_messages?.created_at)));
+  const photos = rows.filter(a => (a.mime || '').startsWith('image/')), voice = rows.filter(a => a.chat_messages?.kind === 'voice'), files = rows.filter(a => !(a.mime || '').startsWith('image/') && a.chat_messages?.kind !== 'voice');
+  alertHtml(`<h3 style="margin-bottom:10px">🖼 Media · ${esc(_chatCur.name || '')}</h3>
+    <b>Photos · ${photos.length}</b><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0 12px">${photos.map(a => `<div class="chatatt" data-path="${esc(a.storage_path)}" data-mime="${esc(a.mime)}"><img alt="" style="width:100%;height:90px;object-fit:cover;border-radius:6px;cursor:zoom-in"></div>`).join('') || '<span class="muted">None</span>'}</div>
+    <b>Files · ${files.length}</b><div style="margin:6px 0 12px">${files.map(a => `<div class="chatatt" data-path="${esc(a.storage_path)}" data-mime="${esc(a.mime || '')}">📎 <a href="#" onclick="return false">${esc(a.name || 'file')}</a> <span class="muted" style="font-size:11px">${fmtSize(a.size)}</span></div>`).join('') || '<span class="muted">None</span>'}</div>
+    <b>Voice · ${voice.length}</b><div style="margin-top:6px">${voice.map(a => `<div><audio class="chataud" data-path="${esc(a.storage_path)}" controls preload="none" style="height:34px"></audio> <span class="muted" style="font-size:11px">${new Date(a.chat_messages.created_at).toLocaleString('en-IN')}</span></div>`).join('') || '<span class="muted">None</span>'}</div>`);
+}
+function chatAnnounceSettings() {
+  const c = _chatCur;
+  alertHtml(`<h3 style="margin-bottom:10px">📢 Announcement settings · ${esc(c.name || '')}</h3>
+    <label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="anOnly" style="width:auto;margin-top:3px" ${c.admins_only ? 'checked' : ''}><span><b>Only admins can post</b><br><span class="muted" style="font-size:12px">Everyone in the channel gets a notification for each post</span></span></label>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" id="anAck" style="width:auto;margin-top:3px" ${c.require_ack ? 'checked' : ''}><span><b>Ask people to acknowledge</b><br><span class="muted" style="font-size:12px">Each post shows an Acknowledge button and who has read it</span></span></label>
+    <div style="text-align:right;margin-top:12px"><button class="btn" onclick="chatSaveAnnounce()">Save</button></div>`);
+}
+async function chatSaveAnnounce() {
+  const only = document.getElementById('anOnly').checked, ack = only && document.getElementById('anAck').checked;
+  const { error } = await db.rpc('chat_set_announce', { p_channel: _chatCur.id, p_admins_only: only, p_require_ack: ack }); if (error) { alert(error.message); return; }
+  _chatCur.admins_only = only; _chatCur.require_ack = ack; closeModal('htmlBg'); renderChatRoom(true); loadChat();
+}
+let _chatSearchT = null;
+function chatSearchMsgs() {
+  alertHtml(`<h3 style="margin-bottom:10px">🔎 Search all messages</h3><input id="csQ" style="width:100%" placeholder="Type at least 2 letters" oninput="clearTimeout(_chatSearchT);_chatSearchT=setTimeout(chatRunSearch,350)"><div id="csRes" style="max-height:55vh;overflow:auto;margin-top:8px"></div>`);
+  setTimeout(() => document.getElementById('csQ')?.focus(), 50);
+}
+async function chatRunSearch() {
+  const q = document.getElementById('csQ')?.value.trim() || '', el = document.getElementById('csRes'); if (!el) return;
+  if (q.length < 2) { el.innerHTML = ''; return; }
+  const { data } = await db.rpc('chat_search', { p_q: q });
+  const hl = t => esc(t).replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), x => `<mark>${x}</mark>`);
+  el.innerHTML = (data || []).map(h => `<div class="pickrow" style="cursor:pointer" onclick="closeModal('htmlBg');openChat('${h.channel_id}')"><span style="flex:1"><b>${h.channel_kind === 'dm' ? '👤' : '#'} ${esc(h.channel_name || 'Chat')}</b> <span class="muted" style="font-size:11px">${new Date(h.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span><br><span style="font-size:13px">${esc(h.user_id === ME.id ? 'You' : pName(h.user_id))}: ${hl(h.body || '')}</span></span></div>`).join('') || '<div class="empty">No messages found</div>';
+}
+async function chatShowStarred() {
+  const { data } = await db.rpc('chat_starred');
+  alertHtml(`<h3 style="margin-bottom:10px">⭐ Starred messages</h3>` + ((data || []).map(m => `<div class="pickrow" style="cursor:pointer" onclick="closeModal('htmlBg');openChat('${m.channel_id}')"><span style="flex:1"><b>${esc(m.user_id === ME.id ? 'You' : pName(m.user_id))} · ${esc(m.channel_name || '')}</b><br><span style="font-size:13px">${esc(chatPreview(m))}</span></span></div>`).join('') || '<div class="empty">Hover a message and click ☆ to keep it here.</div>'));
+}
 
 // ---------- CSV export ----------
 function exportCsv(kind) {
