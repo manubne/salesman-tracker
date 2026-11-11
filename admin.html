@@ -128,6 +128,13 @@
   .chip.completed, .chip.converted, .chip.won, .chip.done, .chip.accepted { background:#E6F6EC; color:var(--green); }
   .chip.missed, .chip.unverified, .chip.lost, .chip.overdue { background:#FDECEC; color:var(--red); }
   .chip.dropped, .chip.pending { background:#EEF1F5; color:#475569; }
+  .chip.svc-open, .chip.svc-assigned, .chip.svc-unassigned, .chip.svc-waiting_customer, .chip.svc-waiting_parts, .chip.svc-scheduled, .chip.svc-raised, .chip.svc-draft, .chip.svc-cov-chargeable, .chip.svc-tech-off_duty { background:#FEF3E2; color:var(--orange); }
+  .chip.svc-accepted, .chip.svc-travelling, .chip.svc-on_site, .chip.svc-cov-amc, .chip.svc-tech-travelling, .chip.svc-renewed { background:#E6F1F6; color:var(--brand); }
+  .chip.svc-in_progress, .chip.svc-tech-on_job { background:#F1EBFE; color:var(--purple); }
+  .chip.svc-completed, .chip.svc-resolved, .chip.svc-closed, .chip.svc-done, .chip.svc-active, .chip.svc-cov-warranty, .chip.svc-cov-free, .chip.svc-tech-free { background:#E6F6EC; color:var(--green); }
+  .chip.svc-rejected, .chip.svc-cancelled, .chip.svc-missed, .chip.svc-expired { background:#FDECEC; color:var(--red); }
+  .svcph { width:92px; height:92px; border-radius:10px; background:#E4E8F0 center/cover; cursor:zoom-in; position:relative; } .svcph span { position:absolute; left:4px; bottom:4px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:1px 5px; border-radius:6px; }
+  @media (max-width:720px) { .svcgrid { grid-template-columns:1fr !important; } }
   .chip.live { background:var(--teal); color:#fff; }
   .flag { display:inline-block; background:#FDECEC; color:var(--red); border-radius:6px; padding:2px 7px; font-size:11px; margin:1px 3px 1px 0; font-weight:650; white-space:nowrap; }
   .flag.info { background:#EEF1F5; color:#475569; }
@@ -259,7 +266,7 @@
 <div id="noAccess" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
   <div class="panel" style="max-width:420px;text-align:center">
     <h2 style="justify-content:center">Use the mobile app</h2>
-    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, coordinators and tele-callers. Sales users should use the BNE Sales app on their phone.</p>
+    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNE Sales app on their phone.</p>
     <button class="btn" onclick="logout()">Sign out</button>
   </div>
 </div>
@@ -296,6 +303,12 @@
       <button data-v="reports" data-roles="admin,head,manager" onclick="show('reports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span>Reports &amp; targets</span></button>
       <button data-v="incentives" data-roles="admin,head,manager" onclick="show('incentives')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89L17 22l-5-3-5 3 1.52-9.11"/></svg><span>Incentives &amp; scorecards</span></button>
 
+      <div class="navlabel" data-perm="svc.ticket.view_all,svc.job.view_all,svc.amc.view,svc.reports,svc.machine.manage">Service</div>
+      <button data-v="svcTickets" data-perm="svc.ticket.view_all" onclick="show('svcTickets')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 010 6v2a2 2 0 002 2h14a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg><span>Service tickets</span><span class="badge" id="svcBadge" style="display:none"></span></button>
+      <button data-v="svcTechs" data-perm="svc.job.assign,svc.tracking.view,svc.job.view_all" onclick="show('svcTechs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg><span>Technicians</span></button>
+      <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
+      <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
+      <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
       <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
@@ -669,7 +682,7 @@
         <div class="toolbar">
           <input id="spName" placeholder="Full name *">
           <input id="spEmail" type="email" placeholder="Work email * (name@bne.org.in)" style="min-width:230px">
-          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option></select>
+          <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="technician">Technician (service)</option><option value="service_manager">Service manager</option></select>
           <select id="spBranch"></select>
           <input id="spMobile" placeholder="Mobile (optional)" maxlength="10" inputmode="numeric" style="max-width:150px">
           <input id="spTerritory" placeholder="Territory (optional)" style="max-width:150px">
@@ -679,10 +692,47 @@
         <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Only emails you add here (or any @bne.org.in address) can sign in.</p>
       </div>
       <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div class="toolbar"><button class="btn" id="delInvBtn" style="background:#DC2626;display:none" onclick="deleteSelectedInvites()">Delete selected invites</button></div><div id="invitesTbl"></div></div>
+      <div class="panel" data-roles="admin,head"><h2>Service access <span class="sub">who is in the service team and what each role can do</span></h2><div id="svcAccess"></div></div>
       <div class="panel"><h2>People &amp; access <span class="sub">role decides what they can do; branch decides what they can see</span></h2>
         <div class="toolbar"><input id="teamSearch" placeholder="Search people…" oninput="loadUsers(true)"> <button class="btn" id="delUsersBtn" data-roles="admin,head" style="background:#DC2626;display:none" onclick="deleteSelectedUsers()">Delete selected</button> <span id="delUsersMsg" class="muted" style="font-size:13px"></span></div>
         <div id="teamTbl"></div>
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
+    </div>
+
+    <!-- ================= SERVICE ================= -->
+    <div id="svcTickets" class="view">
+      <div class="kpis" id="svcKpis"></div>
+      <div class="panel"><h2>Service tickets <span class="sub">complaints, installations and AMC visits</span></h2>
+        <div class="toolbar"><div class="seg" id="svcSeg"><button data-f="open" onclick="svcSetFilter('open')">Open</button><button data-f="unassigned" onclick="svcSetFilter('unassigned')">Not assigned</button><button data-f="overdue" onclick="svcSetFilter('overdue')">Overdue</button><button data-f="waiting" onclick="svcSetFilter('waiting')">Waiting</button><button data-f="done" onclick="svcSetFilter('done')">Resolved</button><button data-f="all" onclick="svcSetFilter('all')">All</button></div>
+          <input id="svcQ" placeholder="Search ticket, customer, mobile, serial…" oninput="renderSvcTickets()" style="min-width:240px">
+          <select id="svcCat" onchange="renderSvcTickets()"><option value="">All types</option><option value="breakdown">Breakdown</option><option value="installation">Installation</option><option value="preventive">Preventive</option><option value="complaint">Complaint</option><option value="demo">Demo</option><option value="other">Other</option></select>
+          <button class="btn" data-perm="svc.ticket.create" onclick="svcTicketForm()">+ New ticket</button></div>
+        <div id="svcTicketTbl"></div></div>
+    </div>
+    <div id="svcTechs" class="view">
+      <div class="kpis" id="svcTechKpis"></div>
+      <div class="panel"><h2>Technicians <span class="sub">who is free, who is on a job, hours worked today</span></h2><div class="toolbar"><button class="btn sec" onclick="loadSvcTechs()">Refresh</button></div><div id="svcTechTbl"></div>
+        <p class="hint">A technician shows as Free after tapping “Start day” in the app. Their routes and km are on the Live map &amp; routes page, same as the sales team.</p></div>
+    </div>
+    <div id="svcMachines" class="view">
+      <div class="panel"><h2>Machines &amp; warranty <span class="sub">added automatically when a deal is won; warranty starts on installation</span></h2>
+        <div class="toolbar"><input id="svcMQ" placeholder="Search model, serial, customer…" oninput="renderSvcMachines()" style="min-width:240px">
+          <select id="svcMF" onchange="renderSvcMachines()"><option value="">All machines</option><option value="warranty">Under warranty</option><option value="expiring">Warranty ending in 30 days</option><option value="amc">Under AMC</option><option value="out">Out of cover</option><option value="pending">Awaiting installation</option></select>
+          <button class="btn" data-perm="svc.machine.manage" onclick="svcMachineForm()">+ Add machine</button></div>
+        <div id="svcMachineTbl"></div></div>
+    </div>
+    <div id="svcAmc" class="view">
+      <div class="kpis" id="svcAmcKpis"></div>
+      <div class="panel"><h2>AMC contracts <span class="sub">annual maintenance – visits are scheduled and raised automatically</span></h2>
+        <div class="toolbar"><select id="svcAF" onchange="loadSvcAmc()"><option value="active">Active</option><option value="expiring">Expiring in 30 days</option><option value="expired">Expired</option><option value="renewed">Renewed</option><option value="cancelled">Cancelled</option><option value="all">All</option></select>
+          <button class="btn" data-perm="svc.amc.manage" onclick="svcAmcForm()">+ New AMC</button></div>
+        <div id="svcAmcTbl"></div></div>
+    </div>
+    <div id="svcReports" class="view">
+      <div class="panel"><h2>Service reports</h2><div class="toolbar">From <input type="date" id="srFrom" onchange="loadSvcReports()"> to <input type="date" id="srTo" onchange="loadSvcReports()"></div></div>
+      <div class="kpis" id="svcRepKpis"></div>
+      <div class="panel"><h2>Technician scorecard <span class="sub">who finished how many jobs and how fast</span></h2><div id="svcRepTbl"></div></div>
+      <div class="panel"><div id="svcRepMore"></div></div>
     </div>
 
     <!-- ================= SETTINGS ================= -->
@@ -842,6 +892,9 @@
     <div class="mh"><h3 id="custTitle">Customer</h3><button class="xbtn" onclick="closeModal('custBg')">×</button></div>
     <div class="mb" id="custBody"></div>
   </div>
+</div>
+<div class="modal-bg" id="svcBg" onclick="if(event.target===this)closeModal('svcBg')">
+  <div class="modal" style="max-width:920px"><div class="mb" id="svcBody"></div></div>
 </div>
 <div class="modal-bg" id="htmlBg" onclick="if(event.target===this)closeModal('htmlBg')">
   <div class="modal" style="max-width:520px"><div class="mb" id="htmlBody"></div></div>
@@ -1365,12 +1418,16 @@ async function init() {
   const { data: me } = await db.from('users').select('*').eq('id', session.user.id).maybeSingle();
   ME = me;
   document.getElementById('loginView').style.display = 'none';
-  if (!ME || !ME.active || !isStaff()) { document.getElementById('noAccess').style.display = 'flex'; return; }
+  try { const { data: pp } = await db.rpc('my_perms'); PERMS = pp || {}; } catch (_) { PERMS = {}; }
+  const svcDesk = can('svc.ticket.view_all') || can('svc.job.view_all') || can('svc.amc.view');
+  if (!ME || !ME.active || !(isStaff() || (svcDesk && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
   document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
   // role-based navigation
   document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
-  document.getElementById('topAddLead').style.display = '';
+  document.querySelectorAll('[data-perm]').forEach(el => { el.style.display = el.dataset.perm.split(',').some(can) ? '' : 'none'; });
+  document.getElementById('topAddLead').style.display = isStaff() ? '' : 'none';
+  svcBadge();
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
@@ -1391,6 +1448,8 @@ async function init() {
     loadBilling();
     Promise.all([loadCustomers(), loadOrders(), loadFollowUps()]);
     show('pipeline');
+  } else if (!isStaff()) {
+    show('svcTickets');
   } else {
     show('leads');
   }
@@ -1419,12 +1478,17 @@ function show(v) {
   if (v === 'payments') loadPayments();
   if (v === 'orders') { loadOrders(); loadProducts(); }
   if (v === 'pipeline') loadPipeline();
-  if (v === 'team') { loadUsers(); loadInvites(); }
+  if (v === 'team') { loadUsers().then(renderSvcAccess); loadInvites(); }
   if (v === 'chat') { loadChat(); }
   if (v === 'followups') loadFollowUps();
   if (v === 'reports') loadReports();
   if (v === 'analytics') initAnalytics();
   if (v === 'settings') renderSettings();
+  if (v === 'svcTickets') loadSvcTickets();
+  if (v === 'svcTechs') loadSvcTechs();
+  if (v === 'svcMachines') loadSvcMachines();
+  if (v === 'svcAmc') loadSvcAmc();
+  if (v === 'svcReports') loadSvcReports();
 }
 
 // ---------- settings ----------
@@ -2012,7 +2076,7 @@ async function loadUsers(onlyRender) {
   }
   const el = document.getElementById('teamTbl'); if (!el) return;
   renderAccess();
-  const roles = ['sales', 'manager', 'head', 'admin', 'coordinator', 'telecaller', 'quote'];
+  const roles = ['sales', 'manager', 'head', 'admin', 'coordinator', 'telecaller', 'quote', 'technician', 'service_manager'];
   const canEdit = isOwner();
   const q = (document.getElementById('teamSearch')?.value || '').toLowerCase();
   const rows = cache.users.filter(u => (!BRANCH || u.branch_id === BRANCH || (_mgrBranches[u.id] || []).includes(BRANCH)) && (!q || `${u.name || ''} ${u.mobile || ''} ${u.role} ${branchName(u.branch_id)}`.toLowerCase().includes(q)));
@@ -3827,8 +3891,8 @@ function setBranchFilter(v) {
   const cur = document.querySelector('.view.active')?.id;
   if (cur) show(cur);
 }
-const ROLE_LABEL = { admin: 'Admin', head: 'Head', manager: 'Branch manager', sales: 'Salesperson', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team' };
-const ROLE_HELP = { admin: 'Full access incl. settings', head: 'Full access to all branches', manager: 'Only their branch(es)', sales: 'Own data only', coordinator: 'Lead desk — all leads', telecaller: 'Lead desk — all leads', quote: 'Quotations' };
+const ROLE_LABEL = { admin: 'Admin', head: 'Head', manager: 'Branch manager', sales: 'Salesperson', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team', technician: 'Technician', service_manager: 'Service manager' };
+const ROLE_HELP = { admin: 'Full access incl. settings', head: 'Full access to all branches', manager: 'Only their branch(es)', sales: 'Own data only', coordinator: 'Lead desk — all leads', telecaller: 'Lead desk — all leads', quote: 'Quotations', technician: 'Service jobs in the app', service_manager: 'Runs the service desk' };
 async function renderAccess() {
   await loadBranches();
   const el = document.getElementById('branchTbl'); if (!el) return;
@@ -4324,6 +4388,390 @@ async function chatShowStarred() {
   alertHtml(`<h3 style="margin-bottom:10px">⭐ Starred messages</h3>` + ((data || []).map(m => `<div class="pickrow" style="cursor:pointer" onclick="closeModal('htmlBg');openChat('${m.channel_id}')"><span style="flex:1"><b>${esc(m.user_id === ME.id ? 'You' : pName(m.user_id))} · ${esc(m.channel_name || '')}</b><br><span style="font-size:13px">${esc(chatPreview(m))}</span></span></div>`).join('') || '<div class="empty">Hover a message and click ☆ to keep it here.</div>'));
 }
 
+// ================= SERVICE MODULE: tickets, jobs, technicians, machines, AMC, reports, access =================
+let PERMS = {}, _svc = { tickets: [], techs: [], machines: [], amc: [], customers: null, filter: 'open', rt: null, rolePerms: {}, amcByMachine: {} };
+const can = p => PERMS['*'] === true || PERMS[p] === true;
+const SVC_PERMS = [
+  ['svc.ticket.create', 'Create tickets'], ['svc.ticket.view_all', 'See all tickets'], ['svc.ticket.manage', 'Edit / close tickets'],
+  ['svc.job.create', 'Create jobs'], ['svc.job.assign', 'Assign technicians'], ['svc.job.view_all', 'See all jobs'],
+  ['svc.machine.manage', 'Edit machines & warranty'], ['svc.amc.view', 'See AMC'], ['svc.amc.manage', 'Create / edit AMC'],
+  ['svc.tracking.view', 'Live location of technicians'], ['svc.reports', 'Service reports'], ['svc.warranty.override', 'Approve warranty overrides']];
+const SVC_ROLES = ['service_manager', 'manager', 'coordinator', 'telecaller', 'sales', 'quote', 'technician'];
+const svcW = s => String(s || '').replace(/_/g, ' ');
+const svcChip = s => `<span class="chip svc-${esc(s)}">${esc(svcW(s))}</span>`;
+const svcCov = c => `<span class="chip svc-cov-${esc(c || 'chargeable')}">${({ warranty: 'Under warranty', amc: 'Under AMC', free: 'Free' })[c] || 'Chargeable'}</span>`;
+const svcDur = m => m == null ? '—' : (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
+const svcDate = d => d ? new Date(d.length === 10 ? d + 'T00:00:00' : d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const svcOpen = t => !['closed', 'cancelled', 'resolved'].includes(t.status);
+const svcActiveJobs = t => (t.service_jobs || []).filter(j => !['cancelled', 'rejected', 'completed'].includes(j.status));
+const svcOverdue = t => svcOpen(t) && t.sla_due_at && new Date(t.sla_due_at) < new Date();
+const svcQ = s => JSON.stringify(s == null ? '' : String(s)).replace(/"/g, '&quot;');
+function svcModal(html, wide) { document.getElementById('svcBody').innerHTML = html; document.querySelector('#svcBg .modal').style.maxWidth = wide ? '920px' : '560px'; openModal('svcBg'); }
+async function svcRpc(fn, args) { const { data, error } = await db.rpc(fn, args); if (error) { alert(error.message); throw error; } return data; }
+function svcSubscribe() {
+  if (_svc.rt) return;
+  _svc.rt = db.channel('svc-web')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'service_tickets' }, () => svcRefreshSoon())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'service_jobs' }, () => svcRefreshSoon()).subscribe();
+}
+let _svcT = null;
+function svcRefreshSoon() { clearTimeout(_svcT); _svcT = setTimeout(() => { const v = document.querySelector('.view.active')?.id; if (v === 'svcTickets') loadSvcTickets(); if (v === 'svcTechs') loadSvcTechs(); svcBadge(); }, 800); }
+async function svcBadge() {
+  if (!can('svc.ticket.view_all')) return;
+  const { count } = await db.from('service_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open');
+  const b = document.getElementById('svcBadge'); if (b) { b.style.display = count ? '' : 'none'; b.textContent = count; }
+}
+async function svcCustomers() { if (!_svc.customers) { const { data } = await db.from('customers').select('id, name, company, mobile, city, address').order('name').limit(2000); _svc.customers = data || []; } return _svc.customers; }
+async function svcLoadMachines() { const { data } = await db.from('service_machines').select('*, customers(name, company, mobile)').order('created_at', { ascending: false }).limit(2000); _svc.machines = data || []; return _svc.machines; }
+async function svcLoadTechs() { const { data } = await db.rpc('svc_technicians'); _svc.techs = data || []; return _svc.techs; }
+const svcTechName = id => (_svc.techs.find(t => t.user_id === id) || {}).name || uname(id);
+
+// ---------- tickets ----------
+async function loadSvcTickets() {
+  svcSubscribe();
+  const [{ data, error }] = await Promise.all([
+    db.from('service_tickets').select('*, machine:service_machines(id, model, serial_no, warranty_until), service_jobs(id, job_no, status, technician_id, scheduled_at, rating, work_minutes, resolution)').order('created_at', { ascending: false }).limit(1000),
+    can('svc.job.view_all') || can('svc.job.assign') ? svcLoadTechs() : Promise.resolve()]);
+  if (error) { document.getElementById('svcTicketTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  _svc.tickets = data || []; renderSvcTickets(); svcBadge();
+}
+function svcSetFilter(f) { _svc.filter = f; renderSvcTickets(); }
+function renderSvcTickets() {
+  const T = _svc.tickets, today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const un = T.filter(t => svcOpen(t) && !svcActiveJobs(t).length);
+  document.getElementById('svcKpis').innerHTML =
+    kpi(T.filter(svcOpen).length, 'Open tickets', 'blue', '◎', "svcSetFilter('open')") +
+    kpi(un.length, 'Not assigned', 'orange', '?', "svcSetFilter('unassigned')") +
+    kpi(T.filter(svcOverdue).length, 'Past deadline', 'red', '⚠', "svcSetFilter('overdue')") +
+    kpi(T.filter(t => t.status === 'waiting_customer' || t.status === 'waiting_parts').length, 'Waiting (customer / parts)', 'purple', '…', "svcSetFilter('waiting')") +
+    kpi(T.filter(t => t.resolved_at && new Date(t.resolved_at) >= today0).length, 'Resolved today', 'green', '✓', "svcSetFilter('done')");
+  const q = (document.getElementById('svcQ')?.value || '').toLowerCase(), cat = document.getElementById('svcCat')?.value || '';
+  const f = _svc.filter;
+  document.querySelectorAll('#svcSeg button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  const rows = T.filter(t => (f === 'open' ? svcOpen(t) : f === 'unassigned' ? un.includes(t) : f === 'overdue' ? svcOverdue(t) : f === 'waiting' ? ['waiting_customer', 'waiting_parts'].includes(t.status) : f === 'done' ? !svcOpen(t) : true)
+    && (!cat || t.category === cat) && (!BRANCH || t.branch_id === BRANCH)
+    && (!q || `${t.ticket_no} ${t.subject} ${t.contact_name || ''} ${t.contact_mobile || ''} ${t.city || ''} ${t.machine?.model || ''} ${t.machine?.serial_no || ''}`.toLowerCase().includes(q)));
+  document.getElementById('svcTicketTbl').innerHTML = tbl(['Ticket', 'Customer', 'Problem', 'Type', 'Cover', 'Technician', 'Status', 'Deadline', 'Created'],
+    rows.map(t => { const aj = svcActiveJobs(t), lj = (t.service_jobs || []).slice(-1)[0];
+      return [`<b>${esc(t.ticket_no)}</b>${['urgent', 'high'].includes(t.priority) ? ` <span class="chip overdue">${esc(t.priority)}</span>` : ''}`,
+        `${esc(t.contact_name || '—')}<div class="muted" style="font-size:11.5px">${esc([t.city, t.contact_mobile].filter(Boolean).join(' · '))}</div>`,
+        `${esc(t.subject)}${t.machine ? `<div class="muted" style="font-size:11.5px">${esc(t.machine.model || '')}${t.machine.serial_no ? ' · ' + esc(t.machine.serial_no) : ''}</div>` : ''}`,
+        esc(svcW(t.category)), svcCov(t.coverage),
+        aj.length ? esc(svcTechName(aj[aj.length - 1].technician_id)) + `<div class="muted" style="font-size:11.5px">${esc(svcW(aj[aj.length - 1].status))}</div>` : (svcOpen(t) ? '<span style="color:var(--red);font-weight:650">Not assigned</span>' : (lj ? esc(svcTechName(lj.technician_id)) : '—')),
+        svcChip(t.status), svcOverdue(t) ? `<span style="color:var(--red);font-weight:650">Overdue</span><div class="muted" style="font-size:11.5px">${fmtDT(t.sla_due_at)}</div>` : (svcOpen(t) ? fmtDT(t.sla_due_at) : '—'), fmtDT(t.created_at)]; }),
+    i => `style="cursor:pointer" onclick="openSvcTicket('${rows[i].id}')"`);
+}
+async function openSvcTicket(id) {
+  svcModal('<div class="empty">Loading…</div>', true);
+  const { data: t, error } = await db.from('service_tickets').select('*, machine:service_machines(*), service_jobs(*), ticket_messages(*)').eq('id', id).maybeSingle();
+  if (error || !t) { svcModal(`<div class="empty">${esc(error?.message || 'Ticket not found')}</div>`); return; }
+  if (!_svc.techs.length && (can('svc.job.view_all') || can('svc.job.assign'))) await svcLoadTechs();
+  const jobs = (t.service_jobs || []).sort((a, b) => a.created_at.localeCompare(b.created_at)), msgs = (t.ticket_messages || []).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const { data: media } = jobs.length ? await db.from('media').select('*').eq('entity_type', 'service_job').in('entity_id', jobs.map(j => j.id)) : { data: [] };
+  const m = t.machine, open = !['closed', 'cancelled'].includes(t.status), hasActive = jobs.some(j => !['cancelled', 'rejected', 'completed'].includes(j.status));
+  const mob = String(t.contact_mobile || '').replace(/\D/g, '').slice(-10);
+  const icon = { system: '⚡', call: '📞', to_customer: '📤', from_customer: '📥', note: '📝' };
+  svcModal(`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${esc(t.ticket_no)}</h3>${svcChip(t.status)} ${svcCov(t.coverage)}
+      <span class="chip pending">${esc(svcW(t.category))}</span><span class="chip ${['urgent', 'high'].includes(t.priority) ? 'overdue' : 'pending'}">${esc(t.priority)}</span>
+      <span style="flex:1"></span>
+      ${can('svc.ticket.manage') ? `<select class="inp" onchange="svcTicketStatus('${t.id}',this.value)">${['open', 'assigned', 'in_progress', 'waiting_customer', 'waiting_parts', 'resolved', 'closed', 'cancelled'].map(s => `<option value="${s}" ${t.status === s ? 'selected' : ''}>${svcW(s)}</option>`).join('')}</select>
+      <button class="btn sec sm" onclick="svcTicketForm('${t.id}')">Edit</button>` : ''}
+      <button class="btn sec sm" onclick="closeModal('svcBg')">Close</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="svcgrid">
+      <div><b style="font-size:16px">${esc(t.subject)}</b>${t.description ? `<div style="margin-top:4px;white-space:pre-wrap">${esc(t.description)}</div>` : ''}
+        <div class="muted" style="margin-top:8px;font-size:12.5px">Came in by ${esc(t.source)} · created ${fmtDT(t.created_at)} by ${esc(t.created_by ? uname(t.created_by) : 'system')}${open && t.sla_due_at ? ` · <span style="${svcOverdue(t) ? 'color:var(--red);font-weight:650' : ''}">resolve by ${fmtDT(t.sla_due_at)}</span>` : ''}</div></div>
+      <div><b>${esc(t.contact_name || 'Customer')}</b> ${mob ? `<a href="tel:+91${mob}">+91 ${mob}</a> · <a href="https://wa.me/91${mob}" target="_blank">WhatsApp</a>` : ''}
+        <div class="muted">${esc([t.address, t.city].filter(Boolean).join(', '))}${t.lat ? ` · <a href="https://www.google.com/maps/search/?api=1&query=${t.lat},${t.lng}" target="_blank">map</a>` : ''}</div>
+        ${m ? `<div style="margin-top:6px">🛠 <b>${esc(m.model || 'Machine')}</b>${m.serial_no ? ' · ' + esc(m.serial_no) : ''}<div class="muted" style="font-size:12.5px">${m.install_date ? 'Installed ' + svcDate(m.install_date) : 'Not installed yet'}${m.warranty_until ? ' · warranty till ' + svcDate(m.warranty_until) : ''}</div></div>` : '<div class="muted" style="margin-top:6px">No machine linked</div>'}</div>
+    </div>
+    <div style="display:flex;align-items:center;margin:16px 0 6px"><b style="flex:1">Jobs (technician visits)</b>${open && can('svc.job.assign') && !hasActive ? `<button class="btn sm" onclick="svcAssign('${t.id}')">${jobs.length ? '+ New visit' : 'Assign technician'}</button>` : ''}</div>
+    ${jobs.length ? tbl(['Job', 'Technician', 'Scheduled', 'Status', 'Work time', 'Result', 'Rating', ''], jobs.map(j => [esc(j.job_no), esc(j.technician_id ? svcTechName(j.technician_id) : '—'), fmtDT(j.scheduled_at), svcChip(j.status) + (j.reject_reason ? `<div class="muted" style="font-size:11.5px">${esc(j.reject_reason)}</div>` : ''),
+      j.work_started_at ? `${svcDur(j.work_minutes ?? Math.round((Date.now() - new Date(j.work_started_at)) / 60000))}<div class="muted" style="font-size:11.5px">${fmtT(j.work_started_at)}${j.work_ended_at ? '–' + fmtT(j.work_ended_at) : ' · running'}${j.start_verified ? ' · code ✓' : ''}</div>` : '—',
+      j.resolution ? `${esc(svcW(j.resolution))} ${j.billing ? svcCov(j.billing) : ''}` : '—', j.rating ? '★ ' + j.rating : (j.status === 'completed' ? `<a href="#" onclick="navigator.clipboard.writeText('https://bneone.com/?rate=${j.rating_token}');this.textContent='Link copied';return false">Copy rating link</a>` : '—'),
+      (can('svc.job.assign') && ['unassigned', 'assigned', 'accepted', 'rejected', 'travelling'].includes(j.status) ? `<button class="btn sec sm" onclick="svcAssign('${t.id}','${j.id}')">Reassign</button> ` : '') + (can('svc.job.assign') && !['completed', 'cancelled'].includes(j.status) ? `<button class="btn sec sm" onclick="svcJobCancel('${j.id}','${t.id}')">Cancel</button>` : '')])) : '<div class="muted">No technician assigned yet.</div>'}
+    ${jobs.filter(j => j.status === 'completed').map(j => `<div class="warnbox" style="background:#F4F9F6;border-color:#CFE8DA;color:#14532D"><b>${esc(j.job_no)} report</b> · ${esc(svcTechName(j.technician_id))}<div style="white-space:pre-wrap;margin-top:4px">${esc(j.work_notes || '')}</div>
+      ${(j.parts || []).length ? `<div style="margin-top:4px">Parts: ${(j.parts || []).map(p => esc(p.name) + ' × ' + (p.qty || 1)).join(', ')}</div>` : ''}${(j.checklist || []).length ? `<div style="margin-top:4px">Checklist: ${(j.checklist || []).map(c => (c.done ? '✓ ' : '✗ ') + esc(c.item)).join(' · ')}</div>` : ''}
+      ${j.coverage_override_reason ? `<div style="margin-top:4px;color:#B35900"><b>Coverage override:</b> ${esc(j.coverage_override_reason)}</div>` : ''}${j.customer_remarks ? `<div style="margin-top:4px">Customer: “${esc(j.customer_remarks)}”</div>` : ''}${j.rating_comment ? `<div style="margin-top:4px">Rating comment: “${esc(j.rating_comment)}”</div>` : ''}</div>`).join('')}
+    ${(media || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${media.map(x => `<div class="svcph" data-path="${esc(x.storage_path)}" title="${esc(x.kind)}"><span>${esc(x.kind)}</span></div>`).join('')}</div>` : ''}
+    <b style="display:block;margin:16px 0 6px">Activity &amp; communication</b>
+    <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:10px">${msgs.map(x => `<div style="display:flex;gap:8px;margin-bottom:8px"><span>${icon[x.kind] || '📝'}</span><div><div style="${x.kind === 'system' ? 'color:var(--muted);font-size:13px;' : ''}white-space:pre-wrap">${esc(x.body)}</div><div class="muted" style="font-size:11px">${esc(x.user_id ? uname(x.user_id) : 'System')} · ${fmtDT(x.created_at)}${x.kind !== 'system' && x.kind !== 'note' ? ' · ' + esc(svcW(x.kind)) : ''}</div></div></div>`).join('') || '<span class="muted">Nothing yet</span>'}</div>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end"><select id="svcMsgKind" class="inp"><option value="note">Internal note</option><option value="call">Call with customer</option><option value="to_customer">Message sent to customer</option><option value="from_customer">Reply from customer</option></select>
+      <textarea id="svcMsg" rows="2" style="flex:1" placeholder="Write a note, or what was said on the call…"></textarea><button class="btn" onclick="svcAddMsg('${t.id}')">Add</button></div>`, true);
+  document.querySelectorAll('#svcBody .svcph').forEach(async el => { const { data } = await db.storage.from('media').createSignedUrl(el.dataset.path, 3600); if (data) { el.style.backgroundImage = `url('${data.signedUrl}')`; el.onclick = () => window.open(data.signedUrl, '_blank'); } });
+}
+async function svcTicketStatus(id, s) { await svcRpc('svc_ticket_status', { p_ticket: id, p_status: s, p_note: null }); openSvcTicket(id); loadSvcTickets(); }
+async function svcAddMsg(id) { const b = document.getElementById('svcMsg').value.trim(); if (!b) return; await svcRpc('svc_ticket_message', { p_ticket: id, p_kind: document.getElementById('svcMsgKind').value, p_body: b }); openSvcTicket(id); }
+async function svcJobCancel(jobId, ticketId) { const r = prompt('Cancel this job? Reason:'); if (r === null) return; await svcRpc('svc_job_action', { p_job: jobId, p_action: 'cancel', p: { reason: r } }); openSvcTicket(ticketId); loadSvcTickets(); }
+async function svcAssign(ticketId, jobId) {
+  svcModal('<div class="empty">Finding nearest technicians…</div>');
+  const list = await svcRpc('svc_suggest_technicians', { p_ticket: ticketId });
+  const col = { free: 'var(--green)', on_job: 'var(--purple)', travelling: 'var(--brand)', off_duty: 'var(--muted)' };
+  svcModal(`<h3 style="margin-bottom:4px">${jobId ? 'Reassign job' : 'Assign a technician'}</h3><div class="muted" style="margin-bottom:10px">Free technicians nearest to the site come first.</div>
+    <label>Visit time <span class="muted">(blank = as soon as possible)</span></label><input type="datetime-local" id="svcWhen" style="width:100%">
+    ${jobId ? '' : '<label style="margin-top:8px;display:block">Instructions for the technician</label><input id="svcIns" style="width:100%" placeholder="e.g. carry spare thermostat">'}
+    <div style="margin-top:10px;max-height:46vh;overflow:auto">${(list || []).map(t => `<div class="pickrow"><span style="flex:1"><b>${esc(t.name)}</b> <span style="color:${col[t.status] || 'inherit'};font-weight:650;font-size:12px">● ${esc(svcW(t.status))}</span><br><span class="muted" style="font-size:12px">${[t.km != null ? t.km + ' km away' : 'location unknown', t.open_jobs + ' open job' + (t.open_jobs === 1 ? '' : 's'), t.rating ? '★ ' + t.rating : ''].filter(Boolean).join(' · ')}</span></span>
+      <button class="btn sm" onclick="svcDoAssign('${ticketId}','${jobId || ''}','${t.user_id}')">Assign</button></div>`).join('') || '<div class="empty">No technicians yet. Add people with the Technician role (Team page), or tick “Service” for an existing person under Service access.</div>'}</div>
+    <div style="text-align:right;margin-top:10px"><button class="btn sec sm" onclick="openSvcTicket('${ticketId}')">Back</button></div>`);
+}
+async function svcDoAssign(ticketId, jobId, userId) {
+  const w = document.getElementById('svcWhen').value, when = w ? new Date(w).toISOString() : null;
+  if (jobId) await svcRpc('svc_job_assign', { p_job: jobId, p_technician: userId, p_scheduled: when });
+  else await svcRpc('svc_job_create', { p_ticket: ticketId, p_technician: userId, p_scheduled: when, p_type: null, p_instructions: document.getElementById('svcIns')?.value.trim() || null });
+  openSvcTicket(ticketId); loadSvcTickets();
+}
+const svcMachineLabel = m => m ? `${m.model || 'Machine'}${m.serial_no ? ' · ' + m.serial_no : ''} — ${m.customers?.company || m.customers?.name || m.site_name || ''} [${m.id.slice(0, 5)}]` : '';
+const svcCustLabel = c => c ? `${c.company || c.name}${c.company && c.name ? ' · ' + c.name : ''}${c.city ? ' · ' + c.city : ''} [${c.id.slice(0, 5)}]` : '';
+async function svcTicketForm(id, pre) {
+  svcModal('<div class="empty">Loading…</div>');
+  const [machines, customers] = await Promise.all([svcLoadMachines(), svcCustomers()]);
+  const t = id ? (_svc.tickets.find(x => x.id === id) || (await db.from('service_tickets').select('*').eq('id', id).maybeSingle()).data) : (pre || {});
+  const opt = (arr, v) => arr.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('');
+  svcModal(`<h3 style="margin-bottom:10px">${id ? 'Edit ticket ' + esc(t.ticket_no) : 'New service ticket'}</h3>
+    <label>Machine <span class="muted">(search by model, serial or customer)</span></label>
+    <input id="tfMachineQ" list="tfMachines" style="width:100%" placeholder="Type to search…" value="${esc(t.machine_id ? svcMachineLabel(machines.find(m => m.id === t.machine_id)) : '')}" onchange="svcPickMachine()">
+    <datalist id="tfMachines">${machines.map(m => `<option value="${esc(svcMachineLabel(m))}">`).join('')}</datalist>
+    <div id="tfCover" style="margin:4px 0 8px;font-size:12.5px"></div>
+    <label>…or customer without a machine on record</label>
+    <input id="tfCustQ" list="tfCusts" style="width:100%" placeholder="Type to search…" value="${esc(!t.machine_id && t.customer_id ? svcCustLabel(customers.find(c => c.id === t.customer_id)) : '')}" onchange="svcPickCust()">
+    <datalist id="tfCusts">${customers.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist>
+    <label style="margin-top:8px;display:block">Problem in short *</label><input id="tfSubject" style="width:100%" value="${esc(t.subject || '')}">
+    <label style="margin-top:8px;display:block">Details</label><textarea id="tfDesc" rows="3" style="width:100%">${esc(t.description || '')}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+      <div><label>Type</label><select id="tfCat" style="width:100%">${opt([['breakdown', 'Breakdown'], ['installation', 'Installation'], ['preventive', 'Preventive'], ['complaint', 'Complaint'], ['demo', 'Demo'], ['other', 'Other']], t.category || 'breakdown')}</select></div>
+      <div><label>Priority</label><select id="tfPri" style="width:100%">${opt([['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['urgent', 'Urgent']], t.priority || 'normal')}</select></div>
+      <div><label>Came in by</label><select id="tfSrc" style="width:100%" ${id ? 'disabled' : ''}>${opt([['phone', 'Phone call'], ['whatsapp', 'WhatsApp'], ['email', 'Email'], ['walkin', 'Walk-in'], ['app', 'Our staff'], ['other', 'Other']], t.source || 'phone')}</select></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div><label>Site contact name *</label><input id="tfName" style="width:100%" value="${esc(t.contact_name || '')}"></div>
+      <div><label>Mobile * <span class="muted">(gets start / end codes)</span></label><input id="tfMob" style="width:100%" maxlength="10" inputmode="numeric" value="${esc(String(t.contact_mobile || '').replace(/\D/g, '').slice(-10))}"></div>
+      <div><label>Site address</label><input id="tfAddr" style="width:100%" value="${esc(t.address || '')}"></div>
+      <div><label>City</label><input id="tfCity" style="width:100%" value="${esc(t.city || '')}"></div></div>
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="svcSaveTicket('${id || ''}')">${id ? 'Save' : 'Create ticket'}</button></div>`);
+  window._tfMachine = t.machine_id || null; window._tfCust = t.customer_id || null; svcShowCover();
+}
+function svcTicketForMachine(mid) {
+  const m = _svc.machines.find(x => x.id === mid); if (!m) return;
+  svcTicketForm('', { machine_id: m.id, customer_id: m.customer_id, contact_name: m.contact_name || m.customers?.name, contact_mobile: m.contact_mobile || m.customers?.mobile, address: m.address, city: m.city });
+}
+function svcShowCover() {
+  const el = document.getElementById('tfCover'); if (!el) return; const m = _svc.machines.find(x => x.id === window._tfMachine);
+  if (!m) { el.innerHTML = ''; return; }
+  const inW = m.warranty_until && m.warranty_until >= todayStr();
+  el.innerHTML = m.warranty_until ? (inW ? `<span style="color:var(--green);font-weight:650">✔ Under warranty until ${svcDate(m.warranty_until)}</span>` : `<span style="color:var(--orange);font-weight:650">Warranty ended ${svcDate(m.warranty_until)}</span>`) : '<span class="muted">Not installed yet – warranty starts on installation</span>';
+}
+function svcPickMachine() {
+  const v = document.getElementById('tfMachineQ').value, m = _svc.machines.find(x => svcMachineLabel(x) === v);
+  window._tfMachine = m ? m.id : null; if (!m) { svcShowCover(); return; }
+  window._tfCust = null; document.getElementById('tfCustQ').value = '';
+  const set = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
+  set('tfName', m.contact_name || m.customers?.name); set('tfMob', String(m.contact_mobile || m.customers?.mobile || '').replace(/\D/g, '').slice(-10)); set('tfAddr', m.address); set('tfCity', m.city); svcShowCover();
+}
+function svcPickCust() {
+  const v = document.getElementById('tfCustQ').value, c = (_svc.customers || []).find(x => svcCustLabel(x) === v);
+  window._tfCust = c ? c.id : null; if (!c) return;
+  window._tfMachine = null; document.getElementById('tfMachineQ').value = ''; svcShowCover();
+  const set = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
+  set('tfName', c.name); set('tfMob', String(c.mobile || '').replace(/\D/g, '').slice(-10)); set('tfAddr', c.address); set('tfCity', c.city);
+}
+async function svcSaveTicket(id) {
+  const g = x => document.getElementById(x).value.trim();
+  if (g('tfSubject').length < 3) { alert('Describe the problem in a few words'); return; }
+  if (!g('tfName') || g('tfMob').length !== 10) { alert('Add the contact name and a 10-digit mobile number'); return; }
+  const p = { subject: g('tfSubject'), description: g('tfDesc'), category: g('tfCat'), priority: g('tfPri'), source: g('tfSrc'), contact_name: g('tfName'), contact_mobile: g('tfMob'), address: g('tfAddr'), city: g('tfCity') };
+  if (id) p.id = id; if (window._tfMachine) p.machine_id = window._tfMachine; if (window._tfCust) p.customer_id = window._tfCust;
+  const t = await svcRpc('svc_ticket_save', { p });
+  await loadSvcTickets(); openSvcTicket(t.id);
+}
+
+// ---------- technicians ----------
+async function loadSvcTechs() {
+  svcSubscribe();
+  const T = await svcLoadTechs(), n = s => T.filter(t => t.status === s).length;
+  document.getElementById('svcTechKpis').innerHTML = kpi(n('free'), 'Free now', 'green', '●', '') + kpi(n('on_job'), 'On a job', 'purple', '🛠', '') + kpi(n('travelling'), 'Travelling', 'blue', '➜', '') + kpi(n('off_duty'), 'Off duty', 'orange', '○', '');
+  document.getElementById('svcTechTbl').innerHTML = tbl(['Technician', 'Now', 'Open jobs', 'Done today', 'Time on jobs today', 'On duty since', 'Last location', 'Rating'],
+    T.map(t => [`<b>${esc(t.name || '')}</b><div class="muted" style="font-size:11.5px">${esc([ROLE_LABEL[t.role], (t.skills || []).join(', ')].filter(Boolean).join(' · '))}</div>`,
+      `<span class="chip svc-tech-${t.status}">${esc(svcW(t.status))}</span>${t.current_job_no ? `<div class="muted" style="font-size:11.5px">${esc(t.current_job_no)}</div>` : ''}`, t.open_jobs, t.done_today, svcDur(t.work_minutes_today),
+      t.day_start_at ? fmtT(t.day_start_at) + (t.day_end_at ? ' – ' + fmtT(t.day_end_at) : '') : '—',
+      t.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${t.lat},${t.lng}" target="_blank">Open map</a><div class="muted" style="font-size:11.5px">${ago(t.at)}${t.battery != null ? ' · 🔋' + t.battery + '%' : ''}</div>` : '—', t.rating ? '★ ' + t.rating : '—']));
+}
+
+// ---------- machines ----------
+async function loadSvcMachines() {
+  await svcLoadMachines();
+  const { data: am } = await db.from('amc_machines').select('machine_id, amc_contracts(contract_no, status, end_date)');
+  _svc.amcByMachine = {}; (am || []).forEach(a => { if (a.amc_contracts?.status === 'active') _svc.amcByMachine[a.machine_id] = a.amc_contracts; });
+  renderSvcMachines();
+}
+function renderSvcMachines() {
+  const q = (document.getElementById('svcMQ')?.value || '').toLowerCase(), f = document.getElementById('svcMF')?.value || '', today = todayStr(), soon = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+  const st = m => m.status === 'pending_install' ? 'pending' : (m.warranty_until && m.warranty_until >= today ? 'warranty' : (_svc.amcByMachine[m.id] ? 'amc' : 'out'));
+  const rows = _svc.machines.filter(m => (!q || `${m.model} ${m.serial_no} ${m.site_name} ${m.customers?.name} ${m.customers?.company} ${m.city}`.toLowerCase().includes(q)) && (!BRANCH || m.branch_id === BRANCH)
+    && (!f || (f === 'expiring' ? m.warranty_until >= today && m.warranty_until <= soon : st(m) === f)));
+  document.getElementById('svcMachineTbl').innerHTML = tbl(['Machine', 'Serial no.', 'Customer / site', 'Installed', 'Warranty', 'AMC', ''],
+    rows.map(m => [`<b>${esc(m.model || 'Machine')}</b>`, esc(m.serial_no || '—'), `${esc(m.customers?.company || m.customers?.name || m.site_name || '—')}<div class="muted" style="font-size:11.5px">${esc(m.city || '')}</div>`, svcDate(m.install_date),
+      m.status === 'pending_install' ? '<span class="chip pending">Awaiting installation</span>' : (m.warranty_until && m.warranty_until >= today ? `<span class="chip svc-cov-warranty">till ${svcDate(m.warranty_until)}</span>` : `<span class="chip svc-cov-chargeable">${m.warranty_until ? 'ended ' + svcDate(m.warranty_until) : 'none'}</span>`),
+      _svc.amcByMachine[m.id] ? `<span class="chip svc-cov-amc">${esc(_svc.amcByMachine[m.id].contract_no)}</span>` : '—',
+      (can('svc.ticket.create') ? `<button class="btn sec sm" onclick="svcTicketForMachine('${m.id}')">+ Ticket</button> ` : '') +
+      (can('svc.machine.manage') ? `<button class="btn sec sm" onclick="svcMachineForm('${m.id}')">Edit</button>` : '')]));
+}
+async function svcMachineForm(id) {
+  const customers = await svcCustomers(), m = id ? _svc.machines.find(x => x.id === id) : {};
+  svcModal(`<h3 style="margin-bottom:10px">${id ? 'Edit machine' : 'Add a machine'}</h3>
+    <label>Customer</label><input id="mfCustQ" list="mfCusts" style="width:100%" value="${esc(m.customer_id ? svcCustLabel(customers.find(c => c.id === m.customer_id)) : '')}"><datalist id="mfCusts">${customers.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div><label>Model *</label><input id="mfModel" style="width:100%" value="${esc(m.model || '')}"></div><div><label>Serial number</label><input id="mfSerial" style="width:100%" value="${esc(m.serial_no || '')}"></div>
+      <div><label>Installation date</label><input id="mfDate" type="date" style="width:100%" value="${m.install_date || ''}"></div><div><label>Warranty (months)</label><input id="mfW" type="number" min="0" style="width:100%" value="${m.warranty_months ?? 12}"></div>
+      <div><label>Site contact</label><input id="mfCN" style="width:100%" value="${esc(m.contact_name || '')}"></div><div><label>Contact mobile</label><input id="mfCM" style="width:100%" maxlength="10" value="${esc(String(m.contact_mobile || '').replace(/\D/g, '').slice(-10))}"></div>
+      <div><label>Site address</label><input id="mfAddr" style="width:100%" value="${esc(m.address || '')}"></div><div><label>City</label><input id="mfCity" style="width:100%" value="${esc(m.city || '')}"></div></div>
+    <div class="hint">Warranty end date = installation date + warranty months. Leave the date blank if the machine is not installed yet.</div>
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="svcSaveMachine('${id || ''}')">Save</button></div>`);
+}
+async function svcSaveMachine(id) {
+  const g = x => document.getElementById(x).value.trim(); if (!g('mfModel')) { alert('Enter the model'); return; }
+  const c = (_svc.customers || []).find(x => svcCustLabel(x) === g('mfCustQ'));
+  const p = { model: g('mfModel'), serial_no: g('mfSerial'), install_date: g('mfDate'), warranty_months: Number(g('mfW') || 12), contact_name: g('mfCN'), contact_mobile: g('mfCM'), address: g('mfAddr'), city: g('mfCity') };
+  if (id) p.id = id; if (c) p.customer_id = c.id;
+  await svcRpc('svc_machine_save', { p }); closeModal('svcBg'); loadSvcMachines();
+}
+
+// ---------- AMC ----------
+async function loadSvcAmc() {
+  const { data, error } = await db.from('amc_contracts').select('*, customers(name, company, mobile), amc_machines(machine_id), amc_visits(id, seq, due_date, status, ticket_id)').order('end_date');
+  if (error) { document.getElementById('svcAmcTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  _svc.amc = data || []; const today = todayStr(), in30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), act = _svc.amc.filter(a => a.status === 'active');
+  const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+  document.getElementById('svcAmcKpis').innerHTML = kpi(act.length, 'Active contracts', 'green', '✓', '') + kpi(act.filter(a => a.end_date <= in30).length, 'Expiring in 30 days', 'orange', '⏳', '') +
+    kpi(inr(act.reduce((s, a) => s + Number(a.amount || 0), 0)), 'Active contract value', 'blue', '₹', '') +
+    kpi(inr(act.reduce((s, a) => s + Math.max(0, Number(a.amount || 0) - Number(a.paid_amount || 0)), 0)), 'Yet to collect', 'red', '!', '') +
+    kpi(_svc.amc.reduce((s, a) => s + (a.amc_visits || []).filter(v => v.status === 'scheduled' && v.due_date <= in30).length, 0), 'Visits due in 30 days', 'purple', '🛠', '');
+  const f = document.getElementById('svcAF')?.value || 'active';
+  const rows = _svc.amc.filter(a => (f === 'all' || (f === 'expiring' ? a.status === 'active' && a.end_date <= in30 : a.status === f)) && (!BRANCH || a.branch_id === BRANCH));
+  document.getElementById('svcAmcTbl').innerHTML = tbl(['Contract', 'Customer', 'Plan', 'Period', 'Machines', 'Visits', 'Amount', 'Status', ''],
+    rows.map(a => { const v = a.amc_visits || [], done = v.filter(x => x.status === 'done').length, left = Math.ceil((new Date(a.end_date) - new Date(today)) / 864e5);
+      const next = v.filter(x => x.status === 'scheduled').sort((x, y) => x.due_date.localeCompare(y.due_date))[0];
+      return [`<b>${esc(a.contract_no)}</b>`, esc(a.customers?.company || a.customers?.name || '—'), esc(svcW(a.plan)), `${svcDate(a.start_date)} – ${svcDate(a.end_date)}${a.status === 'active' ? `<div class="muted" style="font-size:11.5px;${left <= 30 ? 'color:var(--red);font-weight:650' : ''}">${left >= 0 ? left + ' days left' : 'ended'}</div>` : ''}`,
+        (a.amc_machines || []).length, `${done} of ${v.filter(x => x.status !== 'cancelled').length} done<div class="muted" style="font-size:11.5px">${next ? 'next ' + svcDate(next.due_date) : ''}</div>`,
+        `${inr(Number(a.amount || 0))}<div class="muted" style="font-size:11.5px">paid ${inr(Number(a.paid_amount || 0))}</div>`, svcChip(a.status),
+        can('svc.amc.manage') ? `<button class="btn sec sm" onclick="svcAmcForm('${a.id}')">Open</button> ${['active', 'expired'].includes(a.status) ? `<button class="btn sec sm" onclick="svcAmcForm('', '${a.id}')">Renew</button>` : ''}` : '']; }));
+}
+async function svcAmcForm(id, renewOf) {
+  svcModal('<div class="empty">Loading…</div>');
+  const [customers] = await Promise.all([svcCustomers(), svcLoadMachines()]);
+  const src = _svc.amc.find(x => x.id === (id || renewOf)) || {}, a = id ? src : {}, today = todayStr();
+  const start = id ? a.start_date : (renewOf ? new Date(new Date(src.end_date).getTime() + 864e5).toISOString().slice(0, 10) : today);
+  const e0 = new Date(start + 'T00:00:00Z'); e0.setUTCFullYear(e0.getUTCFullYear() + 1); e0.setUTCDate(e0.getUTCDate() - 1);
+  const end = id ? a.end_date : e0.toISOString().slice(0, 10);
+  window._amcCust = src.customer_id || null; window._amcSel = new Set((src.amc_machines || []).map(x => x.machine_id));
+  svcModal(`<h3 style="margin-bottom:10px">${id ? 'AMC ' + esc(a.contract_no) : (renewOf ? 'Renew ' + esc(src.contract_no) : 'New AMC contract')}</h3>
+    <label>Customer *</label><input id="afCustQ" list="afCusts" style="width:100%" value="${esc(src.customer_id ? svcCustLabel(customers.find(c => c.id === src.customer_id)) : '')}" onchange="svcAmcCust()" ${id ? 'disabled' : ''}><datalist id="afCusts">${customers.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist>
+    <label style="margin-top:8px;display:block">Machines covered</label><div id="afMachines" style="max-height:130px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:6px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+      <div><label>Plan</label><select id="afPlan" style="width:100%">${[['comprehensive', 'Comprehensive (parts + labour)'], ['non_comprehensive', 'Non-comprehensive (labour)'], ['labour_only', 'Labour only']].map(([k, l]) => `<option value="${k}" ${(src.plan || 'non_comprehensive') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div><label>Start *</label><input id="afStart" type="date" style="width:100%" value="${start}"></div><div><label>End *</label><input id="afEnd" type="date" style="width:100%" value="${end}"></div>
+      <div><label>Preventive visits / year</label><input id="afVisits" type="number" min="0" max="24" style="width:100%" value="${src.visits_per_year ?? 4}"></div>
+      <div><label>Contract amount ₹</label><input id="afAmt" type="number" min="0" style="width:100%" value="${id ? a.amount : (src.amount || '')}"></div><div><label>Received ₹</label><input id="afPaid" type="number" min="0" style="width:100%" value="${id ? a.paid_amount : ''}"></div></div>
+    ${id ? `<label style="margin-top:8px;display:block">Status</label><select id="afStatus" style="width:100%">${['active', 'draft', 'cancelled', 'expired', 'renewed'].map(s => `<option ${a.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : ''}
+    <label style="margin-top:8px;display:block">Notes / terms</label><textarea id="afNotes" rows="2" style="width:100%">${esc(a.notes || '')}</textarea>
+    ${id ? `<b style="display:block;margin-top:12px">Preventive visit schedule</b>${tbl(['#', 'Due', 'Status', ''], (a.amc_visits || []).sort((x, y) => x.seq - y.seq).map(v => [v.seq, svcDate(v.due_date), svcChip(v.status), v.ticket_id ? `<a href="#" onclick="openSvcTicket('${v.ticket_id}');return false">Open ticket</a>` : '']))}<div class="hint">A preventive ticket is raised automatically 3 days before each due date.</div>` : '<div class="hint">Visits are spread evenly over the contract. A preventive ticket is raised automatically 3 days before each one is due, and the service desk gets a reminder 30 days before the contract ends.</div>'}
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="svcSaveAmc('${id || ''}','${renewOf || ''}')">${id ? 'Save' : 'Create contract'}</button></div>`);
+  svcAmcMachines();
+}
+function svcAmcCust() { const c = (_svc.customers || []).find(x => svcCustLabel(x) === document.getElementById('afCustQ').value); window._amcCust = c ? c.id : null; window._amcSel = new Set(); svcAmcMachines(); }
+function svcAmcMachines() {
+  const el = document.getElementById('afMachines'); if (!el) return; const ms = _svc.machines.filter(m => m.customer_id && m.customer_id === window._amcCust);
+  el.innerHTML = ms.map(m => `<label style="display:flex;gap:8px;align-items:center;padding:3px 0"><input type="checkbox" style="width:auto" value="${m.id}" ${window._amcSel.has(m.id) ? 'checked' : ''} onchange="this.checked?_amcSel.add(this.value):_amcSel.delete(this.value)"> ${esc(m.model || 'Machine')}${m.serial_no ? ' · ' + esc(m.serial_no) : ''} <span class="muted" style="font-size:11.5px">${m.warranty_until ? 'warranty till ' + svcDate(m.warranty_until) : ''}</span></label>`).join('') || `<span class="muted">${window._amcCust ? 'This customer has no machines on record. Add one under Machines first.' : 'Pick a customer to see their machines.'}</span>`;
+}
+async function svcSaveAmc(id, renewOf) {
+  const g = x => document.getElementById(x)?.value.trim() ?? '';
+  if (!window._amcCust) { alert('Pick the customer'); return; } if (!g('afStart') || !g('afEnd')) { alert('Set the start and end dates'); return; }
+  const p = { customer_id: window._amcCust, plan: g('afPlan'), start_date: g('afStart'), end_date: g('afEnd'), visits_per_year: Number(g('afVisits') || 0), amount: Number(g('afAmt') || 0), paid_amount: Number(g('afPaid') || 0), notes: g('afNotes'), machine_ids: [...window._amcSel] };
+  if (id) { p.id = id; p.status = g('afStatus'); } if (renewOf) p.renewal_of = renewOf;
+  await svcRpc('svc_amc_save', { p }); closeModal('svcBg'); loadSvcAmc();
+}
+
+// ---------- reports ----------
+async function loadSvcReports() {
+  const from = document.getElementById('srFrom'), to = document.getElementById('srTo');
+  if (!from.value) { from.value = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10); to.value = todayStr(); }
+  const f = new Date(from.value + 'T00:00:00').toISOString(), t = new Date(to.value + 'T23:59:59').toISOString();
+  const [{ data: jobs }, { data: tk }] = await Promise.all([
+    db.from('service_jobs').select('id, technician_id, type, status, work_minutes, travel_minutes, rating, resolution, billing, created_at, accepted_at, work_started_at, work_ended_at, ticket_id').gte('created_at', f).lte('created_at', t).limit(5000),
+    db.from('service_tickets').select('id, status, category, coverage, created_at, resolved_at, sla_due_at, machine_id, first_response_at').gte('created_at', f).lte('created_at', t).limit(5000)]);
+  if (!_svc.techs.length) await svcLoadTechs();
+  const J = jobs || [], T = tk || [], done = J.filter(j => j.status === 'completed'), avg = a => a.length ? Math.round(a.reduce((s, x) => s + x, 0) / a.length) : null;
+  const good = j => ['fixed', 'installed', 'pm_done'].includes(j.resolution);
+  const byTicket = {}; J.forEach(j => { (byTicket[j.ticket_id] ||= []).push(j); });
+  const ftf = Object.values(byTicket).filter(js => js.some(j => j.status === 'completed'));
+  const ftfOk = ftf.filter(js => { const d = js.filter(j => j.status === 'completed'); return d.length === 1 && good(d[0]); }).length;
+  const res = T.filter(x => x.resolved_at), inSla = res.filter(x => !x.sla_due_at || new Date(x.resolved_at) <= new Date(x.sla_due_at)).length, rated = done.filter(j => j.rating);
+  document.getElementById('svcRepKpis').innerHTML = kpi(T.length, 'Tickets raised', 'blue', '◎', '') + kpi(done.length, 'Jobs completed', 'green', '✓', '') + kpi(svcDur(avg(done.filter(j => j.work_minutes != null).map(j => j.work_minutes))), 'Avg time on a job', 'purple', '⏱', '') +
+    kpi(ftf.length ? Math.round(ftfOk * 100 / ftf.length) + '%' : '—', 'Fixed on first visit', 'teal', '①', '') + kpi(res.length ? Math.round(inSla * 100 / res.length) + '%' : '—', 'Resolved within deadline', 'orange', '⏳', '') +
+    kpi(rated.length ? (rated.reduce((s, j) => s + j.rating, 0) / rated.length).toFixed(1) + ' ★' : '—', `Customer rating (${rated.length})`, 'blue', '★', '');
+  const per = {}; J.forEach(j => { if (!j.technician_id) return; (per[j.technician_id] ||= []).push(j); });
+  const rows = Object.entries(per).map(([uid, js]) => { const d = js.filter(j => j.status === 'completed'), r = d.filter(j => j.rating), fx = d.filter(good);
+    const resp = js.filter(j => j.accepted_at).map(j => Math.round((new Date(j.accepted_at) - new Date(j.created_at)) / 60000));
+    return { uid, n: js.length, d: d.length, rej: js.filter(j => j.status === 'rejected').length, w: avg(d.filter(j => j.work_minutes != null).map(j => j.work_minutes)), tr: avg(d.filter(j => j.travel_minutes != null).map(j => j.travel_minutes)), tot: d.reduce((s, j) => s + (j.work_minutes || 0), 0),
+      fx: d.length ? Math.round(fx.length * 100 / d.length) : null, rt: r.length ? (r.reduce((s, j) => s + j.rating, 0) / r.length).toFixed(1) : null, rn: r.length, resp: avg(resp), wty: d.filter(j => j.billing === 'warranty').length, amc: d.filter(j => j.billing === 'amc').length, ch: d.filter(j => j.billing === 'chargeable').length }; }).sort((a, b) => b.d - a.d);
+  document.getElementById('svcRepTbl').innerHTML = tbl(['#', 'Technician', 'Assigned', 'Completed', 'Rejected', 'Avg time to accept', 'Avg travel', 'Avg time on job', 'Total hours on jobs', 'Fixed %', 'Rating', 'Warranty / AMC / Paid'],
+    rows.map((r, i) => [i + 1, `<b>${esc(svcTechName(r.uid))}</b>`, r.n, r.d, r.rej || '—', svcDur(r.resp), svcDur(r.tr), svcDur(r.w), (r.tot / 60).toFixed(1) + ' h', r.fx == null ? '—' : r.fx + '%', r.rt ? `★ ${r.rt} <span class="muted">(${r.rn})</span>` : '—', `${r.wty} / ${r.amc} / ${r.ch}`]));
+  const cat = {}; T.forEach(x => { cat[x.category] = (cat[x.category] || 0) + 1; }); const cov = {}; done.forEach(j => { cov[j.billing || '—'] = (cov[j.billing || '—'] || 0) + 1; });
+  const mc = {}; T.forEach(x => { if (x.machine_id && x.category !== 'installation' && x.category !== 'preventive') mc[x.machine_id] = (mc[x.machine_id] || 0) + 1; });
+  const rep = Object.entries(mc).filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 10); if (rep.length && !_svc.machines.length) await svcLoadMachines();
+  document.getElementById('svcRepMore').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+    <div><b>Tickets by type</b>${tbl(['Type', 'Count'], Object.entries(cat).sort((a, b) => b[1] - a[1]).map(([k, n]) => [esc(svcW(k)), n]))}</div>
+    <div><b>Completed jobs by billing</b>${tbl(['Billing', 'Jobs'], Object.entries(cov).sort((a, b) => b[1] - a[1]).map(([k, n]) => [esc(svcW(k)), n]))}</div>
+    <div><b>Machines with repeat complaints</b>${rep.length ? tbl(['Machine', 'Tickets'], rep.map(([id, n]) => { const m = _svc.machines.find(x => x.id === id); return [esc(m ? `${m.model || ''} ${m.serial_no || ''} — ${m.customers?.company || m.customers?.name || ''}` : id.slice(0, 8)), n]; })) : '<div class="muted" style="padding:10px 0">None in this period 👍</div>'}</div></div>`;
+}
+
+// ---------- access (admin) ----------
+async function renderSvcAccess() {
+  const el = document.getElementById('svcAccess'); if (!el || !isOwner()) return;
+  const { data } = await db.from('app_settings').select('value').eq('key', 'permissions').maybeSingle(); const P = (data && data.value) || {}; _svc.rolePerms = P;
+  const people = cache.users.filter(u => u.active);
+  const cb = (on, js) => `<input type="checkbox" style="width:17px;height:17px;accent-color:var(--brand)" ${on ? 'checked' : ''} onchange="${js}">`;
+  el.innerHTML = `<b>What each role can do in Service</b> <span class="muted">(Admin and Head can do everything)</span>
+    <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>Permission</th>${SVC_ROLES.map(r => `<th style="text-align:center">${esc(ROLE_LABEL[r] || r)}</th>`).join('')}</tr></thead><tbody>
+    ${SVC_PERMS.map(([k, l]) => `<tr><td>${l}</td>${SVC_ROLES.map(r => `<td style="text-align:center">${cb(P[r] && P[r][k], `svcSetRolePerm('${r}','${k}',this.checked)`)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <b style="display:block;margin-top:16px">Teams &amp; personal access</b><span class="muted">Tick “Service” for sales people who also do installation or service – they get a Jobs tab in the app. “Custom access” overrides the role defaults for one person.</span>
+    ${tbl(['Person', 'Role', 'Sales team', 'Service team', 'Skills (models they can service)', 'Custom access'], people.map(u => { const tm = u.teams || ['sales'], n = Object.keys(u.perms || {}).length;
+      return [`<b>${esc(u.name || u.email || u.mobile)}</b>`, esc(ROLE_LABEL[u.role] || u.role),
+        cb(tm.includes('sales'), `svcSetTeam('${u.id}','sales',this.checked)`), cb(tm.includes('service'), `svcSetTeam('${u.id}','service',this.checked)`),
+        `<input class="inp" style="width:220px" placeholder="e.g. Dishwasher, Combi oven" value="${esc((u.skills || []).join(', '))}" onchange="svcSetSkills('${u.id}',this.value)">`,
+        ['admin', 'head'].includes(u.role) ? '<span class="muted">full access</span>' : `<button class="btn sec sm" onclick="svcUserPerms('${u.id}')">${n ? n + ' override' + (n > 1 ? 's' : '') : 'Role default'}</button>`]; }))}`;
+}
+async function svcSetRolePerm(role, perm, on) { const cur = { ...(_svc.rolePerms[role] || {}) }; if (on) cur[perm] = true; else delete cur[perm]; _svc.rolePerms[role] = cur; await svcRpc('svc_set_role_perms', { p_role: role, p_perms: cur }); }
+async function svcSetTeam(uid, team, on) { const u = cache.users.find(x => x.id === uid); const tm = new Set(u.teams || ['sales']); on ? tm.add(team) : tm.delete(team); u.teams = [...tm]; await svcRpc('svc_set_user_access', { p_user: uid, p_teams: u.teams, p_perms: null, p_skills: null }); }
+async function svcSetSkills(uid, v) { const u = cache.users.find(x => x.id === uid); u.skills = v.split(',').map(x => x.trim()).filter(Boolean); await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: null, p_skills: u.skills }); }
+function svcUserPerms(uid) {
+  const u = cache.users.find(x => x.id === uid), def = _svc.rolePerms[u.role] || {}, own = u.perms || {};
+  svcModal(`<h3 style="margin-bottom:4px">Access for ${esc(u.name || u.email || '')}</h3><div class="muted" style="margin-bottom:10px">Role: ${esc(ROLE_LABEL[u.role] || u.role)}. “Role default” follows the table on the Team page.</div>
+    ${SVC_PERMS.map(([k, l]) => `<div class="pickrow"><span style="flex:1">${l}<br><span class="muted" style="font-size:11.5px">role default: ${def[k] ? 'allowed' : 'not allowed'}</span></span>
+      <select class="inp upSel" data-k="${k}"><option value="">Role default</option><option value="1" ${own[k] === true ? 'selected' : ''}>Allow</option><option value="0" ${own[k] === false ? 'selected' : ''}>Don't allow</option></select></div>`).join('')}
+    <div style="text-align:right;margin-top:12px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="svcSaveUserPerms('${uid}')">Save</button></div>`);
+}
+async function svcSaveUserPerms(uid) {
+  const p = {}; document.querySelectorAll('.upSel').forEach(s => { if (s.value !== '') p[s.dataset.k] = s.value === '1'; });
+  await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
+}
+
+// ---------- public rating page: bneone.com/?rate=TOKEN ----------
+async function svcRatingPage(token) {
+  document.body.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F4F6FA;padding:20px"><div id="rateBox" style="background:#fff;border-radius:18px;padding:28px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(15,23,42,.12);text-align:center">Loading…</div></div>`;
+  const box = document.getElementById('rateBox'), { data } = await db.rpc('svc_rating_info', { p_token: token });
+  if (!data) { box.innerHTML = '<h2>Link not valid</h2><p style="color:#64748B">This rating link is no longer active.</p>'; return; }
+  if (data.rated) { box.innerHTML = `<h2>Thank you!</h2><p style="color:#64748B">You rated this service ${'★'.repeat(data.rating)}.</p>`; return; }
+  window._rate = 0;
+  box.innerHTML = `<h2 style="margin:0 0 6px">How was our service?</h2><p style="color:#64748B;margin:0 0 16px">${esc(data.job_no)}${data.technician ? ' · technician ' + esc(data.technician) : ''}</p>
+    <div id="stars" style="font-size:44px;cursor:pointer;user-select:none;color:#CBD5E1">${[1, 2, 3, 4, 5].map(i => `<span data-i="${i}">★</span>`).join('')}</div>
+    <textarea id="rateC" rows="3" placeholder="Anything you would like to tell us? (optional)" style="width:100%;margin-top:14px;border:1px solid #E4E8F0;border-radius:10px;padding:10px;font:inherit"></textarea>
+    <button id="rateBtn" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:10px;background:#22779A;color:#fff;font:inherit;font-weight:700;cursor:pointer">Submit rating</button><div id="rateErr" style="color:#DC2626;margin-top:8px;font-size:13px"></div>`;
+  document.querySelectorAll('#stars span').forEach(s => s.onclick = () => { window._rate = Number(s.dataset.i); document.querySelectorAll('#stars span').forEach(x => x.style.color = Number(x.dataset.i) <= window._rate ? '#F59E0B' : '#CBD5E1'); });
+  document.getElementById('rateBtn').onclick = async () => {
+    if (!window._rate) { document.getElementById('rateErr').textContent = 'Tap a star to rate.'; return; }
+    const { data: ok, error } = await db.rpc('svc_rate', { p_token: token, p_rating: window._rate, p_comment: document.getElementById('rateC').value });
+    box.innerHTML = error || !ok ? '<h2>Could not save</h2><p style="color:#64748B">Please try again later.</p>' : '<h2>Thank you! 🙏</h2><p style="color:#64748B">Your feedback helps us serve you better.<br>— Team BNE</p>';
+  };
+}
+
 // ---------- CSV export ----------
 function exportCsv(kind) {
   const flat = {
@@ -4349,7 +4797,8 @@ function exportCsv(kind) {
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show')); });
-init();
+const _rateTok = new URLSearchParams(location.search).get('rate');
+if (_rateTok) svcRatingPage(_rateTok); else init();
 </script>
 <style>.ch { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; font-weight:700; }</style>
 </body>
