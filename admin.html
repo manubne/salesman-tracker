@@ -317,6 +317,7 @@
       <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
+      <button data-v="stock" onclick="show('stock')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>Stock check</span></button>
       <div class="navlabel" data-perm="quote.create,quote.view_all,quote.master">Quotations</div>
       <button data-v="quotes" data-perm="quote.create,quote.view_all" onclick="show('quotes')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Quotations</span></button>
       <button data-v="quoteSetup" data-perm="quote.master" onclick="show('quoteSetup')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span>Quotation setup</span></button>
@@ -710,6 +711,14 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= STOCK CHECK ================= -->
+    <div id="stock" class="view">
+      <div class="panel"><h2>Stock check <span class="sub">free to use right now, live from Odoo</span></h2>
+        <div style="position:relative;max-width:640px"><div class="toolbar" style="margin-bottom:0"><input id="stkQ" autocomplete="off" placeholder="Type model or item name, e.g. 22HP, cassette, AJU32452014" style="flex:1;min-width:260px" oninput="stkTyped()" onkeydown="if(event.key==='Enter')stkSearch();if(event.key==='Escape')stkHideSug()"><button class="btn" onclick="stkSearch()">Check stock</button></div>
+          <div id="stkSug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.14);margin-top:4px;max-height:360px;overflow:auto"></div></div>
+        <p class="hint">Suggestions appear after 3 letters. Free to use = quantity in the warehouse minus what is already reserved for other orders.</p>
+        <div id="stkOut" style="margin-top:14px"></div></div>
+    </div>
     <!-- ================= QUOTATIONS ================= -->
     <div id="quotes" class="view">
       <div class="kpis" id="qtKpis"></div>
@@ -1520,6 +1529,7 @@ function show(v) {
   if (v === 'svcMachines') loadSvcMachines();
   if (v === 'svcAmc') loadSvcAmc();
   if (v === 'svcReports') loadSvcReports();
+  if (v === 'stock') setTimeout(() => document.getElementById('stkQ').focus(), 50);
   if (v === 'quotes') loadQuotes();
   if (v === 'quoteSetup') loadQtSetup();
 }
@@ -4786,6 +4796,39 @@ async function svcSaveUserPerms(uid) {
   const p = {}; document.querySelectorAll('.upSel').forEach(s => { if (s.value !== '') p[s.dataset.k] = s.value === '1'; });
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
 }
+
+// ================= STOCK CHECK (Odoo) =================
+const STK = { t: null, seq: 0, sug: [] };
+async function stkCall(body) {
+  const r = await db.functions.invoke('odoo', { body });
+  if (r.error) { try { const j = JSON.parse(await r.error.context.text()); return { error: j.error || 'Could not reach the stock server' }; } catch (_) { return { error: 'Could not reach the stock server. Try again.' }; } }
+  return r.data || { error: 'Unexpected reply' };
+}
+function stkHideSug() { document.getElementById('stkSug').style.display = 'none'; }
+function stkTyped() {
+  clearTimeout(STK.t); const q = document.getElementById('stkQ').value.trim();
+  if (q.length < 3) { stkHideSug(); return; }
+  STK.t = setTimeout(async () => { const my = ++STK.seq, r = await stkCall({ action: 'suggest', q }); if (my !== STK.seq) return;
+    STK.sug = r.items || []; const el = document.getElementById('stkSug');
+    el.innerHTML = STK.sug.length ? `<div class="pickrow" style="padding:9px 12px;color:var(--brand);font-weight:650" onclick="stkSearch()">Show all matching “${esc(q)}”</div>` + STK.sug.map((s, i) => `<div class="pickrow" style="padding:9px 12px" onclick="stkPick(${i})"><span><b>${esc(s.name)}</b>${s.model ? `<div class="muted" style="font-size:11.5px">${esc(s.model)}</div>` : ''}</span></div>`).join('') : '<div class="muted" style="padding:10px 12px">No item with that name.</div>';
+    el.style.display = 'block'; }, 280);
+}
+function stkPick(i) { const s = STK.sug[i]; document.getElementById('stkQ').value = s.name; stkSearch([s.id], s.name); }
+async function stkSearch(ids, label) {
+  clearTimeout(STK.t); STK.seq++; stkHideSug();
+  const q = label || document.getElementById('stkQ').value.trim(), out = document.getElementById('stkOut');
+  if (!ids && q.length < 2) { out.innerHTML = '<div class="empty">Type at least 2 letters or digits.</div>'; return; }
+  out.innerHTML = '<div class="empty">Checking Odoo…</div>';
+  const r = await stkCall({ action: 'stock', q, ids });
+  if (r.error) { out.innerHTML = `<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`; return; }
+  const n = v => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }), items = r.items || [];
+  if (!items.length) { out.innerHTML = '<div class="empty">No item found with that name.</div>'; return; }
+  out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} item${items.length === 1 ? '' : 's'}${items.length >= 40 ? ' (first 40 – type more to narrow down)' : ''} · live from Odoo at ${new Date(r.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>` +
+    tbl(['Item', 'Category', 'Free to use', 'In warehouse', 'Reserved', 'Where'], items.map(it => [`<b>${esc(it.name)}</b>${it.model ? `<div class="muted" style="font-size:11.5px">${esc(it.model)}</div>` : ''}`, esc(it.category),
+      `<b style="font-size:17px;color:${it.free > 0 ? 'var(--green)' : 'var(--red)'}">${n(it.free)}</b> <span class="muted" style="font-size:11.5px">${esc(it.unit)}</span>`, n(it.on_hand), n(it.reserved),
+      it.places.length ? it.places.map(w => `<div style="font-size:12.5px;white-space:nowrap">${esc(w.warehouse)}${w.location ? ` <span class="muted">· ${esc(w.location)}</span>` : ''}: <b>${n(w.free)}</b> free${w.reserved ? ` <span class="muted">(${n(w.reserved)} reserved)</span>` : ''}</div>`).join('') : '<span class="muted">—</span>']));
+}
+document.addEventListener('click', e => { const s = document.getElementById('stkSug'); if (s && !e.target.closest('#stkSug') && e.target.id !== 'stkQ') s.style.display = 'none'; });
 
 // ================= QUOTATIONS: shared core (calc, document layout, Excel parser) =================
 // Pure functions – also run under Node for tests.
