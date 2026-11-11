@@ -316,6 +316,7 @@
       <button data-v="svcTickets" data-perm="svc.ticket.view_all" onclick="show('svcTickets')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 010 6v2a2 2 0 002 2h14a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg><span>Service tickets</span><span class="badge" id="svcBadge" style="display:none"></span></button>
       <button data-v="svcTechs" data-perm="svc.job.assign,svc.tracking.view,svc.job.view_all" onclick="show('svcTechs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg><span>Technicians</span></button>
       <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
+      <button data-v="svcWarranty" data-perm="svc.ticket.view_all" onclick="show('svcWarranty')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Warranty check</span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
       <div class="navlabel" data-perm="quote.create,quote.view_all,quote.master">Quotations</div>
@@ -711,6 +712,14 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= WARRANTY CHECK ================= -->
+    <div id="svcWarranty" class="view">
+      <div class="panel"><h2>Warranty check <span class="sub">live from Odoo · the invoice date is day 1 of the warranty</span></h2>
+        <div class="toolbar"><div class="seg" id="wcSeg"><button data-f="serial" class="active" onclick="wcMode('serial')">By serial number</button><button data-f="cust" onclick="wcMode('cust')">By customer (mobile, name, email)</button></div></div>
+        <div class="toolbar" style="max-width:680px"><input id="wcQ" autocomplete="off" style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')wcSearch()"><button class="btn" onclick="wcSearch()">Search</button></div>
+        <p class="hint" id="wcHint"></p>
+        <div id="wcOut" style="margin-top:14px"></div></div>
+    </div>
     <!-- ================= STOCK CHECK ================= -->
     <div id="stock" class="view">
       <div class="panel"><h2>Stock check <span class="sub">free to use right now, live from Odoo</span></h2>
@@ -1529,6 +1538,7 @@ function show(v) {
   if (v === 'svcMachines') loadSvcMachines();
   if (v === 'svcAmc') loadSvcAmc();
   if (v === 'svcReports') loadSvcReports();
+  if (v === 'svcWarranty') wcMode(WC.mode);
   if (v === 'stock') setTimeout(() => document.getElementById('stkQ').focus(), 50);
   if (v === 'quotes') loadQuotes();
   if (v === 'quoteSetup') loadQtSetup();
@@ -4795,6 +4805,49 @@ function svcUserPerms(uid) {
 async function svcSaveUserPerms(uid) {
   const p = {}; document.querySelectorAll('.upSel').forEach(s => { if (s.value !== '') p[s.dataset.k] = s.value === '1'; });
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
+}
+
+// ================= WARRANTY CHECK (Odoo) =================
+const WC = { mode: 'serial', inv: [] };
+function wcMode(m) {
+  WC.mode = m; document.querySelectorAll('#wcSeg button').forEach(b => b.classList.toggle('active', b.dataset.f === m));
+  const q = document.getElementById('wcQ'); q.value = ''; q.placeholder = m === 'serial' ? 'Machine serial number (full or part), e.g. 609PHSS016337' : 'Customer mobile number, name, email or invoice number';
+  document.getElementById('wcHint').textContent = m === 'serial' ? 'Shows the machine, the invoice it was billed on, days since billed and warranty left.' : 'Lists the customer’s invoices. Click an invoice to see its machines, serial numbers and warranty.';
+  document.getElementById('wcOut').innerHTML = ''; setTimeout(() => q.focus(), 50);
+}
+const wcBadge = w => w.status === 'in_warranty' ? `<span class="chip won" style="font-size:12.5px">In warranty · ${w.days_left} day${w.days_left === 1 ? '' : 's'} left</span>`
+  : w.status === 'out_of_warranty' ? `<span class="chip overdue" style="font-size:12.5px">Out of warranty · ended ${w.days_over} day${w.days_over === 1 ? '' : 's'} ago</span>` : '<span class="chip">Not billed yet</span>';
+const wcCust = c => c ? `<b>${esc(c.name || '')}</b><div class="muted" style="font-size:11.5px">${esc([c.phone, c.city].filter(Boolean).join(' · '))}${c.email ? '<br>' + esc(c.email) : ''}</div>` : '<span class="muted">—</span>';
+async function wcSearch() {
+  const q = document.getElementById('wcQ').value.trim(), out = document.getElementById('wcOut');
+  if (q.length < 3) { out.innerHTML = '<div class="empty">Type at least 3 characters.</div>'; return; }
+  out.innerHTML = '<div class="empty">Checking Odoo…</div>';
+  const r = await stkCall({ action: WC.mode === 'serial' ? 'warranty' : 'inv_search', q });
+  if (r.error) { out.innerHTML = `<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`; return; }
+  const items = r.items || [];
+  if (!items.length) { out.innerHTML = `<div class="empty">${WC.mode === 'serial' ? 'No machine found with that serial number.' : 'No invoice found for that customer.'}</div>`; return; }
+  if (WC.mode === 'serial') {
+    out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} machine${items.length === 1 ? '' : 's'}${items.length >= 25 ? ' (first 25 – type more of the serial)' : ''} · as on ${fmtD(r.today)}</div>` +
+      tbl(['Serial no.', 'Machine', 'Customer', 'Invoice', 'Days since billed', 'Warranty', 'Status'], items.map(w => [`<b>${esc(w.serial)}</b>`,
+        `${esc(w.product)}${w.model ? `<div class="muted" style="font-size:11.5px">${esc(w.model)}</div>` : ''}`, wcCust(w.customer),
+        w.invoice ? `<b>${esc(w.invoice.number)}</b><div class="muted" style="font-size:11.5px">${fmtD(w.invoice_date)}${w.sale_order ? ' · ' + esc(w.sale_order) : ''}</div>` : `<span class="muted">${w.sold ? 'Sold on ' + esc(w.sale_order) + ', invoice not posted' : 'Not sold – still in stock'}</span>`,
+        w.days_since != null ? `<b>${w.days_since}</b>` : '—', w.expires ? `${w.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(w.expires)}</div>` : `${w.months} months`, wcBadge(w)]));
+  } else {
+    WC.inv = items;
+    out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} invoice${items.length === 1 ? '' : 's'}${items.length >= 80 ? ' (latest 80)' : ''} · click one to see machines and serial numbers</div>` +
+      tbl(['Invoice', 'Date', 'Customer', 'Amount', 'Payment', 'Days since billed', ''], items.map((w, i) => [`<b>${esc(w.number)}</b><div class="muted" style="font-size:11.5px">${esc([w.origin, w.company].filter(Boolean).join(' · '))}</div>`, fmtD(w.invoice_date), wcCust(w.customer),
+        rs(Math.round(w.amount || 0)), w.payment_state === 'paid' ? '<span class="chip won">Paid</span>' : w.payment_state === 'partial' ? `<span class="chip">Part paid</span><div class="muted" style="font-size:11.5px">due ${rs(Math.round(w.due || 0))}</div>` : `<span class="chip overdue">Not paid</span>`,
+        `<b>${w.days_since ?? '—'}</b>`, `<a href="#" onclick="wcInvoice(${i});return false">Machines &amp; warranty</a>`]), i => `style="cursor:pointer" onclick="wcInvoice(${i})"`);
+  }
+}
+async function wcInvoice(i) {
+  const w = WC.inv[i]; svcModal('<div class="empty">Reading the invoice from Odoo…</div>', true);
+  const r = await stkCall({ action: 'inv_detail', id: w.id });
+  if (r.error) { svcModal(`<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`, true); return; }
+  svcModal(`<h3 style="margin-bottom:4px">Invoice ${esc(r.number)}</h3><div class="muted" style="margin-bottom:12px">${fmtD(r.invoice_date)} · ${esc((w.customer || {}).name || '')}${(w.customer || {}).phone ? ' · ' + esc(w.customer.phone) : ''} · billed ${w.days_since} day${w.days_since === 1 ? '' : 's'} ago</div>
+    ${tbl(['Item', 'Qty', 'Serial numbers', 'Warranty', 'Status'], (r.lines || []).map(l => [`<b>${esc(l.product)}</b>${l.model ? `<div class="muted" style="font-size:11.5px">${esc(l.model)}</div>` : ''}`, Number(l.qty || 0).toLocaleString('en-IN'),
+      l.serials.length ? l.serials.map(esc).join('<br>') : `<span class="muted">${l.tracked ? 'not delivered yet' : '—'}</span>`, `${l.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(l.expires)}</div>`, wcBadge(l)]))}
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Close</button></div>`, true);
 }
 
 // ================= STOCK CHECK (Odoo) =================
