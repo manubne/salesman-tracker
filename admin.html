@@ -271,13 +271,13 @@
       <button data-v="travel" data-roles="admin,head,manager" onclick="show('travel')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M8 22v-6h8v6"/><circle cx="12" cy="10" r="2"/></svg><span>Travel &amp; fuel</span><span class="badge" id="claimBadge" style="display:none"></span></button>
       <button data-v="attendance" data-roles="admin,head,manager" onclick="show('attendance')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Attendance</span></button>
 
-      <div class="navlabel" data-roles="admin,head,manager">Sales</div>
-      <button data-v="pipeline" data-roles="admin,head,manager" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
-      <button data-v="billing" data-roles="admin,head,manager" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
+      <div class="navlabel" data-roles="admin,head,manager,coordinator,telecaller">Sales</div>
+      <button data-v="pipeline" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
+      <button data-v="billing" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
       <button data-v="payments" data-roles="admin,head,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
-      <button data-v="customers" data-roles="admin,head,manager" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
-      <button data-v="orders" data-roles="admin,head,manager" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
-      <button data-v="followups" data-roles="admin,head,manager" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
+      <button data-v="customers" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
+      <button data-v="orders" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
+      <button data-v="followups" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
       <button data-v="reqs" data-roles="admin,head,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
 
       <div class="navlabel" data-roles="admin,head,manager">Insights</div>
@@ -894,7 +894,7 @@
             </div>
             <div class="toolbar"><input id="lvNote" placeholder="Add a note or call summary…" style="flex:1" onkeydown="if(event.key==='Enter')addLeadNote()"><button class="btn sec sm" onclick="addLeadNote()">Add note</button></div>
             <div id="lvMsg"></div>
-            <div style="display:flex;align-items:center;margin:18px 0 6px"><h4 style="font-size:13px;flex:1">Deals</h4><button class="btn sm" onclick="openOppForm(null,{lead_id:_lv.id})" data-roles="admin,head,manager">+ Create deal</button></div>
+            <div style="display:flex;align-items:center;margin:18px 0 6px"><h4 style="font-size:13px;flex:1">Deals</h4><button class="btn sm" onclick="openOppForm(null,{lead_id:_lv.id})" data-roles="admin,head,manager,coordinator,telecaller">+ Create deal</button></div>
             <div id="lvDeals"></div>
           </div>
         </div>
@@ -1038,6 +1038,38 @@
   <div class="modal" style="max-width:820px">
     <div class="mh"><h3 id="idTitle">Incentive details</h3><button class="xbtn" onclick="closeModal('incDetBg')">×</button></div>
     <div class="mb" id="idBody"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="billFormBg" onclick="if(event.target===this)closeModal('billFormBg')">
+  <div class="modal" style="max-width:820px">
+    <div class="mh"><h3 id="bfTitle">Invoice request</h3><button class="xbtn" onclick="closeModal('billFormBg')">×</button></div>
+    <div class="mb">
+      <div class="formgrid">
+        <div class="field"><label>Requesting for *</label><select id="bfReq"></select></div>
+        <div class="field"><label>Lead source *</label><select id="bfSrc"></select></div>
+        <div class="field"><label>Order category *</label><select id="bfCat" onchange="if(this.value==='supply_installation'&&document.getElementById('bfInst').value==='no'){document.getElementById('bfInst').value='yes';bfInstChanged()}"></select></div>
+        <div class="field"><label>Invoice type *</label><select id="bfInv"></select></div>
+        <div class="field"><label>Payment received? *</label><select id="bfPay"></select></div>
+        <div class="field"><label>Payment details</label><input id="bfPayD" placeholder="UTR no / cheque no / credit days"></div>
+        <div class="field"><label>Contact person name *</label><input id="bfContact"></div>
+        <div class="field"><label>Contact number *</label><input id="bfPhone" inputmode="tel"></div>
+        <div class="field"><label>Email ID *</label><input id="bfEmail" type="email"></div>
+        <div class="field"><label>Firm name</label><input id="bfFirm"></div>
+        <div class="field"><label>GST (if any)</label><input id="bfGst" style="text-transform:uppercase"></div>
+        <div class="field"><label>Delivery date *</label><input id="bfDel" type="date"></div>
+        <div class="field" style="grid-column:1/-1"><label>Billing &amp; delivery address</label><textarea id="bfAddr" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label>Machine details *</label><textarea id="bfMachine" rows="2"></textarea></div>
+        <div class="field"><label>Installation also required? *</label><select id="bfInst" onchange="bfInstChanged()"></select></div>
+        <div class="field" id="bfInstDateWrap"><label>Installation date *</label><input id="bfInstDate" type="date"></div>
+        <div class="field"><label>Delivery location</label><input id="bfLoc"></div>
+        <div class="field"><label>Delivery location contact number</label><input id="bfLocC" inputmode="tel"></div>
+        <div class="field" style="grid-column:1/-1"><label>Any other comments</label><textarea id="bfCom" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label>Attach documents (GST certificate, drawings… up to 5)</label><input id="bfFiles" type="file" multiple accept="image/*,.pdf"></div>
+      </div>
+      <p class="hint">The deal's PO copy, payment proof and latest quotation are attached automatically. It is emailed to Accounts (managers in CC; installation team when installation is required).</p>
+      <div style="margin-top:12px"><button class="btn" id="bfSave" onclick="submitBillForm()">Submit &amp; email to Accounts</button> <span id="bfMsg"></span></div>
+    </div>
   </div>
 </div>
 
@@ -1217,6 +1249,8 @@ const daysAgoStr = n => { const d = new Date(Date.now() - n*864e5); return d.get
 const isStaff = () => ME && ['admin','head','manager','coordinator','telecaller'].includes(ME.role);
 const isOwner = () => ME && ['admin','head'].includes(ME.role);
 const isManager = () => ME && ['admin','head','manager'].includes(ME.role);
+const isOfficeRole = () => ME && ['coordinator','telecaller'].includes(ME.role);
+const canRunDeals = () => isManager() || isOfficeRole();   // create deals, set owner, mark won, invoice requests
 function chip(s, label) { return `<span class="chip ${esc(s)}">${esc(label || STATUS_LABEL[s] || String(s||'').replace(/_/g,' '))}</span>`; }
 function flagsHtml(fl) { return (fl||[]).map(f => `<span class="flag ${f==='location_saved'?'info':''}">${esc(FLAG_LABEL[f]||f)}</span>`).join('') || '<span class="muted">—</span>'; }
 function realFlags(fl) { return (fl||[]).filter(f => f !== 'location_saved'); }
@@ -1337,6 +1371,10 @@ async function init() {
     loadBilling();
     loadPayments();
     Promise.all([loadInvites(), loadVisits(), loadCustomers(), loadReqs(), loadAttendance(), loadOrders(), loadFollowUps()]).then(loadOverview);
+  } else if (isOfficeRole()) {
+    loadBilling();
+    Promise.all([loadCustomers(), loadOrders(), loadFollowUps()]);
+    show('pipeline');
   } else {
     show('leads');
   }
@@ -1396,6 +1434,7 @@ async function saveSetting(key, value, msgId) {
 }
 const NOTIF_CATS = [
   ['lead_assigned', 'New lead assigned', 'Salesperson the lead is assigned to'],
+  ['deal_assigned', 'Deal assigned', 'Salesperson the deal is assigned to'],
   ['quote_request', 'Quote request', 'Quote team member assigned'],
   ['quote_ready', 'Quotation ready', 'Salesperson who owns the deal'],
   ['payment_submitted', 'Payment to verify', 'Branch manager, Head, Admin'],
@@ -2451,7 +2490,7 @@ async function openOpp(id) {
       <button class="btn sm sec" onclick="moveStage(_ov.id, document.getElementById('ovStage').value)">Update stage</button>
       <button class="btn sm" style="background:linear-gradient(135deg,#16A34A,#22C55E)" onclick="openWon(_ov.id)">Mark Won</button>
       <button class="btn sm danger" onclick="openLost(_ov.id)">Lost</button></div>`;
-    if (isManager()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
+    if (canRunDeals()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
       <label class="muted" style="font-size:12px">Chance %</label><input id="ovProb" class="inp" type="number" min="0" max="100" value="${o.probability ?? ''}" style="width:80px">
       <button class="btn sm sec" onclick="saveOppMeta()">Save</button></div>`;
   } else if (isOwner()) {
@@ -2512,7 +2551,7 @@ function openOppForm(o, preset) {
   ofLinkChanged(preset.lead_id || preset.customer_id);
   document.getElementById('ofCat').innerHTML = '<option value="">— choose —</option>' + _cats.filter(c => c.active || (o && c.id === o.category_id)).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   document.getElementById('ofOwner').innerHTML = repOpts(o ? ownerOf(o) : '', '— me —');
-  document.getElementById('ofOwner').disabled = !isManager();
+  document.getElementById('ofOwner').disabled = !canRunDeals();
   document.getElementById('ofStage').innerHTML = ['qualified', 'demo', 'need_quote', 'quoted', 'negotiation'].map(s => `<option value="${s}">${STAGES[s]}</option>`).join('');
   const v = (id, x) => document.getElementById(id).value = x ?? '';
   v('ofName', o?.title); v('ofCat', o?.category_id); v('ofValue', o?.est_value); v('ofQty', o?.qty); v('ofSqft', o?.sqft);
@@ -2532,7 +2571,7 @@ function ofPartyChanged() {
   const l = cache.leads.find(x => x.id === document.getElementById('ofParty').value); if (!l) return;
   const v = (id, x) => { const el = document.getElementById(id); if (!el.value && x != null) el.value = x; };
   v('ofName', l.requirement); v('ofCat', l.category_id); v('ofValue', l.est_value);
-  if (l.assigned_to && isManager()) document.getElementById('ofOwner').value = l.assigned_to;
+  if (l.assigned_to && canRunDeals()) document.getElementById('ofOwner').value = l.assigned_to;
 }
 async function saveOpp() {
   const g = id => document.getElementById(id).value.trim(), num = id => g(id) === '' ? null : Number(g(id).replace(/,/g, ''));
@@ -2547,7 +2586,7 @@ async function saveOpp() {
   const btn = document.getElementById('ofSave'); btn.disabled = true;
   let res;
   if (_ofEdit) {
-    if (isManager() && owner && owner !== ownerOf(_ofEdit)) d.owner_id = owner;
+    if (canRunDeals() && owner && owner !== ownerOf(_ofEdit)) d.owner_id = owner;
     res = await db.from('orders').update(d).eq('id', _ofEdit.id).select().single();
   } else {
     const t = g('ofLinkType'), pid = g('ofParty');
@@ -3146,15 +3185,68 @@ async function setBillingStatus(status) {
   if (error) { flash('bvMsg', error.message, false); return; }
   await loadBilling(); openBilling(_brView.id);
 }
+let _bfOrder = null;
+function bfInstChanged() { document.getElementById('bfInstDateWrap').style.display = document.getElementById('bfInst').value === 'no' ? 'none' : ''; }
+function openBillForm(orderId) {
+  const o = cache.orders.find(x => x.id === orderId); if (!o || o.stage !== 'won') { alert('Invoice requests are for won deals only'); return; }
+  _bfOrder = o;
+  const p = party(o), opts = (m, sel) => '<option value="">Choose…</option>' + Object.entries(m).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  const srcs = (S('billing', {}).lead_sources || []).length ? S('billing', {}).lead_sources : ['Indiamart', 'JustDial', 'Google, FB or Instagram', 'LG Employee', 'Existing Customer', 'Cold Call', 'Office walkin', 'Others'];
+  const src = String(o.source || o.leads?.source || '').toLowerCase();
+  const guess = srcs.find(s => src && (s.toLowerCase().includes(src) || src.includes(s.toLowerCase().split(' ')[0])));
+  document.getElementById('bfTitle').textContent = 'Invoice request — ' + (p.name || 'Deal') + (o.po_number ? ' · PO ' + o.po_number : '');
+  document.getElementById('bfReq').innerHTML = opts(BR.req, '');
+  document.getElementById('bfSrc').innerHTML = '<option value="">Choose…</option>' + srcs.map(s => `<option ${s === guess ? 'selected' : ''}>${esc(s)}</option>`).join('');
+  document.getElementById('bfCat').innerHTML = opts(BR.cat, '');
+  document.getElementById('bfInv').innerHTML = opts(BR.inv, '');
+  document.getElementById('bfPay').innerHTML = opts(BR.pay, (o.advance_amount || 0) > 0 ? 'yes' : '');
+  document.getElementById('bfInst').innerHTML = Object.entries(BR.inst).map(([k, v]) => `<option value="${k}" ${k === 'no' ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  const set = (id, v) => document.getElementById(id).value = v || '';
+  set('bfPayD', [o.payment_mode, o.payment_ref].filter(Boolean).join(' · ')); set('bfContact', p.name); set('bfPhone', p.mobile); set('bfEmail', p.email || o.leads?.email);
+  set('bfFirm', p.company); set('bfGst', ''); set('bfAddr', p.address); set('bfDel', o.delivery_date);
+  set('bfMachine', [o.order_categories?.name, o.title, o.qty ? 'Qty ' + o.qty : ''].filter(Boolean).join(' · '));
+  set('bfInstDate', ''); set('bfLoc', ''); set('bfLocC', ''); set('bfCom', ''); document.getElementById('bfFiles').value = '';
+  bfInstChanged(); document.getElementById('bfMsg').innerHTML = '';
+  closeModal('oppViewBg'); openModal('billFormBg');
+}
+async function submitBillForm() {
+  const g = id => (document.getElementById(id).value || '').trim(), o = _bfOrder;
+  const need = [['bfReq', 'Requesting for'], ['bfSrc', 'Lead source'], ['bfCat', 'Order category'], ['bfInv', 'Invoice type'], ['bfPay', 'Payment received?'],
+    ['bfContact', 'Contact person'], ['bfPhone', 'Contact number'], ['bfEmail', 'Email ID'], ['bfDel', 'Delivery date'], ['bfMachine', 'Machine details']]
+    .filter(([id]) => !g(id)).map(x => x[1]);
+  if (g('bfInst') !== 'no' && !g('bfInstDate')) need.push('Installation date');
+  if (need.length) { flash('bfMsg', 'Please fill: ' + need.join(', '), false); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(g('bfEmail'))) { flash('bfMsg', 'Enter a valid email', false); return; }
+  const gst = g('bfGst').toUpperCase();
+  if (gst && !/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gst)) { flash('bfMsg', 'GST number looks wrong (15 characters)', false); return; }
+  const files = [...document.getElementById('bfFiles').files].slice(0, 5);
+  const btn = document.getElementById('bfSave'); btn.disabled = true; flash('bfMsg', 'Submitting…');
+  try {
+    const n = v => v || null;
+    const { data: row, error } = await db.from('billing_requests').insert({ order_id: o.id, created_by: ME.id,
+      requesting_for: g('bfReq'), lead_source: g('bfSrc'), order_category: g('bfCat'), invoice_type: g('bfInv'), payment_received: g('bfPay'),
+      payment_details: n(g('bfPayD')), contact_name: g('bfContact'), contact_number: g('bfPhone'), email: g('bfEmail'), firm_name: n(g('bfFirm')),
+      gst_number: n(gst), billing_address: n(g('bfAddr')), machine_details: g('bfMachine'), delivery_date: g('bfDel'), installation_required: g('bfInst'),
+      installation_date: g('bfInst') === 'no' ? null : g('bfInstDate'), delivery_location: n(g('bfLoc')), delivery_contact: n(g('bfLocC')), comments: n(g('bfCom')) }).select().single();
+    if (error) throw error;
+    for (const f of files) await uploadMedia(f, 'billing', row.id, 'document');
+    const { data: r, error: e2 } = await db.functions.invoke('billing-request-email', { body: { id: row.id } });
+    const errTxt = e2 ? (await e2.context?.json?.().catch(() => null))?.error || e2.message : r?.error;
+    flash('bfMsg', errTxt ? `Saved as #${row.ref_no}, but the email failed: ${errTxt}. You can resend it from Billing requests.` : `Request #${row.ref_no} emailed to Accounts ✓`, !errTxt);
+    loadBilling();
+    if (!errTxt) setTimeout(() => closeModal('billFormBg'), 1500);
+  } catch (e) { flash('bfMsg', e.message || String(e), false); }
+  finally { btn.disabled = false; }
+}
 async function loadOppBilling(orderId) {
   const el = document.getElementById('ovBilling'); if (!el) return;
   const o = cache.orders.find(x => x.id === orderId);
   if (!o || o.stage !== 'won') { el.innerHTML = ''; return; }
   const { data } = await db.from('billing_requests').select('id, ref_no, requesting_for, status, created_at, installation_required').eq('order_id', orderId).order('created_at', { ascending: false });
-  el.innerHTML = `<h4 style="font-size:13px;margin:16px 0 6px">Billing requests</h4>` + ((data || []).length
+  el.innerHTML = `<div style="display:flex;align-items:center;margin:16px 0 6px"><h4 style="font-size:13px;flex:1">Invoice / billing requests</h4><button class="btn sm" onclick="openBillForm('${orderId}')">+ Raise invoice request</button></div>` + ((data || []).length
     ? data.map(b => `<div class="rowlink" style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #EEF1F7;cursor:pointer" onclick="closeModal('oppViewBg');openBilling('${b.id}')">
         <b>#${b.ref_no}</b><span style="flex:1">${esc(BR.req[b.requesting_for])}${b.installation_required !== 'no' ? ' · installation' : ''}</span>${chip(BR.st[b.status]?.[0] || 'pending', BR.st[b.status]?.[1] || b.status)}</div>`).join('')
-    : '<span class="muted">None yet — the salesperson fills it from the app after marking Won.</span>');
+    : '<span class="muted">None yet — raise one here, or the salesperson can from the app.</span>');
 }
 // settings
 function renderBillingSettings() {
