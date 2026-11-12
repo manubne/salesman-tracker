@@ -317,6 +317,7 @@
       <button data-v="svcTickets" data-perm="svc.ticket.view_all" onclick="show('svcTickets')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 010 6v2a2 2 0 002 2h14a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg><span>Service jobs</span><span class="badge" id="svcBadge" style="display:none"></span></button>
       <button data-v="svcOdoo" data-perm="svc.ticket.view_all" onclick="show('svcOdoo')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg><span>Odoo tickets</span></button>
       <button data-v="svcTechs" data-perm="svc.job.assign,svc.tracking.view,svc.job.view_all" onclick="show('svcTechs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg><span>Technicians</span></button>
+      <button id="svcMapNav" data-v="mapv" style="display:none" onclick="show('mapv')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Live map &amp; routes</button>
       <button data-v="svcWarranty" data-perm="svc.ticket.view_all" onclick="show('svcWarranty')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Warranty check</span></button>
       <button data-v="svcComm" data-perm="svc.ticket.view_all,svc.billing" onclick="show('svcComm')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Commissioning reports</span></button>
       <button data-v="svcBilling" data-perm="svc.billing,svc.warranty.override,svc.job.assign" onclick="show('svcBilling')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Service billing</span><span class="badge" id="sbBadge" style="display:none"></span></button>
@@ -407,6 +408,7 @@
           <div class="seg" id="mapMode">
             <button class="active" data-m="live" onclick="setMapMode('live')">Live team</button><button data-m="route" onclick="setMapMode('route')">Route replay</button><button data-m="visits" onclick="setMapMode('visits')">Visits</button>
           </div>
+          <select id="mapTeam" style="display:none" onchange="fillRouteUsers(); if (_mapMode === 'live') loadLive()"><option value="">Sales + service</option><option value="sales">Sales team</option><option value="service">Service team</option></select>
           <span id="mmLive" style="display:inline-flex;gap:10px;align-items:center"><span class="muted" id="liveUpd"></span><button class="btn sec sm" onclick="loadLive()">Refresh</button>
             <span class="muted" style="font-size:12px">● green = updated &lt; 20 min · ● orange = 20–60 min · ● grey = older / off duty · ● red = fake GPS</span></span>
           <span id="mmRoute" style="display:none;gap:8px;align-items:center"><select id="routeUser"></select> <input type="date" id="routeDate"> <button class="btn" onclick="loadRoute()">Show route</button></span>
@@ -1404,6 +1406,12 @@ const daysAgoStr = n => { const d = new Date(Date.now() - n*864e5); return d.get
 const isStaff = () => ME && ['admin','head','manager','coordinator','telecaller'].includes(ME.role);
 const isOwner = () => ME && ['admin','head'].includes(ME.role);
 const isManager = () => ME && ['admin','head','manager'].includes(ME.role);
+const canTrack = () => isManager() || can('svc.tracking.view');
+const svcOnlyTrack = () => !isManager() && can('svc.tracking.view');   // service manager: sees the service team only
+const isSvcUser = u => !!u && (['technician', 'service_manager'].includes(u.role) || (u.teams || []).includes('service'));
+const mapTeam = () => svcOnlyTrack() ? 'service' : ((document.getElementById('mapTeam') || {}).value || '');
+const inMapTeam = uid => { const t = mapTeam(); if (!t) return true; const sv = isSvcUser(cache.users.find(x => x.id === uid)); return t === 'service' ? sv : !sv; };
+const trackOpts = (sel, blank) => opts(cache.users.filter(u => u.active && inBranch(u.id) && (u.role === 'sales' || (isSvcUser(u) && u.role !== 'service_manager')) && inMapTeam(u.id)).map(u => ({ v: u.id, l: u.name || u.mobile })), sel, blank);
 const isOfficeRole = () => ME && ['coordinator','telecaller'].includes(ME.role);
 const canRunDeals = () => isManager() || isOfficeRole();   // create deals, set owner, mark won, invoice requests
 function chip(s, label) { return `<span class="chip ${esc(s)}">${esc(label || STATUS_LABEL[s] || String(s||'').replace(/_/g,' '))}</span>`; }
@@ -1520,6 +1528,9 @@ async function init() {
   document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
   document.querySelectorAll('[data-perm]').forEach(el => { el.style.display = el.dataset.perm.split(',').some(can) ? '' : 'none'; });
   document.getElementById('topAddLead').style.display = isStaff() ? '' : 'none';
+  document.getElementById('svcMapNav').style.display = svcOnlyTrack() ? '' : 'none';
+  document.getElementById('mapTeam').style.display = isManager() ? '' : 'none';
+  if (svcOnlyTrack()) document.querySelectorAll('#mapMode button').forEach(b => { if (b.dataset.m === 'visits') b.style.display = 'none'; else if (b.dataset.m === 'live') b.textContent = 'Live technicians'; });
   svcBadge(); qrSubscribe(); sbBadge();
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
@@ -3549,7 +3560,7 @@ async function loadMap() {
   fitTo(pts, 40);
 }
 let _routeLayer = [];
-function fillRouteUsers() { const el = document.getElementById('routeUser'); const cur = el.value; el.innerHTML = repOpts(cur, '— salesperson —'); if (!document.getElementById('routeDate').value) document.getElementById('routeDate').value = todayStr(); }
+function fillRouteUsers() { const el = document.getElementById('routeUser'); const cur = el.value; el.innerHTML = trackOpts(cur, svcOnlyTrack() ? '— technician —' : '— person —'); if (!document.getElementById('routeDate').value) document.getElementById('routeDate').value = todayStr(); }
 // ---------- live map, route replay (Phase 3) ----------
 let _mapMode = 'live', _liveTimer = null, _liveMarkers = [], _liveFitted = 0;
 const istDayStart = d => new Date(d + 'T00:00:00+05:30');
@@ -3563,7 +3574,7 @@ function setMapMode(m) {
   clearMapLayers();
   document.getElementById('mapSide').innerHTML = '';
   if (m === 'live') loadLive(); else if (m === 'visits') loadMap();
-  else document.getElementById('mapSide').innerHTML = '<div class="empty">Pick a salesperson and a date, then “Show route”.</div>';
+  else document.getElementById('mapSide').innerHTML = '<div class="empty">Pick a person and a date, then “Show route”.</div>';
 }
 function clearMapLayers() {
   markers.forEach(x => x.remove()); markers = [];
@@ -3581,15 +3592,15 @@ function liveColor(r) {
   return m <= 20 ? '#16A34A' : '#D97706';
 }
 async function loadLive() {
-  if (!isManager()) return;
+  if (!canTrack()) return;
   const { data, error } = await db.rpc('live_reps');
   if (error) { document.getElementById('mapSide').innerHTML = `<div class="err">${esc(error.message)}</div>`; return; }
-  const rows = (data || []).filter(r => !HIDDEN_IDS.has(r.user_id) && (r.role === 'sales' || r.at) && inBranch(r.user_id));
+  const rows = (data || []).filter(r => !HIDDEN_IDS.has(r.user_id) && (['sales', 'technician'].includes(r.role) || r.at) && inBranch(r.user_id) && inMapTeam(r.user_id));
   const onDuty = rows.filter(r => r.day_start_at && !r.day_end_at);
   const fresh = onDuty.filter(r => minsAgo(r.at) != null && minsAgo(r.at) <= 20);
   const lowBat = onDuty.filter(r => r.battery != null && r.battery < 20);
   document.getElementById('liveCards').innerHTML =
-    kpi(onDuty.length + ' / ' + rows.filter(r => r.role === 'sales').length, 'On duty now', 'blue', '👤') +
+    kpi(onDuty.length + ' / ' + rows.filter(r => ['sales', 'technician'].includes(r.role)).length, 'On duty now', 'blue', '👤') +
     kpi(onDuty.filter(r => r.tracking_on).length, 'Tracking on', 'teal', '📡') +
     kpi(fresh.length, 'Updated in last 20 min', 'green', '✓') +
     kpi(onDuty.length - fresh.length, 'Not updating', onDuty.length - fresh.length ? 'red' : 'green', '⚠') +
@@ -3608,7 +3619,7 @@ async function loadLive() {
         ${r.battery != null ? ` · <span class="${r.battery < 20 ? 'stale' : ''}">🔋 ${r.battery}%</span>` : ''}${r.pings_today ? ` · ${r.pings_today} points today` : ''}
         ${r.day_start_at && !r.day_end_at && !r.tracking_on ? ' · <span class="stale">tracking off</span>' : ''}${r.mock ? ' · <span class="stale">fake GPS</span>' : ''}</div>
       <div style="margin:6px 0 0 18px"><a href="#" onclick="event.stopPropagation();routeFor('${r.user_id}');return false" style="font-size:12px">Today's route →</a></div></div>`;
-  }).join('') || '<div class="empty">No salespeople yet.</div>';
+  }).join('') || '<div class="empty">Nobody to show yet. People appear here after they tap “Start day” in the app.</div>';
   // markers
   if (!map) await initMap(); if (!map) return;
   if (_mapMode !== 'live') return;
@@ -3649,7 +3660,7 @@ const KM_METHOD = { road: 'road-snapped', live: 'live estimate · exact km tonig
 async function loadRoute() {
   if (!map) await initMap(); if (!map) return;
   const uid = document.getElementById('routeUser').value, d = document.getElementById('routeDate').value;
-  if (!uid || !d) { alert('Pick a salesperson and date'); return; }
+  if (!uid || !d) { alert('Pick a person and date'); return; }
   clearMapLayers();
   const s = istDayStart(d), e = new Date(s.getTime() + 864e5);
   const [data, { data: vs }, { data: tr }, { data: tp }] = await Promise.all([
