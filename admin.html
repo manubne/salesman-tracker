@@ -274,7 +274,7 @@
 <div id="noAccess" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
   <div class="panel" style="max-width:420px;text-align:center">
     <h2 style="justify-content:center">Use the mobile app</h2>
-    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNE Sales app on their phone.</p>
+    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the quote team, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNE Sales app on their phone.</p>
     <button class="btn" onclick="logout()">Sign out</button>
   </div>
 </div>
@@ -299,6 +299,7 @@
 
       <div class="navlabel" data-roles="admin,head,manager,coordinator,telecaller">Sales</div>
       <button data-v="stock" onclick="show('stock')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>Stock check</span></button>
+      <button data-v="quoteReqs" onclick="show('quoteReqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Quote requests</span><span class="badge" id="qrBadge" style="display:none"></span></button>
       <button data-v="pipeline" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
       <button data-v="billing" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
       <button data-v="payments" data-roles="admin,head,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
@@ -319,9 +320,6 @@
       <button data-v="svcWarranty" data-perm="svc.ticket.view_all" onclick="show('svcWarranty')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Warranty check</span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
-      <div class="navlabel" data-perm="quote.create,quote.view_all,quote.master">Quotations</div>
-      <button data-v="quotes" data-perm="quote.create,quote.view_all" onclick="show('quotes')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Quotations</span></button>
-      <button data-v="quoteSetup" data-perm="quote.master" onclick="show('quoteSetup')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span>Quotation setup</span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
       <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
@@ -712,6 +710,15 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= QUOTE REQUESTS ================= -->
+    <div id="quoteReqs" class="view">
+      <div class="kpis" id="qrKpis"></div>
+      <div class="panel"><h2>Quote requests <span class="sub">sales asks, the quote team prepares the quotation and attaches it here</span></h2>
+        <div class="toolbar"><div class="seg" id="qrSeg"><button data-f="open" onclick="qrFilter('open')">To prepare</button><button data-f="ready" onclick="qrFilter('ready')">Ready to send</button><button data-f="sent" onclick="qrFilter('sent')">Sent</button><button data-f="all" onclick="qrFilter('all')">All</button></div>
+          <input id="qrQ" placeholder="Search customer, request no., salesperson…" oninput="renderQuoteReqs()" style="min-width:240px"><span style="flex:1"></span>
+          <button class="btn" onclick="qrForm()">+ Request a quote</button></div>
+        <div id="qrTbl"></div></div>
+    </div>
     <!-- ================= WARRANTY CHECK ================= -->
     <div id="svcWarranty" class="view">
       <div class="panel"><h2>Warranty check <span class="sub">live from Odoo · the invoice date is day 1 of the warranty</span></h2>
@@ -1476,7 +1483,7 @@ async function init() {
   document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
   document.querySelectorAll('[data-perm]').forEach(el => { el.style.display = el.dataset.perm.split(',').some(can) ? '' : 'none'; });
   document.getElementById('topAddLead').style.display = isStaff() ? '' : 'none';
-  svcBadge();
+  svcBadge(); qrSubscribe();
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
@@ -1498,7 +1505,7 @@ async function init() {
     Promise.all([loadCustomers(), loadOrders(), loadFollowUps()]);
     show('pipeline');
   } else if (!isStaff()) {
-    show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quotes' : 'svcTickets');
+    show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quoteReqs' : 'svcTickets');
   } else {
     show('leads');
   }
@@ -1540,6 +1547,7 @@ function show(v) {
   if (v === 'svcReports') loadSvcReports();
   if (v === 'svcWarranty') wcMode(WC.mode);
   if (v === 'stock') setTimeout(() => document.getElementById('stkQ').focus(), 50);
+  if (v === 'quoteReqs') loadQuoteReqs();
   if (v === 'quotes') loadQuotes();
   if (v === 'quoteSetup') loadQtSetup();
 }
@@ -4805,6 +4813,111 @@ function svcUserPerms(uid) {
 async function svcSaveUserPerms(uid) {
   const p = {}; document.querySelectorAll('.upSel').forEach(s => { if (s.value !== '') p[s.dataset.k] = s.value === '1'; });
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
+}
+
+// ================= QUOTE REQUESTS =================
+const QR = { list: [], filter: 'open', rt: null, items: [] };
+const QR_ST = { open: ['Open', 'pending'], in_progress: ['Being prepared', 'scheduled'], ready: ['Ready to send', 'won'], sent: ['Sent to client', 'done'], cancelled: ['Cancelled', 'lost'] };
+const qrChip = st => `<span class="chip ${(QR_ST[st] || [])[1] || ''}">${(QR_ST[st] || [st])[0]}</span>`;
+const qrDesk = () => can('quote.create');
+const qrMine = r => r.requested_by === ME.id || isStaff();
+function qrSubscribe() {
+  if (QR.rt) return; qrBadge();
+  QR.rt = db.channel('qr-web').on('postgres_changes', { event: '*', schema: 'public', table: 'quote_requests' }, () => { clearTimeout(QR.t); QR.t = setTimeout(() => { qrBadge(); if (document.getElementById('quoteReqs').classList.contains('active')) loadQuoteReqs(true); }, 500); }).subscribe();
+}
+async function qrBadge() {
+  const q = db.from('quote_requests').select('id', { count: 'exact', head: true });
+  const { count } = await (qrDesk() && !isStaff() ? q.in('status', ['open', 'in_progress']) : q.eq('status', qrDesk() ? 'open' : 'ready'));
+  const b = document.getElementById('qrBadge'); if (b) { b.style.display = count ? '' : 'none'; b.textContent = count; }
+}
+async function loadQuoteReqs(quiet) {
+  const { data, error } = await db.from('quote_requests').select('*').order('created_at', { ascending: false }).limit(1000);
+  if (error) { document.getElementById('qrTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  QR.list = data || []; renderQuoteReqs(); if (!quiet) qrBadge();
+}
+function qrFilter(f) { QR.filter = f; renderQuoteReqs(); }
+const qrItemsText = r => (r.items || []).map(i => `${i.qty || 1} × ${i.machine || ''}`).join(', ');
+function renderQuoteReqs() {
+  const L = QR.list, m0 = todayStr().slice(0, 7), n = st => L.filter(r => r.status === st).length;
+  document.getElementById('qrKpis').innerHTML = kpi(n('open'), 'Open requests', 'orange', '◎', "qrFilter('open')") + kpi(n('in_progress'), 'Being prepared', 'blue', '✎', "qrFilter('open')") +
+    kpi(n('ready'), 'Ready, not yet sent to client', 'green', '✓', "qrFilter('ready')") + kpi(L.filter(r => r.status === 'sent' && (r.sent_at || '').slice(0, 7) === m0).length, 'Sent this month', 'purple', '➜', "qrFilter('sent')");
+  const f = QR.filter, q = (document.getElementById('qrQ').value || '').toLowerCase();
+  document.querySelectorAll('#qrSeg button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  const rows = L.filter(r => (f === 'open' ? ['open', 'in_progress'].includes(r.status) : f === 'all' ? true : r.status === f) && (!q || `${r.req_no} ${r.customer_name} ${r.customer_mobile || ''} ${r.requested_by_name || ''} ${r.city || ''} ${qrItemsText(r)}`.toLowerCase().includes(q)));
+  document.getElementById('qrTbl').innerHTML = tbl(['Request', 'Customer', 'What is needed', 'Asked by', 'Needed by', 'Status', 'Quote'], rows.map(r => [`<b>${esc(r.req_no)}</b>${r.revision ? ` <span class="chip overdue">change ${r.revision}</span>` : ''}<div class="muted" style="font-size:11.5px">${fmtDT(r.created_at)}</div>`,
+    `<b>${esc(r.customer_name)}</b><div class="muted" style="font-size:11.5px">${esc([r.customer_mobile, r.city].filter(Boolean).join(' · '))}</div>`,
+    `${esc(qrItemsText(r) || r.notes || '—').slice(0, 140)}<div class="muted" style="font-size:11.5px">${esc([r.system, r.brand].filter(Boolean).join(' · '))}</div>`, esc(r.requested_by_name || '—'),
+    r.needed_by ? `${fmtD(r.needed_by)}${['open', 'in_progress'].includes(r.status) && r.needed_by < todayStr() ? '<div style="color:var(--red);font-size:11.5px;font-weight:650">overdue</div>' : ''}` : '—',
+    qrChip(r.status) + (r.taken_by_name && r.status === 'in_progress' ? `<div class="muted" style="font-size:11.5px">${esc(r.taken_by_name)}</div>` : ''),
+    r.file_path ? `<b>${r.quote_amount != null ? rs(Math.round(r.quote_amount)) : 'Attached'}</b><div class="muted" style="font-size:11.5px">${esc(r.quote_ref || r.file_name || '')}</div>` : '—']),
+    i => `style="cursor:pointer" onclick="qrOpen('${rows[i].id}')"`);
+}
+async function qrFileUrl(r) { const { data } = await db.storage.from('quotes').createSignedUrl(r.file_path, 7 * 24 * 3600, { download: r.file_name || true }); return data && data.signedUrl; }
+async function qrOpen(id) {
+  const r = QR.list.find(x => x.id === id) || (await db.from('quote_requests').select('*').eq('id', id).maybeSingle()).data; if (!r) return;
+  const open = ['open', 'in_progress'].includes(r.status), url = r.file_path ? await qrFileUrl(r) : null, digits = String(r.customer_mobile || '').replace(/\D/g, '').slice(-10);
+  const msg = `Dear Sir/Madam,\n\nPlease find our quotation${r.quote_ref ? ' ' + r.quote_ref : ''} here:\n${url || ''}\n\nRegards,\n${ME.name || ''}\nB N Enterprises`;
+  QR.cur = r;
+  svcModal(`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><h3 style="flex:1">${esc(r.req_no)} · ${esc(r.customer_name)}</h3>${qrChip(r.status)}</div>
+    <div class="muted" style="margin-bottom:10px">Asked by <b>${esc(r.requested_by_name || '—')}</b> on ${fmtDT(r.created_at)}${r.needed_by ? ' · needed by <b>' + fmtD(r.needed_by) + '</b>' : ''}${r.taken_by_name ? ' · prepared by ' + esc(r.taken_by_name) : ''}</div>
+    <div class="qtg2"><div><div class="ch">Customer</div><b>${esc(r.customer_name)}</b><br>${esc([r.customer_mobile, r.customer_email, r.city].filter(Boolean).join(' · ')) || '<span class="muted">no contact given</span>'}</div>
+      <div><div class="ch">Type</div>${esc([r.system, r.brand].filter(Boolean).join(' · ')) || '—'}</div></div>
+    <div class="ch" style="margin-top:12px">What is needed</div>
+    ${(r.items || []).length ? tbl(['Machine / item', 'Qty', 'Rate asked (₹)'], r.items.map(i => [esc(i.machine || ''), esc(i.qty ?? ''), i.rate ? Number(i.rate).toLocaleString('en-IN') : '—'])) : ''}
+    ${r.notes ? `<div style="background:#F8FAFE;border-radius:10px;padding:10px;margin-top:8px;white-space:pre-wrap">${esc(r.notes)}</div>` : ''}
+    ${r.revise_note ? `<div style="background:#FFF4E5;border-radius:10px;padding:10px;margin-top:8px"><b>Change asked (${r.revision}):</b> ${esc(r.revise_note)}</div>` : ''}
+    ${r.file_path ? `<div class="ch" style="margin-top:14px">Quotation</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><a class="btn sec" href="${esc(url || '#')}" target="_blank">⬇ ${esc(r.file_name || 'Download')}</a>
+        <span>${r.quote_ref ? 'Ref <b>' + esc(r.quote_ref) + '</b> · ' : ''}${r.quote_amount != null ? 'Value <b>' + rs(Math.round(r.quote_amount)) + '</b> · ' : ''}ready ${fmtDT(r.ready_at)}</span></div>${r.quote_note ? `<div class="muted" style="margin-top:6px">Note from quote team: ${esc(r.quote_note)}</div>` : ''}` : ''}
+    ${['ready', 'sent'].includes(r.status) && qrMine(r) ? `<div class="ch" style="margin-top:14px">Send to the client</div><div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" target="_blank" href="https://wa.me/${digits.length === 10 ? '91' + digits : ''}?text=${encodeURIComponent(msg)}" onclick="qrSent('${r.id}','whatsapp')">WhatsApp</a>
+        <a class="btn" href="mailto:${esc(r.customer_email || '')}?subject=${encodeURIComponent('Quotation ' + (r.quote_ref || '') + ' - B N Enterprises')}&body=${encodeURIComponent(msg)}" onclick="qrSent('${r.id}','email')">Email</a>
+        ${r.status === 'ready' ? `<button class="btn sec" onclick="qrSent('${r.id}','other')">Mark as sent</button>` : ''}<button class="btn sec" onclick="qrReopen('${r.id}')">Ask for changes</button></div>
+        <div class="hint">On the web these open WhatsApp or your email with a download link to the quotation (valid 7 days). To attach the file itself, download it first, or send from the phone app.${r.sent_at ? ' Sent ' + fmtDT(r.sent_at) + (r.sent_via ? ' by ' + esc(r.sent_via) : '') + '.' : ''}</div>` : ''}
+    ${open && qrDesk() ? `<div class="ch" style="margin-top:14px">${r.status === 'open' ? 'Prepare this quotation' : 'Attach the quotation'}</div>
+        ${r.status === 'open' ? `<button class="btn sec" onclick="qrTake('${r.id}')">I am preparing this</button><div class="hint">Lets the salesperson and the rest of the team see that it is being worked on.</div>` : ''}
+        <div class="qtg3" style="margin-top:8px"><div class="field"><label>Quotation file * <span class="muted">(PDF preferred)</span></label><input type="file" id="qrFile" accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png"></div>
+          <div class="field"><label>Quotation ref no.</label><input id="qrRef" value="${esc(r.quote_ref || '')}"></div><div class="field"><label>Total value ₹ (incl. GST)</label><input id="qrAmt" type="number" step="any" value="${r.quote_amount ?? ''}"></div></div>
+        <div class="field"><label>Note to the salesperson (optional)</label><input id="qrNote" value=""></div>
+        <button class="btn" id="qrSubBtn" onclick="qrSubmit('${r.id}')">Submit quotation</button>` : ''}
+    <div style="text-align:right;margin-top:14px">${open && qrMine(r) ? `<button class="btn danger" style="float:left" onclick="qrCancel('${r.id}')">Cancel request</button>` : ''}<button class="btn sec" onclick="closeModal('svcBg')">Close</button></div>`, true);
+}
+async function qrRpc(fn, args, okMsg) { const { error } = await db.rpc(fn, args); if (error) { qtToast(error.message, true); return false; } if (okMsg) qtToast(okMsg); await loadQuoteReqs(); return true; }
+async function qrTake(id) { if (await qrRpc('qr_take', { p_id: id }, 'Marked as being prepared')) qrOpen(id); }
+async function qrSubmit(id) {
+  const f = document.getElementById('qrFile').files[0]; if (!f) { qtToast('Choose the quotation file first', true); return; }
+  if (f.size > 20 * 1024 * 1024) { qtToast('The file is larger than 20 MB', true); return; }
+  const btn = document.getElementById('qrSubBtn'); btn.disabled = true; btn.textContent = 'Uploading…';
+  const path = `${id}/${Date.now()}_${f.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80)}`;
+  const up = await db.storage.from('quotes').upload(path, f, { contentType: f.type || 'application/octet-stream' });
+  if (up.error) { btn.disabled = false; btn.textContent = 'Submit quotation'; qtToast('Upload failed: ' + up.error.message, true); return; }
+  const amt = document.getElementById('qrAmt').value;
+  if (await qrRpc('qr_submit', { p_id: id, p_file_path: path, p_file_name: f.name, p_ref: document.getElementById('qrRef').value, p_amount: amt === '' ? null : Number(amt), p_note: document.getElementById('qrNote').value }, 'Quotation submitted – the salesperson has been notified')) closeModal('svcBg');
+  else { btn.disabled = false; btn.textContent = 'Submit quotation'; }
+}
+async function qrSent(id, via) { const r = QR.list.find(x => x.id === id); if (r && r.status === 'sent' && via !== 'other') return; await qrRpc('qr_sent', { p_id: id, p_via: via }, via === 'other' ? 'Marked as sent' : null); if (via === 'other') closeModal('svcBg'); }
+async function qrReopen(id) { const note = prompt('What should the quote team change?'); if (!note) return; if (await qrRpc('qr_reopen', { p_id: id, p_note: note }, 'Sent back to the quote team')) closeModal('svcBg'); }
+async function qrCancel(id) { const why = prompt('Why is this request cancelled? (optional)'); if (why === null) return; if (await qrRpc('qr_cancel', { p_id: id, p_reason: why }, 'Request cancelled')) closeModal('svcBg'); }
+async function qrForm() {
+  QR.items = [{ machine: '', qty: 1, rate: '' }]; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
+  svcModal(`<h3 style="margin-bottom:10px">Request a quote</h3>
+    <div class="field"><label>Customer <span class="muted">(pick from the list, or type a new name below)</span></label><input id="qfCustQ" list="qfCusts" placeholder="Search customer…" onchange="qrPickCust(this.value)"><datalist id="qfCusts">${custs.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist></div>
+    <div class="qtg2"><div class="field"><label>Customer name *</label><input id="qfName"></div><div class="field"><label>Mobile</label><input id="qfMob" maxlength="14" inputmode="numeric"></div>
+      <div class="field"><label>Email</label><input id="qfEmail" type="email"></div><div class="field"><label>City / site</label><input id="qfCity"></div></div>
+    <div class="qtg3"><div class="field"><label>Type</label><select id="qfSys"><option value="">—</option><option>VRF</option><option>DX / Split</option><option>Ductable</option><option>Service / AMC</option><option>Other</option></select></div>
+      <div class="field"><label>Brand</label><input id="qfBrand" list="qfBrands" placeholder="LG, Mitsubishi…"><datalist id="qfBrands">${(QT.brands || []).map(b => `<option value="${esc(b.name)}">`).join('')}<option value="LG"><option value="Mitsubishi"><option value="Toshiba-Carrier"></datalist></div>
+      <div class="field"><label>Needed by</label><input id="qfBy" type="date" min="${todayStr()}"></div></div>
+    <div class="ch">Machines needed</div><div id="qfItems"></div><button class="btn sec" onclick="qrItemAdd()">+ Add machine</button>
+    <div class="field" style="margin-top:10px"><label>Anything else the quote team should know</label><textarea id="qfNotes" rows="3" placeholder="Site details, installation scope, payment terms asked…"></textarea></div>
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="qrCreate()">Send request to quote team</button></div>`, true);
+  QR.cust = null; qrItemsRender();
+}
+function qrItemsRender() { document.getElementById('qfItems').innerHTML = QR.items.map((it, i) => `<div style="display:grid;grid-template-columns:1fr 90px 150px 28px;gap:8px;margin-bottom:8px"><input class="inp" placeholder="Machine / model, e.g. 2 TR 4-way cassette inverter" value="${esc(it.machine)}" oninput="QR.items[${i}].machine=this.value"><input class="inp" type="number" min="1" placeholder="Qty" value="${esc(it.qty)}" oninput="QR.items[${i}].qty=this.value"><input class="inp" type="number" placeholder="Rate asked ₹ (optional)" value="${esc(it.rate)}" oninput="QR.items[${i}].rate=this.value">${QR.items.length > 1 ? `<a class="qx" onclick="QR.items.splice(${i},1);qrItemsRender()">×</a>` : '<span></span>'}</div>`).join(''); }
+function qrItemAdd() { QR.items.push({ machine: '', qty: 1, rate: '' }); qrItemsRender(); }
+async function qrPickCust(v) { const c = (await svcCustomers()).find(x => svcCustLabel(x) === v); if (!c) return; QR.cust = c.id; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10); document.getElementById('qfCity').value = c.city || ''; }
+async function qrCreate() {
+  const v = id => document.getElementById(id).value.trim(), items = QR.items.filter(i => String(i.machine).trim()).map(i => ({ machine: String(i.machine).trim(), qty: Number(i.qty) || 1, rate: i.rate === '' ? null : Number(i.rate) }));
+  const { data, error } = await db.rpc('qr_create', { p: { customer_id: QR.cust, customer_name: v('qfName'), customer_mobile: v('qfMob'), customer_email: v('qfEmail'), city: v('qfCity'), system: v('qfSys'), brand: v('qfBrand'), needed_by: v('qfBy'), items, notes: v('qfNotes') } });
+  if (error) { qtToast(error.message, true); return; } closeModal('svcBg'); qtToast(`Request ${data.req_no} sent to the quote team`); loadQuoteReqs();
 }
 
 // ================= WARRANTY CHECK (Odoo) =================
