@@ -787,11 +787,11 @@
     <!-- ================= SERVICE ================= -->
     <div id="svcTickets" class="view">
       <div class="kpis" id="svcKpis"></div>
-      <div class="panel"><h2>Service tickets <span class="sub">complaints, installations and AMC visits</span></h2>
+      <div class="panel"><h2>Service jobs <span class="sub">every job here has its ticket in Odoo Helpdesk</span></h2>
         <div class="toolbar"><div class="seg" id="svcSeg"><button data-f="open" onclick="svcSetFilter('open')">Open</button><button data-f="unassigned" onclick="svcSetFilter('unassigned')">Not assigned</button><button data-f="overdue" onclick="svcSetFilter('overdue')">Overdue</button><button data-f="waiting" onclick="svcSetFilter('waiting')">Waiting</button><button data-f="done" onclick="svcSetFilter('done')">Resolved</button><button data-f="all" onclick="svcSetFilter('all')">All</button></div>
           <input id="svcQ" placeholder="Search ticket, customer, mobile, serial…" oninput="renderSvcTickets()" style="min-width:240px">
           <select id="svcCat" onchange="renderSvcTickets()"><option value="">All types</option><option value="breakdown">Breakdown</option><option value="installation">Installation</option><option value="preventive">Preventive</option><option value="complaint">Complaint</option><option value="demo">Demo</option><option value="other">Other</option></select>
-          <button class="btn" data-perm="svc.ticket.create" onclick="svcTicketForm()">+ New ticket</button></div>
+          <button class="btn" data-perm="svc.ticket.create" onclick="svcJobForm({})">+ New job</button></div>
         <div id="svcTicketTbl"></div></div>
     </div>
     <div id="svcTechs" class="view">
@@ -5049,7 +5049,7 @@ async function svcJobForm(pre) {
     <div class="field"><label>Details</label><textarea id="jfDesc" rows="3">${esc(pre.details || '')}</textarea></div>
     ${can('svc.job.assign') ? `<div class="qtg2"><div class="field"><label>Technician <span class="muted">(can be assigned later)</span></label><select id="jfTech"><option value="">— assign later —</option>${techs.map(t => `<option value="${t.user_id}">${esc(t.name)} · ${esc(svcW(t.status))}${t.open_jobs ? ' · ' + t.open_jobs + ' open' : ''}</option>`).join('')}</select></div>
       <div class="field"><label>Visit time</label><input type="datetime-local" id="jfWhen"></div></div>` : ''}
-    ${pre.odoo ? '' : '<label style="font-size:13px"><input type="checkbox" id="jfOdoo" checked> Also create the ticket in Odoo Helpdesk (Service team)</label>'}
+    ${pre.odoo ? '' : '<p class="hint" style="margin:0">The ticket is created in Odoo Helpdesk as well, so there is one ticket record.</p>'}
     <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="jfBtn" onclick="svcJobCreate()">${pre.odoo ? 'Create job' : 'Create job'}</button></div>`, true);
 }
 async function svcJobCreate() {
@@ -5059,7 +5059,7 @@ async function svcJobCreate() {
   btn.disabled = true; btn.textContent = 'Working…';
   try {
     let od = pre.odoo || null;
-    if (!od && document.getElementById('jfOdoo')?.checked) {
+    if (!od) {
       const r = await stkCall({ action: 'hd_create', subject: v('jfSubj'), details: v('jfDesc'), team: v('jfCat') === 'installation' ? 'Installation' : 'Service', partner_id: pre.partner_id || null, customer: v('jfName'), phone: v('jfMob'), email: pre.email || '',
         product: v('jfProd'), model: v('jfModel'), serial: v('jfSerial'), invoice_no: pre.invoice_no || '', invoice_id: pre.invoice_id || null, invoice_date: pre.invoice_date || '', coverage: covTxt, invoice_missing: !!pre.invoice_missing });
       if (r.error) throw new Error('Odoo ticket could not be created: ' + r.error);
