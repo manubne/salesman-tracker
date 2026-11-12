@@ -313,7 +313,8 @@
       <button data-v="incentives" data-roles="admin,head,manager" onclick="show('incentives')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89L17 22l-5-3-5 3 1.52-9.11"/></svg><span>Incentives &amp; scorecards</span></button>
 
       <div class="navlabel" data-perm="svc.ticket.view_all,svc.job.view_all,svc.amc.view,svc.reports,svc.machine.manage">Service</div>
-      <button data-v="svcTickets" data-perm="svc.ticket.view_all" onclick="show('svcTickets')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 010 6v2a2 2 0 002 2h14a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg><span>Service tickets</span><span class="badge" id="svcBadge" style="display:none"></span></button>
+      <button data-v="svcTickets" data-perm="svc.ticket.view_all" onclick="show('svcTickets')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 010 6v2a2 2 0 002 2h14a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg><span>Service jobs</span><span class="badge" id="svcBadge" style="display:none"></span></button>
+      <button data-v="svcOdoo" data-perm="svc.ticket.view_all" onclick="show('svcOdoo')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg><span>Odoo tickets</span></button>
       <button data-v="svcTechs" data-perm="svc.job.assign,svc.tracking.view,svc.job.view_all" onclick="show('svcTechs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg><span>Technicians</span></button>
       <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
       <button data-v="svcWarranty" data-perm="svc.ticket.view_all" onclick="show('svcWarranty')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Warranty check</span></button>
@@ -709,6 +710,16 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= ODOO HELPDESK TICKETS ================= -->
+    <div id="svcOdoo" class="view">
+      <div class="panel"><h2>Odoo tickets <span class="sub">tickets stay in Odoo Helpdesk – assign a technician here and the ticket is updated there</span></h2>
+        <div class="toolbar"><select id="otScope" onchange="loadOdooTickets()"><option value="open">Open tickets</option><option value="all">All tickets</option></select>
+          <select id="otTeam" onchange="loadOdooTickets()"><option value="">All teams</option></select>
+          <input id="otQ" placeholder="Search ref, customer, phone, subject… (Enter)" style="min-width:260px" onkeydown="if(event.key==='Enter')loadOdooTickets()">
+          <button class="btn sec" onclick="loadOdooTickets()">Refresh</button><span style="flex:1"></span>
+          <button class="btn" data-perm="svc.ticket.create" onclick="svcJobForm({})">+ New job</button></div>
+        <div id="otTbl"></div></div>
+    </div>
     <!-- ================= QUOTE REQUESTS ================= -->
     <div id="quoteReqs" class="view">
       <div class="kpis" id="qrKpis"></div>
@@ -1544,6 +1555,7 @@ function show(v) {
   if (v === 'svcMachines') loadSvcMachines();
   if (v === 'svcAmc') loadSvcAmc();
   if (v === 'svcReports') loadSvcReports();
+  if (v === 'svcOdoo') loadOdooTickets();
   if (v === 'svcWarranty') wcMode(WC.mode);
   if (v === 'stock') setTimeout(() => document.getElementById('stkQ').focus(), 50);
   if (v === 'quoteReqs') loadQuoteReqs();
@@ -4495,6 +4507,7 @@ async function loadSvcTickets() {
     can('svc.job.view_all') || can('svc.job.assign') ? svcLoadTechs() : Promise.resolve()]);
   if (error) { document.getElementById('svcTicketTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
   _svc.tickets = data || []; renderSvcTickets(); svcBadge();
+  _svc.tickets.filter(t => t.odoo_ticket_id && ['resolved', 'closed'].includes(t.status) && t.odoo_stage !== 'Resolved').slice(0, 5).forEach(t => svcOdooSync(t.id));
 }
 function svcSetFilter(f) { _svc.filter = f; renderSvcTickets(); }
 function renderSvcTickets() {
@@ -4578,7 +4591,7 @@ async function svcDoAssign(ticketId, jobId, userId) {
   const w = document.getElementById('svcWhen').value, when = w ? new Date(w).toISOString() : null;
   if (jobId) await svcRpc('svc_job_assign', { p_job: jobId, p_technician: userId, p_scheduled: when });
   else await svcRpc('svc_job_create', { p_ticket: ticketId, p_technician: userId, p_scheduled: when, p_type: null, p_instructions: document.getElementById('svcIns')?.value.trim() || null });
-  openSvcTicket(ticketId); loadSvcTickets();
+  svcOdooSync(ticketId); openSvcTicket(ticketId); loadSvcTickets();
 }
 const svcMachineLabel = m => m ? `${m.model || 'Machine'}${m.serial_no ? ' · ' + m.serial_no : ''} — ${m.customers?.company || m.customers?.name || m.site_name || ''} [${m.id.slice(0, 5)}]` : '';
 const svcCustLabel = c => c ? `${c.company || c.name}${c.company && c.name ? ' · ' + c.name : ''}${c.city ? ' · ' + c.city : ''} [${c.id.slice(0, 5)}]` : '';
@@ -4814,6 +4827,73 @@ async function svcSaveUserPerms(uid) {
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
 }
 
+// ================= SERVICE: Odoo tickets + job from customer / machine =================
+const OT = { list: [], meta: null, local: {} };
+async function svcOdooSync(ticketId) { try { const r = await stkCall({ action: 'hd_sync', ticket_id: ticketId }); if (r && r.ok === false && r.error) qtToast('Odoo: ' + r.error, true); return r; } catch (_) {} }
+async function loadOdooTickets() {
+  const el = document.getElementById('otTbl'); el.innerHTML = '<div class="empty">Reading tickets from Odoo…</div>';
+  if (!OT.meta) { const m = await stkCall({ action: 'hd_meta' }); if (!m.error) { OT.meta = m; document.getElementById('otTeam').innerHTML = '<option value="">All teams</option>' + m.teams.map(t => `<option value="${t.id}">${esc(t.name)}${m.teams.filter(x => x.name === t.name).length > 1 ? ' – ' + esc(t.company) : ''}</option>`).join(''); } }
+  const team = document.getElementById('otTeam').value;
+  const [r, loc] = await Promise.all([stkCall({ action: 'hd_list', scope: document.getElementById('otScope').value, q: document.getElementById('otQ').value.trim(), team_id: team ? Number(team) : null }),
+    db.from('service_tickets').select('id, ticket_no, status, odoo_ticket_id, service_jobs(job_no, status, technician_id)').not('odoo_ticket_id', 'is', null).neq('status', 'cancelled').limit(2000), svcLoadTechs()]);
+  if (r.error) { el.innerHTML = `<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`; return; }
+  OT.list = r.items || []; OT.local = {}; (loc.data || []).forEach(t => OT.local[t.odoo_ticket_id] = t);
+  el.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${OT.list.length}${r.total > OT.list.length ? ' of ' + r.total : ''} ticket${r.total === 1 ? '' : 's'} · live from Odoo</div>` +
+    tbl(['Ticket', 'Customer', 'Subject', 'Team', 'Odoo stage', 'Created', 'Technician job'], OT.list.map((t, i) => { const l = OT.local[t.id], j = l && (l.service_jobs || []).slice(-1)[0];
+      return [`<b>${esc(t.ref)}</b>${t.invoice ? `<div class="muted" style="font-size:11.5px">${esc(t.invoice)}</div>` : ''}`, `<b>${esc(t.customer || '—')}</b><div class="muted" style="font-size:11.5px">${esc(t.phone)}</div>`,
+        `${esc(t.subject)}<div class="muted" style="font-size:11.5px">${esc(t.description.slice(0, 110))}</div>`, esc(t.team), `<span class="chip">${esc(t.stage)}</span>${t.assigned ? `<div class="muted" style="font-size:11.5px">${esc(t.assigned)}</div>` : ''}`, fmtDT(String(t.created).replace(' ', 'T') + 'Z'),
+        l ? `<a href="#" onclick="openSvcTicket('${l.id}');return false"><b>${esc(j ? j.job_no : l.ticket_no)}</b></a><div class="muted" style="font-size:11.5px">${j ? esc(svcTechName(j.technician_id)) + ' · ' + esc(svcW(j.status)) : esc(svcW(l.status))}</div>`
+          : (can('svc.ticket.create') ? `<button class="btn sm" onclick="otJob(${i})">Assign technician</button>` : '—')]; }));
+}
+function otJob(i) { const t = OT.list[i]; svcJobForm({ odoo: { id: t.id, ref: t.ref, stage: t.stage }, partner_id: t.partner_id, customer: t.customer, phone: t.phone, email: t.email, subject: t.subject, details: t.description, invoice_no: t.invoice, invoice_id: t.invoice_id, category: /install|commission/i.test(t.team) ? 'installation' : 'breakdown' }); }
+function wcJobPre(w, c) { return { partner_id: null, customer: (c || {}).name, phone: (c || {}).phone, email: (c || {}).email, city: (c || {}).city, product: w.product, model: w.model, serial: w.serial, invoice_no: w.invoice_no, invoice_id: w.invoice_id, invoice_date: w.invoice_date, warranty: w }; }
+function wcJob(i) { const w = WC.items[i]; svcJobForm(wcJobPre({ ...w, invoice_no: w.invoice ? w.invoice.number : '', invoice_id: w.invoice ? w.invoice.id : null }, w.customer)); }
+function wcJobLine(i, li, k) { const inv = WC.inv[i], l = WC.det.lines[li]; svcJobForm(wcJobPre({ ...l, serial: l.serials[k], invoice_no: WC.det.number, invoice_id: WC.det.id, invoice_date: WC.det.invoice_date }, inv.customer)); }
+async function svcJobForm(pre) {
+  OT.pre = pre = pre || {}; svcModal('<div class="empty">Loading…</div>', true);
+  const techs = can('svc.job.assign') ? await svcLoadTechs() : [], w = pre.warranty, cov = w ? (w.status === 'in_warranty' ? 'warranty' : 'chargeable') : (pre.coverage || '');
+  const opt = (arr, v) => arr.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join(''), d10 = String(pre.phone || '').replace(/\D/g, '').slice(-10);
+  svcModal(`<h3 style="margin-bottom:6px">${pre.odoo ? 'Assign technician · Odoo ticket ' + esc(pre.odoo.ref) : 'New service job'}</h3>
+    ${w ? `<div style="background:${w.status === 'in_warranty' ? '#E6F6EC' : '#FDECEC'};border-radius:10px;padding:10px;margin-bottom:10px">${wcBadge(w)} ${w.invoice_date ? `· invoice <b>${esc(pre.invoice_no || '')}</b> dated ${fmtD(w.invoice_date)} · billed ${w.days_since} days ago${w.expires ? ' · warranty till ' + fmtD(w.expires) : ''}` : ''}${w.status === 'out_of_warranty' ? '<br><b>Out of warranty – this job must be billed.</b>' : ''}</div>` : ''}
+    ${pre.invoice_missing ? '<div style="background:#FFF4E5;border-radius:10px;padding:10px;margin-bottom:10px"><b>Invoice not found.</b> The job is created as chargeable and the Odoo ticket is marked for purchase verification.</div>' : ''}
+    <div class="qtg2"><div class="field"><label>Customer name *</label><input id="jfName" value="${esc(pre.customer || '')}"></div><div class="field"><label>Site contact mobile * <span class="muted">(gets start / end codes)</span></label><input id="jfMob" maxlength="10" inputmode="numeric" value="${esc(d10)}"></div>
+      <div class="field"><label>Site address</label><input id="jfAddr" value="${esc(pre.address || '')}"></div><div class="field"><label>City</label><input id="jfCity" value="${esc(pre.city || '')}"></div></div>
+    <div class="qtg3"><div class="field"><label>Machine</label><input id="jfProd" value="${esc(pre.product || '')}"></div><div class="field"><label>Model no.</label><input id="jfModel" value="${esc(pre.model || '')}"></div><div class="field"><label>Serial no.</label><input id="jfSerial" value="${esc(pre.serial || '')}"></div></div>
+    <div class="qtg3"><div class="field"><label>Job type</label><select id="jfCat">${opt([['breakdown', 'Breakdown'], ['installation', 'Installation / commissioning'], ['preventive', 'Maintenance'], ['complaint', 'Complaint'], ['other', 'Other']], pre.category || 'breakdown')}</select></div>
+      <div class="field"><label>Cover</label><select id="jfCov">${opt([['warranty', 'In warranty'], ['chargeable', 'Out of warranty – chargeable'], ['amc', 'AMC']], cov || (pre.invoice_missing ? 'chargeable' : 'warranty'))}</select></div>
+      <div class="field"><label>Priority</label><select id="jfPri">${opt([['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['urgent', 'Urgent']], 'normal')}</select></div></div>
+    <div class="field"><label>Problem in short *</label><input id="jfSubj" value="${esc(pre.subject || '')}"></div>
+    <div class="field"><label>Details</label><textarea id="jfDesc" rows="3">${esc(pre.details || '')}</textarea></div>
+    ${can('svc.job.assign') ? `<div class="qtg2"><div class="field"><label>Technician <span class="muted">(can be assigned later)</span></label><select id="jfTech"><option value="">— assign later —</option>${techs.map(t => `<option value="${t.user_id}">${esc(t.name)} · ${esc(svcW(t.status))}${t.open_jobs ? ' · ' + t.open_jobs + ' open' : ''}</option>`).join('')}</select></div>
+      <div class="field"><label>Visit time</label><input type="datetime-local" id="jfWhen"></div></div>` : ''}
+    ${pre.odoo ? '' : '<label style="font-size:13px"><input type="checkbox" id="jfOdoo" checked> Also create the ticket in Odoo Helpdesk (Service team)</label>'}
+    <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="jfBtn" onclick="svcJobCreate()">${pre.odoo ? 'Create job' : 'Create job'}</button></div>`, true);
+}
+async function svcJobCreate() {
+  const pre = OT.pre || {}, v = id => (document.getElementById(id) || {}).value?.trim() || '', btn = document.getElementById('jfBtn');
+  if (!v('jfName')) return qtToast('Enter the customer name', true); if (v('jfMob').replace(/\D/g, '').length !== 10) return qtToast('Enter the 10-digit mobile of the site contact', true); if (!v('jfSubj')) return qtToast('Write the problem in short', true);
+  const cov = v('jfCov'), covTxt = { warranty: 'In warranty', chargeable: 'Out of warranty – chargeable', amc: 'AMC' }[cov];
+  btn.disabled = true; btn.textContent = 'Working…';
+  try {
+    let od = pre.odoo || null;
+    if (!od && document.getElementById('jfOdoo')?.checked) {
+      const r = await stkCall({ action: 'hd_create', subject: v('jfSubj'), details: v('jfDesc'), team: v('jfCat') === 'installation' ? 'Installation' : 'Service', partner_id: pre.partner_id || null, customer: v('jfName'), phone: v('jfMob'), email: pre.email || '',
+        product: v('jfProd'), model: v('jfModel'), serial: v('jfSerial'), invoice_no: pre.invoice_no || '', invoice_id: pre.invoice_id || null, invoice_date: pre.invoice_date || '', coverage: covTxt, invoice_missing: !!pre.invoice_missing });
+      if (r.error) throw new Error('Odoo ticket could not be created: ' + r.error);
+      od = { id: r.id, ref: r.ref, stage: r.stage };
+    }
+    const mach = [v('jfProd'), v('jfSerial') ? 'SN ' + v('jfSerial') : ''].filter(Boolean).join(' · ');
+    const desc = [v('jfDesc'), mach ? 'Machine: ' + mach + (v('jfModel') ? ' (' + v('jfModel') + ')' : '') : '', pre.invoice_no ? 'Invoice: ' + pre.invoice_no + (pre.invoice_date ? ' dated ' + fmtD(pre.invoice_date) : '') : '', pre.warranty && pre.warranty.expires ? 'Warranty till ' + fmtD(pre.warranty.expires) : '', pre.invoice_missing ? 'Invoice not found – purchase to be verified' : '', od ? 'Odoo ticket ' + od.ref : ''].filter(Boolean).join('\n');
+    const t = await svcRpc('svc_ticket_save', { p: { subject: v('jfSubj') + (mach ? ' – ' + mach : ''), description: desc, category: v('jfCat'), priority: v('jfPri'), coverage: cov, source: 'phone', contact_name: v('jfName'), contact_mobile: v('jfMob').replace(/\D/g, ''), contact_email: pre.email || '', address: v('jfAddr'), city: v('jfCity') } });
+    await svcRpc('svc_ticket_link_odoo', { p_ticket: t.id, p: { odoo_ticket_id: od ? od.id : null, odoo_ticket_ref: od ? od.ref : null, odoo_stage: od ? od.stage : null, odoo_partner_id: pre.partner_id || null, odoo_invoice_no: pre.invoice_no || null, odoo_invoice_date: pre.invoice_date || null,
+      serial_no: v('jfSerial'), model: v('jfModel'), product: v('jfProd'), warranty_until: pre.warranty ? pre.warranty.expires : null, invoice_missing: !!pre.invoice_missing } });
+    const tech = v('jfTech'), when = v('jfWhen');
+    if (tech) { await svcRpc('svc_job_create', { p_ticket: t.id, p_technician: tech, p_scheduled: when ? new Date(when).toISOString() : null, p_type: null, p_instructions: null }); if (od) await svcOdooSync(t.id); }
+    closeModal('svcBg'); qtToast(`${t.ticket_no} created${tech ? ' and assigned' : ''}${od ? ' · Odoo ticket ' + od.ref : ''}`);
+    if (document.getElementById('svcOdoo').classList.contains('active')) loadOdooTickets(); else if (document.getElementById('svcTickets').classList.contains('active')) loadSvcTickets();
+  } catch (e) { btn.disabled = false; btn.textContent = 'Create job'; if (e && e.message && !/access|found|Pick/.test(e.message)) qtToast(e.message, true); }
+}
+
 // ================= QUOTE REQUESTS =================
 const QR = { list: [], filter: 'open', rt: null, items: [] };
 const QR_ST = { open: ['Open', 'pending'], in_progress: ['Being prepared', 'scheduled'], ready: ['Ready to send', 'won'], sent: ['Sent to client', 'done'], cancelled: ['Cancelled', 'lost'] };
@@ -4947,13 +5027,14 @@ async function wcSearch() {
   const r = await stkCall({ action: WC.mode === 'serial' ? 'warranty' : 'inv_search', q });
   if (r.error) { out.innerHTML = `<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`; return; }
   const items = r.items || [];
-  if (!items.length) { out.innerHTML = `<div class="empty">${WC.mode === 'serial' ? 'No machine found with that serial number.' : 'No invoice found for that customer.'}</div>`; return; }
+  if (!items.length) { out.innerHTML = `<div class="empty">${WC.mode === 'serial' ? 'No machine found with that serial number.' : 'No invoice found for that customer.'}${can('svc.ticket.create') ? `<br><br><button class="btn sec" onclick="svcJobForm({ invoice_missing: true, ${WC.mode === 'serial' ? 'serial' : 'customer'}: document.getElementById('wcQ').value.trim() })">Create a job anyway (invoice to be verified)</button>` : ''}</div>`; return; }
   if (WC.mode === 'serial') {
     out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} machine${items.length === 1 ? '' : 's'}${items.length >= 25 ? ' (first 25 – type more of the serial)' : ''} · as on ${fmtD(r.today)}</div>` +
-      tbl(['Serial no.', 'Machine', 'Customer', 'Invoice', 'Days since billed', 'Warranty', 'Status'], items.map(w => [`<b>${esc(w.serial)}</b>`,
+      tbl(['Serial no.', 'Machine', 'Customer', 'Invoice', 'Days since billed', 'Warranty', 'Status', ''], items.map((w, i) => [`<b>${esc(w.serial)}</b>`,
         `${esc(w.product)}${w.model ? `<div class="muted" style="font-size:11.5px">${esc(w.model)}</div>` : ''}`, wcCust(w.customer),
         w.invoice ? `<b>${esc(w.invoice.number)}</b><div class="muted" style="font-size:11.5px">${fmtD(w.invoice_date)}${w.sale_order ? ' · ' + esc(w.sale_order) : ''}</div>` : `<span class="muted">${w.sold ? 'Sold on ' + esc(w.sale_order) + ', invoice not posted' : 'Not sold – still in stock'}</span>`,
-        w.days_since != null ? `<b>${w.days_since}</b>` : '—', w.expires ? `${w.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(w.expires)}</div>` : `${w.months} months`, wcBadge(w)]));
+        w.days_since != null ? `<b>${w.days_since}</b>` : '—', w.expires ? `${w.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(w.expires)}</div>` : `${w.months} months`, wcBadge(w), can('svc.ticket.create') ? `<a href="#" onclick="wcJob(${i});return false">Create job</a>` : '']));
+    WC.items = items;
   } else {
     WC.inv = items;
     out.innerHTML = `<div class="muted" style="font-size:12px;margin-bottom:6px">${items.length} invoice${items.length === 1 ? '' : 's'}${items.length >= 80 ? ' (latest 80)' : ''} · click one to see machines and serial numbers</div>` +
@@ -4966,9 +5047,10 @@ async function wcInvoice(i) {
   const w = WC.inv[i]; svcModal('<div class="empty">Reading the invoice from Odoo…</div>', true);
   const r = await stkCall({ action: 'inv_detail', id: w.id });
   if (r.error) { svcModal(`<div class="empty" style="color:var(--red)">${esc(r.error)}</div>`, true); return; }
+  WC.det = r;
   svcModal(`<h3 style="margin-bottom:4px">Invoice ${esc(r.number)}</h3><div class="muted" style="margin-bottom:12px">${fmtD(r.invoice_date)} · ${esc((w.customer || {}).name || '')}${(w.customer || {}).phone ? ' · ' + esc(w.customer.phone) : ''} · billed ${w.days_since} day${w.days_since === 1 ? '' : 's'} ago</div>
     ${tbl(['Item', 'Qty', 'Serial numbers', 'Warranty', 'Status'], (r.lines || []).map(l => [`<b>${esc(l.product)}</b>${l.model ? `<div class="muted" style="font-size:11.5px">${esc(l.model)}</div>` : ''}`, Number(l.qty || 0).toLocaleString('en-IN'),
-      l.serials.length ? l.serials.map(esc).join('<br>') : `<span class="muted">${l.tracked ? 'not delivered yet' : '—'}</span>`, `${l.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(l.expires)}</div>`, wcBadge(l)]))}
+      l.serials.length ? l.serials.map((sn, k) => esc(sn) + (can('svc.ticket.create') ? ` <a href="#" style="font-size:11.5px" onclick="wcJobLine(${i},${(r.lines || []).indexOf(l)},${k});return false">create job</a>` : '')).join('<br>') : `<span class="muted">${l.tracked ? 'not delivered yet' : '—'}</span>`, `${l.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(l.expires)}</div>`, wcBadge(l)]))}
     <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Close</button></div>`, true);
 }
 
