@@ -3600,7 +3600,7 @@ async function loadLive() {
   const fresh = onDuty.filter(r => minsAgo(r.at) != null && minsAgo(r.at) <= 20);
   const lowBat = onDuty.filter(r => r.battery != null && r.battery < 20);
   document.getElementById('liveCards').innerHTML =
-    kpi(onDuty.length + ' / ' + rows.filter(r => ['sales', 'technician'].includes(r.role)).length, 'On duty now', 'blue', '👤') +
+    kpi(onDuty.length + ' / ' + rows.length, 'On duty now', 'blue', '👤') +
     kpi(onDuty.filter(r => r.tracking_on).length, 'Tracking on', 'teal', '📡') +
     kpi(fresh.length, 'Updated in last 20 min', 'green', '✓') +
     kpi(onDuty.length - fresh.length, 'Not updating', onDuty.length - fresh.length ? 'red' : 'green', '⚠') +
