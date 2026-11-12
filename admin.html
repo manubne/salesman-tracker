@@ -318,6 +318,7 @@
       <button data-v="svcTechs" data-perm="svc.job.assign,svc.tracking.view,svc.job.view_all" onclick="show('svcTechs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg><span>Technicians</span></button>
       <button data-v="svcMachines" data-perm="svc.ticket.view_all,svc.machine.manage" onclick="show('svcMachines')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg><span>Machines &amp; warranty</span></button>
       <button data-v="svcWarranty" data-perm="svc.ticket.view_all" onclick="show('svcWarranty')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Warranty check</span></button>
+      <button data-v="svcComm" data-perm="svc.ticket.view_all,svc.billing" onclick="show('svcComm')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Commissioning reports</span></button>
       <button data-v="svcBilling" data-perm="svc.billing,svc.warranty.override,svc.job.assign" onclick="show('svcBilling')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Service billing</span><span class="badge" id="sbBadge" style="display:none"></span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
@@ -711,6 +712,17 @@
         <p class="muted" style="margin-top:10px"><b>Admin / Head</b>: everything, all branches. <b>Branch manager</b>: leads, pipeline, live map, travel, payments and incentives of their branch(es) only; can approve for their branch. <b>Salesperson</b>: own data only. <b>Coordinator / Tele-caller</b>: lead desk for all leads.</p></div>
     </div>
 
+    <!-- ================= COMMISSIONING REPORTS ================= -->
+    <div id="svcComm" class="view">
+      <div class="kpis" id="crKpis"></div>
+      <div class="panel"><h2>Commissioning / service reports <span class="sub">commissioning starts the machine’s warranty</span></h2>
+        <div class="toolbar"><select id="crSrc" onchange="renderCr()"><option value="">Everyone</option><option value="partner">Channel partners</option><option value="staff">Our team</option></select>
+          <select id="crOn" onchange="renderCr()"><option value="">All report types</option><option value="commissioning">Commissioning</option><option value="breakdown">Breakdown</option><option value="chargeable">Chargeable</option><option value="warranty_service">Warranty service</option><option value="maintenance">Maintenance</option></select>
+          <input id="crQ" placeholder="Search serial, customer, invoice, report no.…" oninput="renderCr()" style="min-width:250px"><span style="flex:1"></span>
+          <button class="btn" data-perm="svc.ticket.create" onclick="crForm({})">+ New report</button></div>
+        <p class="hint">To commission a machine with its invoice details filled in, find it in Warranty check and click “Commissioning report”.</p>
+        <div id="crTbl"></div></div>
+    </div>
     <!-- ================= SERVICE BILLING ================= -->
     <div id="svcBilling" class="view">
       <div class="kpis" id="sbKpis"></div>
@@ -1564,6 +1576,7 @@ function show(v) {
   if (v === 'svcMachines') loadSvcMachines();
   if (v === 'svcAmc') loadSvcAmc();
   if (v === 'svcReports') loadSvcReports();
+  if (v === 'svcComm') loadCr();
   if (v === 'svcBilling') loadSvcBilling();
   if (v === 'svcOdoo') loadOdooTickets();
   if (v === 'svcWarranty') wcMode(WC.mode);
@@ -4838,6 +4851,90 @@ async function svcSaveUserPerms(uid) {
   await svcRpc('svc_set_user_access', { p_user: uid, p_teams: null, p_perms: p, p_skills: null }); cache.users.find(x => x.id === uid).perms = p; closeModal('svcBg'); renderSvcAccess();
 }
 
+// ================= COMMISSIONING / SERVICE REPORTS =================
+const CR = { list: [] };
+const CR_ON = { commissioning: 'Commissioning', breakdown: 'Breakdown', chargeable: 'Chargeable', warranty_service: 'Warranty service', maintenance: 'Maintenance' };
+const CR_TESTS = [['time_on', 'Time switched on'], ['voltage', 'Operating voltage'], ['current', 'Operating current'], ['suction', 'Suction pr. Kg/cm² or Psig'], ['discharge', 'Discharge pr. Kg/cm² or Psig'], ['comp_amps', 'Compressor amps'], ['grill_temp', 'Canvas / grill temp. F/C'], ['return_temp', 'Return air temp. F/C'], ['ambient', 'Ambient temp.'], ['room_temp', 'Conditioned area temp.']];
+async function loadCr() {
+  const { data, error } = await db.from('commissioning_reports').select('id, report_no, report_on, serial_no, product, model_no, invoice_no, purchase_date, customer_name, customer_mobile, work_completed_on, warranty_until, source, partner_name, technician_name, created_at').order('created_at', { ascending: false }).limit(2000);
+  if (error) { document.getElementById('crTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  CR.list = data || []; renderCr();
+}
+function renderCr() {
+  const L = CR.list, m0 = todayStr().slice(0, 7), cm = L.filter(r => r.report_on === 'commissioning');
+  document.getElementById('crKpis').innerHTML = kpi(cm.length, 'Machines commissioned', 'green', '✓', '') + kpi(cm.filter(r => (r.created_at || '').slice(0, 7) === m0).length, 'Commissioned this month', 'blue', '◎', '') +
+    kpi(cm.filter(r => r.source === 'partner').length, 'By channel partners', 'purple', '⇄', '') + kpi(L.length - cm.length, 'Service reports', 'orange', '✎', '');
+  const q = (document.getElementById('crQ').value || '').toLowerCase(), src = document.getElementById('crSrc').value, on = document.getElementById('crOn').value;
+  const rows = L.filter(r => (!src || r.source === src) && (!on || r.report_on === on) && (!q || `${r.report_no} ${r.serial_no || ''} ${r.customer_name} ${r.invoice_no || ''} ${r.product || ''} ${r.model_no || ''} ${r.partner_name || ''}`.toLowerCase().includes(q)));
+  document.getElementById('crTbl').innerHTML = tbl(['Report', 'Type', 'Machine', 'Customer', 'Invoice', 'Work done on', 'Warranty till', 'Filed by'], rows.map(r => [`<b>${esc(r.report_no)}</b>`, esc(CR_ON[r.report_on] || r.report_on),
+    `<b>${esc(r.serial_no || '—')}</b><div class="muted" style="font-size:11.5px">${esc([r.product, r.model_no].filter(Boolean).join(' · '))}</div>`, `${esc(r.customer_name)}<div class="muted" style="font-size:11.5px">${esc(r.customer_mobile || '')}</div>`,
+    r.invoice_no ? `${esc(r.invoice_no)}<div class="muted" style="font-size:11.5px">${fmtD(r.purchase_date)}</div>` : '—', fmtD(r.work_completed_on), r.warranty_until ? `<b>${fmtD(r.warranty_until)}</b>` : '—',
+    r.source === 'partner' ? `<span class="chip">Channel partner</span><div class="muted" style="font-size:11.5px">${esc(r.partner_name || '')}</div>` : esc(r.technician_name || '—')]), i => `style="cursor:pointer" onclick="crOpen('${rows[i].id}')"`);
+}
+function wcCrPre(w, c) { return { report_on: 'commissioning', serial_no: w.serial, odoo_lot_id: w.lot_id || null, product: w.product, model_no: w.model, make: String(w.product || '').split(' - ')[0], invoice_no: w.invoice_no, odoo_invoice_id: w.invoice_id, purchase_date: w.invoice_date, warranty_months: w.months,
+  customer_name: (c || {}).name || '', customer_mobile: (c || {}).phone || '', customer_address: (c || {}).city || '' }; }
+function wcCr(i) { const w = WC.items[i]; crForm(wcCrPre({ ...w, invoice_no: w.invoice ? w.invoice.number : '', invoice_id: w.invoice ? w.invoice.id : null }, w.customer)); }
+function wcCrLine(i, li, k) { const l = WC.det.lines[li], u = (l.units || [])[k] || {}; crForm(wcCrPre({ ...l, ...u, invoice_no: WC.det.number, invoice_id: WC.det.id, invoice_date: WC.det.invoice_date }, WC.inv[i].customer)); }
+function crForm(pre) {
+  CR.pre = pre = pre || {}; CR.mat = [{ particulars: '', qty: '', recommendation: '' }];
+  const f = (l, id, v, x) => `<div class="field"><label>${l}</label><input id="${id}" value="${esc(v ?? '')}" ${x || ''}></div>`, lock = pre.odoo_invoice_id ? 'readonly style="background:#F4F6FA"' : '';
+  svcModal(`<h3 style="margin-bottom:10px">Commissioning / service report</h3>
+    <div class="qtg3"><div class="field"><label>Report on</label><select id="cfOn">${Object.entries(CR_ON).map(([k, l]) => `<option value="${k}" ${(pre.report_on || 'commissioning') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      ${f('Invoice no.', 'cfInv', pre.invoice_no, lock)}<div class="field"><label>Purchase (invoice) date</label><input type="date" id="cfPur" value="${pre.purchase_date || ''}" ${lock}></div></div>
+    <div class="qtg2"><div>${f('Customer name *', 'cfCust', pre.customer_name)}${f('Customer mobile', 'cfMob', String(pre.customer_mobile || '').replace(/\D/g, '').slice(-10), 'maxlength="10"')}<div class="field"><label>Site address</label><textarea id="cfAddr" rows="2">${esc(pre.customer_address || '')}</textarea></div></div>
+      <div>${f('Make', 'cfMake', pre.make)}${f('Model no.', 'cfModel', pre.model_no)}${f('Serial no. *', 'cfSerial', pre.serial_no, lock)}<div class="qtg2">${f('Company SL no.', 'cfCsl', '')}${f('Asset no.', 'cfAsset', '')}</div></div></div>
+    <div class="qtg3">${f('Call ticket no.', 'cfTicket', pre.call_ticket_no)}<div class="field"><label>Call received on</label><input type="date" id="cfRecv"></div><div class="field"><label>Work completed on *</label><input type="date" id="cfDone" value="${todayStr()}" max="${todayStr()}"></div></div>
+    <div class="qtg2"><div><div class="field"><label>Nature of complaint / work</label><textarea id="cfComplaint" rows="3"></textarea></div><div class="field"><label>Action taken</label><textarea id="cfAction" rows="3"></textarea></div><div class="field"><label>Follow-up action (if any)</label><textarea id="cfFollow" rows="2"></textarea></div></div>
+      <div><div class="ch">Test measurements (as applicable)</div>${CR_TESTS.map(([k, l]) => `<div style="display:grid;grid-template-columns:1fr 130px;gap:8px;margin-bottom:6px;align-items:center"><span style="font-size:13px">${l}</span><input class="inp" id="cft_${k}"></div>`).join('')}</div></div>
+    <div class="ch">Materials used</div><div id="cfMat"></div><button class="btn sec" onclick="CR.mat.push({particulars:'',qty:'',recommendation:''});crMatRender()">+ Add row</button>
+    <div class="qtg3" style="margin-top:10px">${f('Customer feedback', 'cfFeed', '')}${f('Customer representative name', 'cfSign', '')}${f('Technician name', 'cfTech', ME.name || '')}</div>
+    <p class="hint">${pre.report_on === 'commissioning' || !pre.report_on ? `Commissioning starts the warranty: ${pre.warranty_months || 12} months from the commissioning date (or from ${S('service', {}).warranty_grace_days ?? 90} days after the invoice, whichever is earlier). A serial can be commissioned only once.` : ''} The customer signature is taken when the report is filed from the app; a report filed here prints with a signature box.</p>
+    <div style="text-align:right;margin-top:12px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="cfBtn" onclick="crSave()">Save report &amp; make PDF</button></div>`, true);
+  crMatRender();
+}
+function crMatRender() { document.getElementById('cfMat').innerHTML = CR.mat.map((m, i) => `<div style="display:grid;grid-template-columns:1fr 80px 1fr 26px;gap:8px;margin-bottom:6px"><input class="inp" placeholder="Particulars" value="${esc(m.particulars)}" oninput="CR.mat[${i}].particulars=this.value"><input class="inp" placeholder="Qty" value="${esc(m.qty)}" oninput="CR.mat[${i}].qty=this.value"><input class="inp" placeholder="Recommendation" value="${esc(m.recommendation)}" oninput="CR.mat[${i}].recommendation=this.value">${CR.mat.length > 1 ? `<a class="qx" onclick="CR.mat.splice(${i},1);crMatRender()">×</a>` : '<span></span>'}</div>`).join(''); }
+async function crSave() {
+  const v = id => (document.getElementById(id) || {}).value?.trim() || '', pre = CR.pre || {}, tests = {}; CR_TESTS.forEach(([k]) => { if (v('cft_' + k)) tests[k] = v('cft_' + k); });
+  const p = { report_on: v('cfOn'), invoice_no: v('cfInv'), purchase_date: v('cfPur'), odoo_invoice_id: pre.odoo_invoice_id || null, odoo_lot_id: pre.odoo_lot_id || null, warranty_months: pre.warranty_months || null, customer_name: v('cfCust'), customer_mobile: v('cfMob'), customer_address: v('cfAddr'),
+    make: v('cfMake'), model_no: v('cfModel'), serial_no: v('cfSerial'), product: pre.product || '', company_sl_no: v('cfCsl'), asset_no: v('cfAsset'), call_ticket_no: v('cfTicket'), call_received_on: v('cfRecv'), work_completed_on: v('cfDone'),
+    complaint: v('cfComplaint'), action_taken: v('cfAction'), follow_up: v('cfFollow'), tests, materials: CR.mat.filter(m => m.particulars.trim()), customer_feedback: v('cfFeed'), customer_sign_name: v('cfSign'), technician_name: v('cfTech') };
+  const btn = document.getElementById('cfBtn'); btn.disabled = true;
+  const { data, error } = await db.rpc('cr_save', { p }); btn.disabled = false;
+  if (error) { qtToast(error.message, true); return; }
+  if (data.report_on === 'commissioning') stkCall({ action: 'cr_note', report_id: data.id }).catch(() => {});
+  closeModal('svcBg'); qtToast(`${data.report_no} saved${data.warranty_until ? ' · warranty till ' + fmtD(data.warranty_until) : ''}`); crPrint(data);
+  if (document.getElementById('svcComm').classList.contains('active')) loadCr();
+}
+async function crOpen(id) { const { data } = await db.from('commissioning_reports').select('*').eq('id', id).maybeSingle(); if (!data) { qtToast('Report not found', true); return; } crPrint(data); }
+async function crPrint(r) {
+  try { await qtLoadMasters(); } catch (_) {}
+  const co = (QT.cfg || {}).company || {}, e = qtEsc, t = r.tests || {}, mats = (r.materials || []).concat(Array(Math.max(0, 6 - (r.materials || []).length)).fill({})), box = on => `<span class="bx">${r.report_on === on ? '✓' : ''}</span>`;
+  const w = window.open('', '_blank'); if (!w) { qtToast('Allow pop-ups for bneone.com to see the report', true); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${e(r.report_no)} ${e(r.serial_no || '')} ${e(r.customer_name)}</title><style>
+    @page{size:A4;margin:9mm} body{font:10pt Arial,Helvetica,sans-serif;color:#000;margin:0} .bar{position:sticky;top:0;background:#0F172A;color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center}.bar button{padding:8px 16px;border:0;border-radius:8px;background:#22779A;color:#fff;font-weight:700;cursor:pointer}
+    @media print{.bar{display:none}} @media screen{body{background:#E9EDF3}.pg{width:210mm;min-height:290mm;margin:8mm auto;padding:9mm;background:#fff;box-shadow:0 4px 24px rgba(15,23,42,.15);box-sizing:border-box}}
+    table{width:100%;border-collapse:collapse} td,th{border:.7pt solid #000;padding:1.6mm 2mm;vertical-align:top} .nb td{border:0} h1{font-size:19pt;margin:0;letter-spacing:1px} .ttl{text-align:center;font-weight:bold;font-size:12pt;margin:3mm 0}
+    .bx{display:inline-block;width:9mm;height:5mm;border:.7pt solid #000;vertical-align:middle;text-align:center;font-weight:bold;margin-left:1mm} .lb{font-weight:bold} .h{height:20mm} img.lg{max-height:20mm;max-width:45mm}</style></head><body>
+    <div class="bar"><b style="flex:1">${e(r.report_no)} · ${e(r.customer_name)}</b><button onclick="print()">Print / Save as PDF</button></div><div class="pg">
+    <table class="nb"><tr><td style="width:48mm">${co.logo ? `<img class="lg" src="${e(co.logo)}">` : ''}</td><td style="text-align:center"><h1>${e(co.name || 'B N ENTERPRISES')}</h1><div style="font-size:9pt">${(co.footer || []).map(e).join('<br>')}</div></td><td style="width:38mm;text-align:right;font-size:9pt">No: <b>${e(r.report_no)}</b></td></tr></table>
+    <div class="ttl">COMMISSIONING / SERVICE REPORT</div>
+    <table class="nb"><tr><td>Purchase Date: <b>${qtDate(r.purchase_date)}</b></td><td>Invoice No: <b>${e(r.invoice_no || '')}</b></td>${r.warranty_until ? `<td style="text-align:right">Warranty: <b>${r.warranty_months} months till ${qtDate(r.warranty_until)}</b></td>` : ''}</tr></table>
+    <table><tr><td colspan="2">Report On: &nbsp; Commissioning ${box('commissioning')} &nbsp; Breakdown ${box('breakdown')} &nbsp; Chargeable ${box('chargeable')} &nbsp; Warranty Service ${box('warranty_service')} &nbsp; Maintenance ${box('maintenance')}</td></tr>
+      <tr><td style="width:50%"><span class="lb">Customer Name &amp; Address:</span><br>${e(r.customer_name)}${r.customer_mobile ? '<br>' + e(r.customer_mobile) : ''}<br>${e(r.customer_address || '').replace(/\n/g, '<br>')}</td>
+        <td style="padding:0"><table style="border:0"><tr><td style="border-width:0 0 .7pt" class="lb">Equipment Details</td></tr>${[['Make', r.make], ['Model No', r.model_no || r.product], ['Serial No', r.serial_no], ['Company SL No', r.company_sl_no], ['Asset No', r.asset_no]].map(([l, v], i, a) => `<tr><td style="border-width:0 0 ${i < a.length - 1 ? '.7pt' : '0'}">${l}: <b>${e(v || '')}</b></td></tr>`).join('')}</table></td></tr></table>
+    <table style="margin-top:-.7pt"><tr><td style="width:37%"><span class="lb">Call Ticket No:</span> ${e(r.call_ticket_no || '')}</td><td style="width:26%"><span class="lb">Call Received On:</span> ${qtDate(r.call_received_on)}</td><td><span class="lb">Work Completed On:</span> ${qtDate(r.work_completed_on)}</td></tr></table>
+    <table style="margin-top:-.7pt"><tr><td style="width:50%;padding:0"><table style="border:0"><tr><td style="border-width:0 0 .7pt" class="h"><span class="lb">Nature of Complaint:</span><br>${e(r.complaint || '').replace(/\n/g, '<br>')}</td></tr><tr><td style="border:0" class="h"><span class="lb">Action Taken:</span><br>${e(r.action_taken || '').replace(/\n/g, '<br>')}</td></tr></table></td>
+        <td style="padding:0"><table style="border:0"><tr><td style="border-width:0 0 .7pt" class="lb">Test Measurements (As Applicable)</td></tr>${CR_TESTS.map(([k, l], i) => `<tr><td style="border-width:0 0 ${i < CR_TESTS.length - 1 ? '.7pt' : '0'}">${l}: <b>${e(t[k] || '')}</b></td></tr>`).join('')}</table></td></tr>
+      <tr><td colspan="2" style="height:14mm"><span class="lb">Follow Up Action (If Any):</span> ${e(r.follow_up || '')}</td></tr></table>
+    <table style="margin-top:-.7pt"><tr><th colspan="4">MATERIALS USED</th></tr><tr><th style="width:12%">S No.</th><th>Particulars</th><th style="width:10%">Qty.</th><th style="width:36%">Recommendation</th></tr>${mats.map((m, i) => `<tr><td style="text-align:center;height:6mm">${m.particulars ? i + 1 : ''}</td><td>${e(m.particulars || '')}</td><td style="text-align:center">${e(m.qty || '')}</td><td>${e(m.recommendation || '')}</td></tr>`).join('')}</table>
+    <table style="margin-top:-.7pt"><tr><td colspan="2" style="height:14mm"><span class="lb">Customer’s Feedback:</span> ${e(r.customer_feedback || '')}</td></tr>
+      <tr><td style="width:50%;height:30mm">The equipment has been serviced to my/our satisfaction.<br>${r.signature_png && /^data:image\//.test(r.signature_png) ? `<img src="${e(r.signature_png)}" style="max-height:16mm;max-width:70mm;display:block;margin:1mm 0">` : '<div style="height:14mm"></div>'}<b>${e(r.customer_sign_name || '')}</b><div style="font-size:8.5pt">Customer’s Company Seal &amp; Signature</div></td>
+        <td>Technician Printed Name: <b>${e(r.technician_name || '')}</b><br>Sign. of Service Technician:<br>Date: <b>${qtDate(r.work_completed_on)}</b>${r.source === 'partner' ? `<br><span style="font-size:8.5pt">Filed by channel partner: ${e(r.partner_name || '')}</span>` : ''}<div style="text-align:right;font-size:8.5pt;margin-top:8mm">Service Engineer’s Sign</div></td></tr>
+      <tr><td colspan="2" style="height:16mm;font-size:9pt"><b>OFFICE USE ONLY</b> &nbsp; BNE Customer Coordination Officer: ____________________ &nbsp; Signature: ______________<br><br>Name: ____________________ &nbsp; Response Time (in hrs): ________ &nbsp; Turn Around: ________</td></tr></table>
+    </div></body></html>`);
+  w.document.close();
+}
+
 // ================= SERVICE BILLING: bill requests, payments, no-charge approvals =================
 const SB = { list: [], filter: 'requested' };
 async function sbBadge() {
@@ -4917,13 +5014,13 @@ async function loadOdooTickets() {
 function otJob(i) { const t = OT.list[i]; svcJobForm({ odoo: { id: t.id, ref: t.ref, stage: t.stage }, partner_id: t.partner_id, customer: t.customer, phone: t.phone, email: t.email, subject: t.subject, details: t.description, invoice_no: t.invoice, invoice_id: t.invoice_id, category: /install|commission/i.test(t.team) ? 'installation' : 'breakdown' }); }
 function wcJobPre(w, c) { return { partner_id: null, customer: (c || {}).name, phone: (c || {}).phone, email: (c || {}).email, city: (c || {}).city, product: w.product, model: w.model, serial: w.serial, invoice_no: w.invoice_no, invoice_id: w.invoice_id, invoice_date: w.invoice_date, warranty: w }; }
 function wcJob(i) { const w = WC.items[i]; svcJobForm(wcJobPre({ ...w, invoice_no: w.invoice ? w.invoice.number : '', invoice_id: w.invoice ? w.invoice.id : null }, w.customer)); }
-function wcJobLine(i, li, k) { const inv = WC.inv[i], l = WC.det.lines[li]; svcJobForm(wcJobPre({ ...l, serial: l.serials[k], invoice_no: WC.det.number, invoice_id: WC.det.id, invoice_date: WC.det.invoice_date }, inv.customer)); }
+function wcJobLine(i, li, k) { const inv = WC.inv[i], l = { ...WC.det.lines[li], ...((WC.det.lines[li].units || [])[k] || {}) }; svcJobForm(wcJobPre({ ...l, serial: l.serials[k], invoice_no: WC.det.number, invoice_id: WC.det.id, invoice_date: WC.det.invoice_date }, inv.customer)); }
 async function svcJobForm(pre) {
   OT.pre = pre = pre || {}; svcModal('<div class="empty">Loading…</div>', true);
-  const techs = can('svc.job.assign') ? await svcLoadTechs() : [], w = pre.warranty, cov = w ? (w.status === 'in_warranty' ? 'warranty' : 'chargeable') : (pre.coverage || '');
+  const techs = can('svc.job.assign') ? await svcLoadTechs() : [], w = pre.warranty, cov = w ? (['in_warranty', 'not_started'].includes(w.status) ? 'warranty' : 'chargeable') : (pre.coverage || '');
   const opt = (arr, v) => arr.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join(''), d10 = String(pre.phone || '').replace(/\D/g, '').slice(-10);
   svcModal(`<h3 style="margin-bottom:6px">${pre.odoo ? 'Assign technician · Odoo ticket ' + esc(pre.odoo.ref) : 'New service job'}</h3>
-    ${w ? `<div style="background:${w.status === 'in_warranty' ? '#E6F6EC' : '#FDECEC'};border-radius:10px;padding:10px;margin-bottom:10px">${wcBadge(w)} ${w.invoice_date ? `· invoice <b>${esc(pre.invoice_no || '')}</b> dated ${fmtD(w.invoice_date)} · billed ${w.days_since} days ago${w.expires ? ' · warranty till ' + fmtD(w.expires) : ''}` : ''}${w.status === 'out_of_warranty' ? '<br><b>Out of warranty – this job must be billed.</b>' : ''}</div>` : ''}
+    ${w ? `<div style="background:${w.status === 'in_warranty' ? '#E6F6EC' : w.status === 'not_started' ? '#FFF4E5' : '#FDECEC'};border-radius:10px;padding:10px;margin-bottom:10px">${wcBadge(w)} ${w.invoice_date ? `· invoice <b>${esc(pre.invoice_no || '')}</b> dated ${fmtD(w.invoice_date)} · billed ${w.days_since} days ago${w.expires ? ' · warranty till ' + fmtD(w.expires) : ''}` : ''}${w.status === 'out_of_warranty' ? '<br><b>Out of warranty – this job must be billed.</b>' : ''}</div>` : ''}
     ${pre.invoice_missing ? '<div style="background:#FFF4E5;border-radius:10px;padding:10px;margin-bottom:10px"><b>Invoice not found.</b> The job is created as chargeable and the Odoo ticket is marked for purchase verification.</div>' : ''}
     <div class="qtg2"><div class="field"><label>Customer name *</label><input id="jfName" value="${esc(pre.customer || '')}"></div><div class="field"><label>Site contact mobile * <span class="muted">(gets start / end codes)</span></label><input id="jfMob" maxlength="10" inputmode="numeric" value="${esc(d10)}"></div>
       <div class="field"><label>Site address</label><input id="jfAddr" value="${esc(pre.address || '')}"></div><div class="field"><label>City</label><input id="jfCity" value="${esc(pre.city || '')}"></div></div>
@@ -5087,7 +5184,10 @@ function wcMode(m) {
   document.getElementById('wcOut').innerHTML = ''; setTimeout(() => q.focus(), 50);
 }
 const wcBadge = w => w.status === 'in_warranty' ? `<span class="chip won" style="font-size:12.5px">In warranty · ${w.days_left} day${w.days_left === 1 ? '' : 's'} left</span>`
-  : w.status === 'out_of_warranty' ? `<span class="chip overdue" style="font-size:12.5px">Out of warranty · ended ${w.days_over} day${w.days_over === 1 ? '' : 's'} ago</span>` : '<span class="chip">Not billed yet</span>';
+  : w.status === 'out_of_warranty' ? `<span class="chip overdue" style="font-size:12.5px">Out of warranty · ended ${w.days_over} day${w.days_over === 1 ? '' : 's'} ago</span>`
+  : w.status === 'not_started' ? `<span class="chip" style="font-size:12.5px;background:#FFF4E5;color:#B45309">Not commissioned · warranty starts by ${fmtD(w.grace_until)}</span>` : '<span class="chip">Not billed yet</span>';
+const wcComm = (w, js) => w.report_no ? `<div class="muted" style="font-size:11.5px">Commissioned ${fmtD(w.commissioned_on)} · <a href="#" onclick="crOpen('${w.report_id}');return false">${esc(w.report_no)}</a></div>`
+  : (w.invoice_date && can('svc.ticket.create') ? `<div style="font-size:11.5px"><a href="#" onclick="${js};return false">Commissioning report</a></div>` : '');
 const wcCust = c => c ? `<b>${esc(c.name || '')}</b><div class="muted" style="font-size:11.5px">${esc([c.phone, c.city].filter(Boolean).join(' · '))}${c.email ? '<br>' + esc(c.email) : ''}</div>` : '<span class="muted">—</span>';
 async function wcSearch() {
   const q = document.getElementById('wcQ').value.trim(), out = document.getElementById('wcOut');
@@ -5102,7 +5202,7 @@ async function wcSearch() {
       tbl(['Serial no.', 'Machine', 'Customer', 'Invoice', 'Days since billed', 'Warranty', 'Status', ''], items.map((w, i) => [`<b>${esc(w.serial)}</b>`,
         `${esc(w.product)}${w.model ? `<div class="muted" style="font-size:11.5px">${esc(w.model)}</div>` : ''}`, wcCust(w.customer),
         w.invoice ? `<b>${esc(w.invoice.number)}</b><div class="muted" style="font-size:11.5px">${fmtD(w.invoice_date)}${w.sale_order ? ' · ' + esc(w.sale_order) : ''}</div>` : `<span class="muted">${w.sold ? 'Sold on ' + esc(w.sale_order) + ', invoice not posted' : 'Not sold – still in stock'}</span>`,
-        w.days_since != null ? `<b>${w.days_since}</b>` : '—', w.expires ? `${w.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(w.expires)}</div>` : `${w.months} months`, wcBadge(w), can('svc.ticket.create') ? `<a href="#" onclick="wcJob(${i});return false">Create job</a>` : '']));
+        w.days_since != null ? `<b>${w.days_since}</b>` : '—', (w.expires ? `${w.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(w.expires)}</div>` : `${w.months} months`) + wcComm(w, `wcCr(${i})`), wcBadge(w), can('svc.ticket.create') ? `<a href="#" onclick="wcJob(${i});return false">Create job</a>` : '']));
     WC.items = items;
   } else {
     WC.inv = items;
@@ -5119,7 +5219,8 @@ async function wcInvoice(i) {
   WC.det = r;
   svcModal(`<h3 style="margin-bottom:4px">Invoice ${esc(r.number)}</h3><div class="muted" style="margin-bottom:12px">${fmtD(r.invoice_date)} · ${esc((w.customer || {}).name || '')}${(w.customer || {}).phone ? ' · ' + esc(w.customer.phone) : ''} · billed ${w.days_since} day${w.days_since === 1 ? '' : 's'} ago</div>
     ${tbl(['Item', 'Qty', 'Serial numbers', 'Warranty', 'Status'], (r.lines || []).map(l => [`<b>${esc(l.product)}</b>${l.model ? `<div class="muted" style="font-size:11.5px">${esc(l.model)}</div>` : ''}`, Number(l.qty || 0).toLocaleString('en-IN'),
-      l.serials.length ? l.serials.map((sn, k) => esc(sn) + (can('svc.ticket.create') ? ` <a href="#" style="font-size:11.5px" onclick="wcJobLine(${i},${(r.lines || []).indexOf(l)},${k});return false">create job</a>` : '')).join('<br>') : `<span class="muted">${l.tracked ? 'not delivered yet' : '—'}</span>`, `${l.months} months<div class="muted" style="font-size:11.5px">till ${fmtD(l.expires)}</div>`, wcBadge(l)]))}
+      l.serials.length ? (l.units || []).map((u, k) => `<div style="margin-bottom:6px"><b>${esc(u.serial)}</b> ${wcBadge(u)}${wcComm(u, `wcCrLine(${i},${(r.lines || []).indexOf(l)},${k})`)}${can('svc.ticket.create') ? `<div style="font-size:11.5px"><a href="#" onclick="wcJobLine(${i},${(r.lines || []).indexOf(l)},${k});return false">Create job</a></div>` : ''}</div>`).join('') : `<span class="muted">${l.tracked ? 'not delivered yet' : '—'}</span>`,
+      `${l.months} months`, l.serials.length ? '' : wcBadge(l)]))}
     <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Close</button></div>`, true);
 }
 
