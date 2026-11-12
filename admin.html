@@ -257,7 +257,7 @@
     <h1>BNE Sales</h1>
     <p id="loginSub">Sign in with your company email</p>
     <div id="emailStep">
-      <input id="email" type="email" placeholder="you@bne.org.in" autocomplete="username" onkeydown="if(event.key==='Enter')sendCode()">
+      <input id="email" type="email" placeholder="Your email" autocomplete="username" onkeydown="if(event.key==='Enter')sendCode()">
       <button class="btn" id="sendBtn" onclick="sendCode()">Send sign-in code</button>
     </div>
     <div id="codeStep" style="display:none">
@@ -694,7 +694,7 @@
         <h2>Add team member</h2>
         <div class="toolbar">
           <input id="spName" placeholder="Full name *">
-          <input id="spEmail" type="email" placeholder="Work email * (name@bne.org.in)" style="min-width:230px">
+          <input id="spEmail" type="email" placeholder="Email * (work or personal)" style="min-width:230px">
           <select id="spRole"><option value="sales">Salesperson</option><option value="manager">Branch manager</option><option value="head">Head</option><option value="admin">Admin</option><option value="coordinator">Coordinator</option><option value="telecaller">Tele-caller</option><option value="quote">Quote team</option><option value="technician">Technician (service)</option><option value="service_manager">Service manager</option><option value="design_engineer">Design engineer</option></select>
           <select id="spBranch"></select>
           <input id="spMobile" placeholder="Mobile (optional)" maxlength="10" inputmode="numeric" style="max-width:150px">
@@ -702,7 +702,7 @@
           <button class="btn" onclick="addInvite()">Add person</button>
         </div>
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
-        <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Only emails you add here (or any @bne.org.in address) can sign in.</p>
+        <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Any email you add here can sign in, including a personal one such as Gmail (use that for technicians who have no work email). Any @bne.org.in address can also sign in.</p>
       </div>
       <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div class="toolbar"><button class="btn" id="delInvBtn" style="background:#DC2626;display:none" onclick="deleteSelectedInvites()">Delete selected invites</button></div><div id="invitesTbl"></div></div>
       <div class="panel" data-roles="admin,head"><h2>Service access <span class="sub">who is in the service team and what each role can do</span></h2><div id="svcAccess"></div></div>
