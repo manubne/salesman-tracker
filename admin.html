@@ -275,6 +275,7 @@
   <div class="panel" style="max-width:420px;text-align:center">
     <h2 style="justify-content:center">Use the mobile app</h2>
     <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the quote team, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNE Sales app on their phone.</p>
+    <div id="noAccessRole" style="margin-bottom:14px"></div>
     <button class="btn" onclick="logout()">Sign out</button>
   </div>
 </div>
@@ -1498,6 +1499,10 @@ async function verifyCode() {
 }
 async function logout() { await db.auth.signOut(); location.reload(); }
 
+// Test mode: accounts with can_switch_role can try the platform as any role (the role really changes until switched back)
+const TEST_ROLES = [['admin', 'Admin'], ['head', 'Head'], ['manager', 'Branch manager'], ['sales', 'Salesperson'], ['service_manager', 'Service manager'], ['technician', 'Technician'], ['quote', 'Quote team'], ['design_engineer', 'Design engineer'], ['coordinator', 'Coordinator'], ['telecaller', 'Tele-caller']];
+function roleSwitchHtml() { return `<select onchange="switchTestRole(this.value)" title="Test mode: switch role" style="margin-top:8px;width:100%;padding:6px 8px;border-radius:8px;border:1px solid #F59E0B;background:#FFFBEB;color:#92400E;font-weight:600;font-size:12.5px">${TEST_ROLES.map(([k, l]) => `<option value="${k}"${ME.role === k ? ' selected' : ''}>Test as: ${l}</option>`).join('')}</select>`; }
+async function switchTestRole(r) { const { error } = await db.rpc('set_my_test_role', { p_role: r }); if (error) { alert(error.message); return; } location.reload(); }
 async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) return;
@@ -1507,9 +1512,11 @@ async function init() {
   try { const { data: pp } = await db.rpc('my_perms'); PERMS = pp || {}; } catch (_) { PERMS = {}; }
   const svcDesk = can('svc.ticket.view_all') || can('svc.job.view_all') || can('svc.amc.view');
   const qtDesk = can('quote.create') || can('quote.view_all') || can('quote.master');
+  if (ME && ME.can_switch_role) { const h = roleSwitchHtml(); document.getElementById('noAccessRole').innerHTML = h; }
   if (!ME || !ME.active || !(isStaff() || ((svcDesk || qtDesk) && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
   document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
+  if (ME.can_switch_role) document.getElementById('meBox').insertAdjacentHTML('beforeend', roleSwitchHtml());
   // role-based navigation
   document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
   document.querySelectorAll('[data-perm]').forEach(el => { el.style.display = el.dataset.perm.split(',').some(can) ? '' : 'none'; });
