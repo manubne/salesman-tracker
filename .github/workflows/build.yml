@@ -30,11 +30,11 @@ jobs:
       - name: Create platform folders (org.bne package)
         working-directory: app
         run: flutter create --org org.bne --platforms=android,web .
-      - name: Brand app name and icon (BNE Sales)
+      - name: Brand app name and icon (BNEOne)
         working-directory: app
         run: |
           M=android/app/src/main/AndroidManifest.xml
-          sed -i 's#android:label="[^"]*"#android:label="BNE Sales"#' $M
+          sed -i 's#android:label="[^"]*"#android:label="BNEOne"#' $M
           grep -n 'android:label' $M
           pip install --quiet pillow
           python3 - <<'PY'
