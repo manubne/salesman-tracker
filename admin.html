@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BNE Sales — Dashboard</title>
+<title>BNEOne — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
@@ -254,7 +254,7 @@
 <div id="loginView">
   <div id="loginBox">
     <img src="logo.png" alt="BNE" class="loginlogo" onerror="this.style.display='none'">
-    <h1>BNE Sales</h1>
+    <h1>BNEOne</h1>
     <p id="loginSub">Sign in with your company email</p>
     <div id="emailStep">
       <input id="email" type="email" placeholder="Your email" autocomplete="username" onkeydown="if(event.key==='Enter')sendCode()">
@@ -274,7 +274,7 @@
 <div id="noAccess" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px">
   <div class="panel" style="max-width:420px;text-align:center">
     <h2 style="justify-content:center">Use the mobile app</h2>
-    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the quote team, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNE Sales app on their phone.</p>
+    <p class="muted" style="margin-bottom:16px">This dashboard is for admins, managers, the quote team, the service desk, coordinators and tele-callers. Sales people and technicians should use the BNEOne app on their phone.</p>
     <div id="noAccessRole" style="margin-bottom:14px"></div>
     <button class="btn" onclick="logout()">Sign out</button>
   </div>
@@ -283,7 +283,7 @@
 <div id="appView" class="shell" style="display:none">
   <div id="scrim" onclick="toggleSidebar(false)"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><img src="logo.png" alt="" style="width:30px;height:30px;border-radius:50%;background:#fff" onerror="this.outerHTML='<span class=&quot;logo&quot;>B</span>'"> BNE Sales</div>
+    <div class="brand"><img src="logo.png" alt="" style="width:30px;height:30px;border-radius:50%;background:#fff" onerror="this.outerHTML='<span class=&quot;logo&quot;>B</span>'"> BNEOne</div>
     <div class="me" id="meBox"></div>
     <nav>
       <button data-v="overview" data-roles="admin,head,manager" onclick="show('overview')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Overview</span></button>
@@ -2156,8 +2156,8 @@ async function addInvite() {
 }
 async function emailInvite(email, name) {
   const dash = location.origin + location.pathname;
-  const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNE Sales</b>.</p><ol><li>Install the app on your Android phone: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it, enter this email (<b>${esc(email)}</b>) and type the one-time code we send you.</li></ol><p>Managers can also use the web dashboard: <a href="${dash}">${dash}</a></p><p>Welcome aboard!</p>`;
-  const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNE Sales', html } });
+  const html = `<p>Hi ${esc(name)},</p><p>You have been added to <b>BNEOne</b>.</p><ol><li>Install the app on your Android phone: <a href="${APK_URL}">${APK_URL}</a></li><li>Open it, enter this email (<b>${esc(email)}</b>) and type the one-time code we send you.</li></ol><p>Managers can also use the web dashboard: <a href="${dash}">${dash}</a></p><p>Welcome aboard!</p>`;
+  const { data, error } = await db.functions.invoke('send-email', { body: { to: email, subject: 'Welcome to BNEOne', html } });
   if (error || (data && (data.error || data.statusCode >= 400))) {
     let why = data?.error?.message || data?.message || data?.error || error?.message || '';
     try { const j = await error?.context?.json?.(); why = j?.message || j?.error?.message || j?.error || why; } catch (_) {}
@@ -2167,7 +2167,7 @@ async function emailInvite(email, name) {
   alert('Invite email sent to ' + email);
 }
 function waInvite(mob, name) {
-  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent('Hi ' + name + ', you have been added to BNE Sales.\n\n1) Install the app: ' + APK_URL + '\n2) Open it and sign in with your work email — a one-time code will be emailed to you.\n\nWelcome aboard!'), '_blank');
+  window.open('https://wa.me/91' + mob + '?text=' + encodeURIComponent('Hi ' + name + ', you have been added to BNEOne.\n\n1) Install the app: ' + APK_URL + '\n2) Open it and sign in with your work email — a one-time code will be emailed to you.\n\nWelcome aboard!'), '_blank');
 }
 async function loadInvites() {
   const { data } = await db.from('salesperson_invites').select('*').order('created_at', { ascending: false });
