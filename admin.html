@@ -4868,7 +4868,7 @@ async function qrOpen(id) {
     ${r.revise_note ? `<div style="background:#FFF4E5;border-radius:10px;padding:10px;margin-top:8px"><b>Change asked (${r.revision}):</b> ${esc(r.revise_note)}</div>` : ''}
     ${r.file_path ? `<div class="ch" style="margin-top:14px">Quotation</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><a class="btn sec" href="${esc(url || '#')}" target="_blank">⬇ ${esc(r.file_name || 'Download')}</a>
         <span>${r.quote_ref ? 'Ref <b>' + esc(r.quote_ref) + '</b> · ' : ''}${r.quote_amount != null ? 'Value <b>' + rs(Math.round(r.quote_amount)) + '</b> · ' : ''}ready ${fmtDT(r.ready_at)}</span></div>${r.quote_note ? `<div class="muted" style="margin-top:6px">Note from quote team: ${esc(r.quote_note)}</div>` : ''}` : ''}
-    ${['ready', 'sent'].includes(r.status) && qrMine(r) ? `<div class="ch" style="margin-top:14px">Send to the client</div><div style="display:flex;gap:8px;flex-wrap:wrap">
+    ${['ready', 'sent'].includes(r.status) && (qrMine(r) || qrDesk()) ? `<div class="ch" style="margin-top:14px">Send to the client</div><div style="display:flex;gap:8px;flex-wrap:wrap">
         <a class="btn" target="_blank" href="https://wa.me/${digits.length === 10 ? '91' + digits : ''}?text=${encodeURIComponent(msg)}" onclick="qrSent('${r.id}','whatsapp')">WhatsApp</a>
         <a class="btn" href="mailto:${esc(r.customer_email || '')}?subject=${encodeURIComponent('Quotation ' + (r.quote_ref || '') + ' - B N Enterprises')}&body=${encodeURIComponent(msg)}" onclick="qrSent('${r.id}','email')">Email</a>
         ${r.status === 'ready' ? `<button class="btn sec" onclick="qrSent('${r.id}','other')">Mark as sent</button>` : ''}<button class="btn sec" onclick="qrReopen('${r.id}')">Ask for changes</button></div>
