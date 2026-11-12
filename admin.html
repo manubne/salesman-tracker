@@ -304,7 +304,6 @@
       <button data-v="billing" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
       <button data-v="payments" data-roles="admin,head,manager" onclick="show('payments')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg><span>Payments</span><span class="badge" id="payBadge" style="display:none"></span></button>
       <button data-v="customers" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('customers')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Customers</span></button>
-      <button data-v="orders" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('orders')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Quotes &amp; catalog</span></button>
       <button data-v="followups" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('followups')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Follow-ups</span></button>
       <button data-v="reqs" data-roles="admin,head,manager" onclick="show('reqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Requirements</span></button>
 
@@ -1700,11 +1699,10 @@ async function loadCategories() {
   const el = document.getElementById('catList'); if (!el) return;
   if (!_cats.length) { el.innerHTML = '<div class="empty">No categories yet. Add one above.</div>'; return; }
   const quoteUsers = cache.users.filter(u => ['quote','manager','admin'].includes(u.role) && u.active);
-  el.innerHTML = tbl(['Category','Active','Quote prepared by'],
+  el.innerHTML = tbl(['Category','Active'],
     _cats.map(c => [
       `<input class="inp" value="${esc(c.name)}" onchange="renameCategory('${c.id}', this.value)" style="min-width:200px">`,
-      `<input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleCategory('${c.id}', this.checked)" style="width:18px;height:18px;accent-color:var(--brand)">`,
-      `<select class="inp" onchange="setCatQuoteUser('${c.id}', this.value)">${opts(quoteUsers.map(u => ({ v: u.id, l: (u.name || u.mobile) + ' (' + u.role + ')' })), c.quote_user_id, '— unassigned —')}</select>`]));
+      `<input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleCategory('${c.id}', this.checked)" style="width:18px;height:18px;accent-color:var(--brand)">`]));
 }
 async function renameCategory(id, name) { if (!name.trim()) return; const { error } = await db.from('order_categories').update({ name: name.trim() }).eq('id', id); if (error) alert(error.message); else loadCategories(); }
 async function toggleCategory(id, active) { const { error } = await db.from('order_categories').update({ active }).eq('id', id); if (error) alert(error.message); }
@@ -2596,6 +2594,7 @@ async function dropStage(stage) {
 async function moveStage(id, stage) {
   if (stage === 'won') return openWon(id);
   if (stage === 'lost') return openLost(id);
+  if (stage === 'need_quote') { const o = (cache.orders || []).find(x => x.id === id) || _ov; if (o && o.stage !== 'need_quote') { closeModal('oppViewBg'); return qrForm(o); } }
   const { error } = await db.from('orders').update({ stage }).eq('id', id);
   if (error) { alert(error.message); return; }
   await loadPipeline(); if (_ov && _ov.id === id && document.getElementById('oppViewBg').classList.contains('show')) openOpp(id);
@@ -2693,7 +2692,7 @@ function openOppForm(o, preset) {
   document.getElementById('ofCat').innerHTML = '<option value="">— choose —</option>' + _cats.filter(c => c.active || (o && c.id === o.category_id)).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   document.getElementById('ofOwner').innerHTML = repOpts(o ? ownerOf(o) : '', '— me —');
   document.getElementById('ofOwner').disabled = !canRunDeals();
-  document.getElementById('ofStage').innerHTML = ['qualified', 'demo', 'need_quote', 'quoted', 'negotiation'].map(s => `<option value="${s}">${STAGES[s]}</option>`).join('');
+  document.getElementById('ofStage').innerHTML = ['qualified', 'demo', 'quoted', 'negotiation'].map(s => `<option value="${s}">${STAGES[s]}</option>`).join('');
   const v = (id, x) => document.getElementById(id).value = x ?? '';
   v('ofName', o?.title); v('ofCat', o?.category_id); v('ofValue', o?.est_value); v('ofQty', o?.qty); v('ofSqft', o?.sqft);
   v('ofClose', o?.expected_close || (o ? '' : new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10))); v('ofProb', o ? o.probability : ''); v('ofNotes', o?.notes);
@@ -4897,8 +4896,8 @@ async function qrSubmit(id) {
 async function qrSent(id, via) { const r = QR.list.find(x => x.id === id); if (r && r.status === 'sent' && via !== 'other') return; await qrRpc('qr_sent', { p_id: id, p_via: via }, via === 'other' ? 'Marked as sent' : null); if (via === 'other') closeModal('svcBg'); }
 async function qrReopen(id) { const note = prompt('What should the quote team change?'); if (!note) return; if (await qrRpc('qr_reopen', { p_id: id, p_note: note }, 'Sent back to the quote team')) closeModal('svcBg'); }
 async function qrCancel(id) { const why = prompt('Why is this request cancelled? (optional)'); if (why === null) return; if (await qrRpc('qr_cancel', { p_id: id, p_reason: why }, 'Request cancelled')) closeModal('svcBg'); }
-async function qrForm() {
-  QR.items = [{ machine: '', qty: 1, rate: '' }]; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
+async function qrForm(deal) {
+  QR.items = [{ machine: '', qty: 1, rate: '' }]; QR.deal = deal && deal.id ? deal : null; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
   svcModal(`<h3 style="margin-bottom:10px">Request a quote</h3>
     <div class="field"><label>Customer <span class="muted">(pick from the list, or type a new name below)</span></label><input id="qfCustQ" list="qfCusts" placeholder="Search customer…" onchange="qrPickCust(this.value)"><datalist id="qfCusts">${custs.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist></div>
     <div class="qtg2"><div class="field"><label>Customer name *</label><input id="qfName"></div><div class="field"><label>Mobile</label><input id="qfMob" maxlength="14" inputmode="numeric"></div>
@@ -4906,18 +4905,28 @@ async function qrForm() {
     <div class="qtg3"><div class="field"><label>Type</label><select id="qfSys"><option value="">—</option><option>VRF</option><option>DX / Split</option><option>Ductable</option><option>Service / AMC</option><option>Other</option></select></div>
       <div class="field"><label>Brand</label><input id="qfBrand" list="qfBrands" placeholder="LG, Mitsubishi…"><datalist id="qfBrands">${(QT.brands || []).map(b => `<option value="${esc(b.name)}">`).join('')}<option value="LG"><option value="Mitsubishi"><option value="Toshiba-Carrier"></datalist></div>
       <div class="field"><label>Needed by</label><input id="qfBy" type="date" min="${todayStr()}"></div></div>
+    <div class="field" id="qfDealWrap" style="display:none"><label>Link to deal <span class="muted">(the deal moves to “Quote requested”, then “Quoted” when the quotation is attached)</span></label><select id="qfDeal"></select></div>
     <div class="ch">Machines needed</div><div id="qfItems"></div><button class="btn sec" onclick="qrItemAdd()">+ Add machine</button>
     <div class="field" style="margin-top:10px"><label>Anything else the quote team should know</label><textarea id="qfNotes" rows="3" placeholder="Site details, installation scope, payment terms asked…"></textarea></div>
     <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="qrCreate()">Send request to quote team</button></div>`, true);
   QR.cust = null; qrItemsRender();
+  if (QR.deal) { const d = QR.deal, c = party(d); QR.cust = d.customer_id || null; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10);
+    document.getElementById('qfEmail').value = c.email || ''; document.getElementById('qfCity').value = c.city || ''; if (d.title) document.getElementById('qfNotes').value = 'Deal: ' + d.title; }
+  qrDealOpts();
+}
+function qrDealOpts() {
+  const w = document.getElementById('qfDealWrap'), sel = document.getElementById('qfDeal'); if (!w) return;
+  const list = (cache.orders || []).filter(o => OPEN_STAGES.includes(o.stage) && ((QR.cust && o.customer_id === QR.cust) || (QR.deal && o.id === QR.deal.id)));
+  w.style.display = list.length ? '' : 'none';
+  sel.innerHTML = (QR.deal ? '' : '<option value="">— no deal —</option>') + list.map(o => `<option value="${o.id}" ${QR.deal && QR.deal.id === o.id ? 'selected' : ''}>${esc(o.title || 'Deal')} · ${STAGES[o.stage] || o.stage}</option>`).join('');
 }
 function qrItemsRender() { document.getElementById('qfItems').innerHTML = QR.items.map((it, i) => `<div style="display:grid;grid-template-columns:1fr 90px 150px 28px;gap:8px;margin-bottom:8px"><input class="inp" placeholder="Machine / model, e.g. 2 TR 4-way cassette inverter" value="${esc(it.machine)}" oninput="QR.items[${i}].machine=this.value"><input class="inp" type="number" min="1" placeholder="Qty" value="${esc(it.qty)}" oninput="QR.items[${i}].qty=this.value"><input class="inp" type="number" placeholder="Rate asked ₹ (optional)" value="${esc(it.rate)}" oninput="QR.items[${i}].rate=this.value">${QR.items.length > 1 ? `<a class="qx" onclick="QR.items.splice(${i},1);qrItemsRender()">×</a>` : '<span></span>'}</div>`).join(''); }
 function qrItemAdd() { QR.items.push({ machine: '', qty: 1, rate: '' }); qrItemsRender(); }
-async function qrPickCust(v) { const c = (await svcCustomers()).find(x => svcCustLabel(x) === v); if (!c) return; QR.cust = c.id; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10); document.getElementById('qfCity').value = c.city || ''; }
+async function qrPickCust(v) { const c = (await svcCustomers()).find(x => svcCustLabel(x) === v); if (!c) return; QR.cust = c.id; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10); document.getElementById('qfCity').value = c.city || ''; qrDealOpts(); }
 async function qrCreate() {
   const v = id => document.getElementById(id).value.trim(), items = QR.items.filter(i => String(i.machine).trim()).map(i => ({ machine: String(i.machine).trim(), qty: Number(i.qty) || 1, rate: i.rate === '' ? null : Number(i.rate) }));
-  const { data, error } = await db.rpc('qr_create', { p: { customer_id: QR.cust, customer_name: v('qfName'), customer_mobile: v('qfMob'), customer_email: v('qfEmail'), city: v('qfCity'), system: v('qfSys'), brand: v('qfBrand'), needed_by: v('qfBy'), items, notes: v('qfNotes') } });
-  if (error) { qtToast(error.message, true); return; } closeModal('svcBg'); qtToast(`Request ${data.req_no} sent to the quote team`); loadQuoteReqs();
+  const { data, error } = await db.rpc('qr_create', { p: { customer_id: QR.cust, order_id: (document.getElementById('qfDeal') || {}).value || null, customer_name: v('qfName'), customer_mobile: v('qfMob'), customer_email: v('qfEmail'), city: v('qfCity'), system: v('qfSys'), brand: v('qfBrand'), needed_by: v('qfBy'), items, notes: v('qfNotes') } });
+  if (error) { qtToast(error.message, true); return; } closeModal('svcBg'); qtToast(`Request ${data.req_no} sent to the quote team`); loadQuoteReqs(); if (data.order_id && typeof loadPipeline === 'function') loadPipeline();
 }
 
 // ================= WARRANTY CHECK (Odoo) =================
