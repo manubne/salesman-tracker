@@ -979,7 +979,7 @@
           <div class="field"><label>An order counts for incentive</label><select id="setPayBasis"><option value="fully_paid">When fully paid &amp; verified (in that month)</option><option value="won">When marked Won (PO received)</option></select></div>
           <div class="field"><label>Treat as fully paid when the balance is at most (₹)</label><input id="setPayTol" type="number" min="0" step="1"></div>
           <div class="field"><label><input type="checkbox" id="setPayProof"> Payment screenshot / proof is required</label></div>
-          <div class="field"><label>UTR / reference required for</label><input id="setPayUtr" placeholder="upi, neft, rtgs, imps, cheque, dd, card"></div>
+          <div class="field"><label>UTR / reference required for</label><input id="setPayUtr" placeholder="upi, neft, rtgs, imps, cheque, dd, card"><span class="muted" style="font-size:12px">Leave “cash” out: for cash the salesperson can enter a receipt no. if there is one.</span></div>
         </div>
         <div style="margin-top:14px"><button class="btn" onclick="savePaySettings()">Save</button> <span id="msgPay"></span></div>
       </div>
@@ -1154,7 +1154,7 @@
         <div class="field"><label>Order value (₹) *</label><input id="wnValue" inputmode="decimal"></div>
         <div class="field"><label id="wnAdvLbl">Advance received (₹)</label><input id="wnAdv" inputmode="decimal"></div>
         <div class="field"><label>Payment mode</label><select id="wnMode"></select></div>
-        <div class="field"><label>UTR / cheque / reference</label><input id="wnRef"></div>
+        <div class="field"><label>UTR / cheque no. / receipt no. (cash)</label><input id="wnRef"></div>
         <div class="field"><label>Payment terms</label><input id="wnTerms" placeholder="e.g. 30% advance, balance before dispatch"></div>
         <div class="field"><label>Committed delivery date</label><input id="wnDelivery" type="date"></div>
         <div class="field"><label id="wnPoFileLbl">PO copy</label><input type="file" id="wnPoFile" accept="image/*,application/pdf"><p class="hint" id="wnPoHave"></p></div>
