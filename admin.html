@@ -326,6 +326,7 @@
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
+      <button data-v="salesreports" data-roles="admin,head" onclick="show('salesreports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Sales email reports</span></button>
       <button data-v="oem" data-roles="admin,head,head" onclick="show('oem')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6 4V8l6 4V4h6v17z"/></svg><span>OEM access</span></button>
       <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
       <button data-v="settings" data-roles="admin,head,head" onclick="show('settings')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
@@ -830,6 +831,44 @@
     </div>
 
     <!-- ================= SETTINGS ================= -->
+    <div id="salesreports" class="view">
+      <div class="panel"><h2>Sales email reports <span class="sub">daily 8:00 AM · weekly Monday 8:15 AM · monthly 1st 8:30 AM — one email per branch</span></h2>
+        <div class="toolbar">
+          <select class="inp" id="srKind"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+          <input class="inp" type="date" id="srDate" title="Any day inside the period">
+          <select class="inp" id="srBranch"><option value="">All branches</option></select>
+          <button class="btn" onclick="srPreview()">Preview</button>
+          <button class="btn sec" onclick="srTest()">Send test to me</button>
+          <button class="btn sec" onclick="srSendNow()">Send to managers now</button>
+        </div>
+        <div id="srInfo" class="hint"></div>
+        <iframe id="srFrame" style="width:100%;height:760px;border:1px solid var(--line,#e5e9f0);border-radius:12px;background:#f4f6fa;display:none"></iframe>
+      </div>
+      <div class="panel"><h2>Who gets them and what is flagged</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+          <label><input type="checkbox" id="srOn"> Reports switched on</label>
+          <label><input type="checkbox" id="srD"> Daily</label>
+          <label><input type="checkbox" id="srW"> Weekly</label>
+          <label><input type="checkbox" id="srM"> Monthly</label>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px">
+          <div class="field"><label>Always in cc <span class="muted">(comma separated)</span></label><input class="inp" id="srCc" style="width:100%"></div>
+          <div class="field"><label>To, when a branch has no manager</label><input class="inp" id="srFb" style="width:100%"></div>
+          <div class="field"><label>Leave out branches</label><input class="inp" id="srEx" style="width:100%"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px">
+          <div class="field"><label>Red flag: code skipped in ≥ % of visits</label><input class="inp" type="number" id="srSkip" min="1" max="100"></div>
+          <div class="field"><label>…counted from visits</label><input class="inp" type="number" id="srSkipMin" min="1"></div>
+          <div class="field"><label>Flag short visits from</label><input class="inp" type="number" id="srShort" min="1"></div>
+          <div class="field"><label>Late after duty start + min</label><input class="inp" type="number" id="srLate" min="0"></div>
+          <div class="field"><label>Target visits a day</label><input class="inp" type="number" id="srMinV" min="0"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" onclick="srSave()">Save</button> <span id="msgSr"></span></div>
+        <p class="hint">To: the branch manager(s) set on the team page. If a branch has no manager it goes to the list above. Short visit = under the minimum visit time in Settings.</p>
+      </div>
+      <div class="panel"><h2>Sent reports</h2><div id="srLog"></div></div>
+    </div>
+
     <div id="oem" class="view">
       <div class="panel"><h2>OEM access <span class="sub">manufacturer people who can only check stock in the app</span></h2>
         <div class="toolbar"><button class="btn" onclick="oemForm()">+ Add OEM user</button><button class="btn sec" onclick="loadOem()">Refresh</button></div>
@@ -1614,6 +1653,7 @@ function show(v) {
   if (v === 'analytics') initAnalytics();
   if (v === 'settings') renderSettings();
   if (v === 'oem') loadOem();
+  if (v === 'salesreports') loadSalesReports();
   if (v === 'svcTickets') loadSvcTickets();
   if (v === 'svcTechs') loadSvcTechs();
   if (v === 'svcBoard') loadSvcBoard();
@@ -1646,6 +1686,69 @@ function fillFilters() {
   const terr = [...new Set(cache.users.map(u => u.territory).filter(Boolean))];
   document.getElementById('terrList').innerHTML = terr.map(t => `<option value="${esc(t)}">`).join('');
 }
+/* ---------- sales email reports ---------- */
+let SR_LAST = [];
+async function srCall(body) {
+  const s = (await db.auth.getSession()).data.session;
+  const r = await fetch(db.supabaseUrl + '/functions/v1/sales-report', { method: 'POST', headers: { apikey: db.supabaseKey, Authorization: 'Bearer ' + (s?.access_token || ''), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('Error ' + r.status));
+  return j;
+}
+const srBody = mode => { const b = { kind: document.getElementById('srKind').value, mode }; const d = document.getElementById('srDate').value; if (d) b.date = d; const br = document.getElementById('srBranch').value; if (br) b.branch_id = br; return b; };
+const srList = a => (a || []).join(', ');
+const srSplit = v => v.split(',').map(x => x.trim()).filter(Boolean);
+async function loadSalesReports() {
+  const c = S('sales_reports', {}), f = c.flags || {};
+  document.getElementById('srOn').checked = c.enabled !== false; document.getElementById('srD').checked = c.daily !== false;
+  document.getElementById('srW').checked = c.weekly !== false; document.getElementById('srM').checked = c.monthly !== false;
+  document.getElementById('srCc').value = srList(c.cc); document.getElementById('srFb').value = srList(c.fallback_to); document.getElementById('srEx').value = srList(c.exclude_branches);
+  document.getElementById('srSkip').value = f.skip_rate_pct ?? 30; document.getElementById('srSkipMin').value = f.min_visits_for_skip ?? 3;
+  document.getElementById('srShort').value = f.short_visits ?? 2; document.getElementById('srLate').value = f.late_minutes ?? 15; document.getElementById('srMinV').value = f.min_daily_visits ?? 3;
+  const { data } = await db.from('report_log').select('*').order('created_at', { ascending: false }).limit(60);
+  document.getElementById('srLog').innerHTML = (data || []).length ? tbl(['When', 'Report', 'Branch', 'To', 'Cc', 'Status'], data.map(x => [
+    new Date(x.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }),
+    esc(x.kind + ' · ' + x.period_from + (x.period_to !== x.period_from ? ' → ' + x.period_to : '')) + (x.test ? ' <span class="muted">(test)</span>' : ''),
+    esc(x.branch_name || ''), esc(srList(x.to_list)), esc(srList(x.cc_list)),
+    x.status === 'sent' ? '<span style="color:#15803d;font-weight:700">Sent</span>' : `<span style="color:#b91c1c;font-weight:700">Failed</span> <span class="muted">${esc(x.error || '')}</span>`]))
+    : '<div class="empty">Nothing sent yet.</div>';
+}
+async function srPreview() {
+  const info = document.getElementById('srInfo'); info.textContent = 'Building the preview…';
+  try {
+    const j = await srCall(srBody('preview')); SR_LAST = j.results.filter(x => x.html);
+    const sel = document.getElementById('srBranch'), cur = sel.value;
+    if (sel.options.length <= 1) for (const x of SR_LAST) sel.add(new Option(x.branch, x.branch_id));
+    sel.value = cur;
+    if (!SR_LAST.length) { info.textContent = 'Nothing to send for this period.'; document.getElementById('srFrame').style.display = 'none'; return; }
+    const x = SR_LAST[0];
+    info.innerHTML = `<b>${esc(x.subject)}</b><br>To: ${esc(srList(x.to)) || '<span style="color:#b91c1c">nobody</span>'} · Cc: ${esc(srList(x.cc))}` + (SR_LAST.length > 1 ? `<br>${SR_LAST.length} branches — pick one above to see the others.` : '');
+    const f = document.getElementById('srFrame'); f.style.display = 'block'; f.srcdoc = x.html;
+  } catch (e) { info.textContent = e.message; }
+}
+async function srTest() {
+  const info = document.getElementById('srInfo'); info.textContent = 'Sending the test to your email only…';
+  try { const j = await srCall(srBody('test')); const ok = j.results.filter(x => x.sent).length; info.textContent = ok ? `Sent ${ok} test email${ok > 1 ? 's' : ''} to you (nobody else).` : (j.results.map(x => x.error || x.skipped).join(', ') || 'Nothing to send.'); loadSalesReports(); }
+  catch (e) { info.textContent = e.message; }
+}
+async function srSendNow() {
+  const b = srBody('send');
+  if (!confirm(`Email the ${b.kind} report${b.branch_id ? '' : ' for every branch'} to the branch managers with the cc list now?`)) return;
+  const info = document.getElementById('srInfo'); info.textContent = 'Sending…';
+  try { const j = await srCall({ ...b, force: true }); info.textContent = j.results.map(x => `${x.branch}: ${x.sent ? 'sent' : (x.error || x.skipped)}`).join(' · ') || 'Nothing to send.'; loadSalesReports(); }
+  catch (e) { info.textContent = e.message; }
+}
+async function srSave() {
+  const num = (id, lo, hi) => { const n = Number(document.getElementById(id).value); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : lo; };
+  const bad = [...srSplit(document.getElementById('srCc').value), ...srSplit(document.getElementById('srFb').value)].filter(e => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+  if (bad.length) { flash('msgSr', 'Check these emails: ' + bad.join(', '), false); return; }
+  const v = { ...S('sales_reports', {}), enabled: document.getElementById('srOn').checked, daily: document.getElementById('srD').checked, weekly: document.getElementById('srW').checked, monthly: document.getElementById('srM').checked,
+    cc: srSplit(document.getElementById('srCc').value.toLowerCase()), fallback_to: srSplit(document.getElementById('srFb').value.toLowerCase()), exclude_branches: srSplit(document.getElementById('srEx').value),
+    flags: { skip_rate_pct: num('srSkip', 1, 100), min_visits_for_skip: num('srSkipMin', 1, 50), short_visits: num('srShort', 1, 50), late_minutes: num('srLate', 0, 240), min_daily_visits: num('srMinV', 0, 30) } };
+  await saveSetting('sales_reports', v, 'msgSr');
+}
+document.addEventListener('change', e => { if (e.target?.id === 'srBranch' && SR_LAST.length) { const x = SR_LAST.find(y => y.branch_id === e.target.value); if (x) { document.getElementById('srFrame').srcdoc = x.html; document.getElementById('srInfo').innerHTML = `<b>${esc(x.subject)}</b><br>To: ${esc(srList(x.to))} · Cc: ${esc(srList(x.cc))}`; } } });
+
 /* ---------- customer app contact + OEM access ---------- */
 function renderPortalContact() {
   const p = S('portal', {});
