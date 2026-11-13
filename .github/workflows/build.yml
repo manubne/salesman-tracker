@@ -176,6 +176,11 @@ jobs:
       - name: Get packages
         working-directory: app
         run: flutter pub get
+      - name: Unit tests (a failing test stops the build)
+        working-directory: app
+        run: |
+          rm -f test/widget_test.dart   # sample test added by `flutter create`, not ours
+          flutter test --reporter expanded
       - name: Build signed App Bundle (.aab)
         working-directory: app
         run: flutter build appbundle --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER}
