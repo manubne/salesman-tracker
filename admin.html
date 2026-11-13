@@ -4591,7 +4591,9 @@ async function openSvcTicket(id) {
   if (error || !t) { svcModal(`<div class="empty">${esc(error?.message || 'Ticket not found')}</div>`); return; }
   if (!_svc.techs.length && (can('svc.job.view_all') || can('svc.job.assign'))) await svcLoadTechs();
   const jobs = (t.service_jobs || []).sort((a, b) => a.created_at.localeCompare(b.created_at)), msgs = (t.ticket_messages || []).sort((a, b) => a.created_at.localeCompare(b.created_at));
-  const { data: media } = jobs.length ? await db.from('media').select('*').eq('entity_type', 'service_job').in('entity_id', jobs.map(j => j.id)) : { data: [] };
+  const [{ data: media }, { data: tmedia }] = await Promise.all([
+    jobs.length ? db.from('media').select('*').eq('entity_type', 'service_job').in('entity_id', jobs.map(j => j.id)).order('created_at') : Promise.resolve({ data: [] }),
+    db.from('media').select('*').eq('entity_type', 'service_ticket').eq('entity_id', t.id).order('created_at')]);
   const m = t.machine, open = !['closed', 'cancelled'].includes(t.status), hasActive = jobs.some(j => !['cancelled', 'rejected', 'completed'].includes(j.status));
   const mob = String(t.contact_mobile || '').replace(/\D/g, '').slice(-10);
   const icon = { system: '⚡', call: '📞', to_customer: '📤', from_customer: '📥', note: '📝' };
@@ -4617,6 +4619,7 @@ async function openSvcTicket(id) {
       ${(j.parts || []).length ? `<div style="margin-top:4px">Parts: ${(j.parts || []).map(p => esc(p.name) + ' × ' + (p.qty || 1)).join(', ')}</div>` : ''}${(j.checklist || []).length ? `<div style="margin-top:4px">Checklist: ${(j.checklist || []).map(c => (c.done ? '✓ ' : '✗ ') + esc(c.item)).join(' · ')}</div>` : ''}
       ${j.coverage_override_reason ? `<div style="margin-top:4px;color:#B35900"><b>Coverage override:</b> ${esc(j.coverage_override_reason)}</div>` : ''}${j.customer_remarks ? `<div style="margin-top:4px">Customer: “${esc(j.customer_remarks)}”</div>` : ''}${j.rating_comment ? `<div style="margin-top:4px">Rating comment: “${esc(j.rating_comment)}”</div>` : ''}</div>`).join('')}
     ${(media || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${media.map(x => `<div class="svcph" data-path="${esc(x.storage_path)}" title="${esc(x.kind)}"><span>${esc(x.kind)}</span></div>`).join('')}</div>` : ''}
+    ${(tmedia || []).length ? `<div style="margin-top:10px"><b style="font-size:12.5px">Photos from the customer</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${tmedia.map(x => `<div class="svcph" data-path="${esc(x.storage_path)}" title="customer"><span>customer</span></div>`).join('')}</div></div>` : ''}
     <b style="display:block;margin:16px 0 6px">Activity &amp; communication</b>
     <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:10px">${msgs.map(x => `<div style="display:flex;gap:8px;margin-bottom:8px"><span>${icon[x.kind] || '📝'}</span><div><div style="${x.kind === 'system' ? 'color:var(--muted);font-size:13px;' : ''}white-space:pre-wrap">${esc(x.body)}</div><div class="muted" style="font-size:11px">${esc(x.user_id ? uname(x.user_id) : 'System')} · ${fmtDT(x.created_at)}${x.kind !== 'system' && x.kind !== 'note' ? ' · ' + esc(svcW(x.kind)) : ''}</div></div></div>`).join('') || '<span class="muted">Nothing yet</span>'}</div>
     <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end"><select id="svcMsgKind" class="inp"><option value="note">Internal note</option><option value="call">Call with customer</option><option value="to_customer">Message sent to customer</option><option value="from_customer">Reply from customer</option></select>
