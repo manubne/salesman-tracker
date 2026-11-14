@@ -183,10 +183,10 @@ jobs:
           flutter test --reporter expanded
       - name: Build signed App Bundle (.aab)
         working-directory: app
-        run: flutter build appbundle --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER}
+        run: flutter build appbundle --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER} --dart-define=BUILD_NO=${GITHUB_RUN_NUMBER}
       - name: Build signed APK
         working-directory: app
-        run: flutter build apk --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER}
+        run: flutter build apk --release --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER} --dart-define=BUILD_NO=${GITHUB_RUN_NUMBER}
       - name: Publish AAB + APK to Release
         uses: softprops/action-gh-release@v2
         with:
