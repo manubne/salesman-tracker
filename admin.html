@@ -326,6 +326,7 @@
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
+      <button data-v="smslog" data-roles="admin,head" onclick="show('smslog')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Customer SMS</span></button>
       <button data-v="salesreports" data-roles="admin,head" onclick="show('salesreports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Sales email reports</span></button>
       <button data-v="oem" data-roles="admin,head,head" onclick="show('oem')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6 4V8l6 4V4h6v17z"/></svg><span>OEM access</span></button>
       <button data-v="chat" onclick="show('chat')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span><span class="badge" id="chatBadge" style="display:none"></span></button>
@@ -831,6 +832,27 @@
     </div>
 
     <!-- ================= SETTINGS ================= -->
+    <div id="smslog" class="view">
+      <div class="panel"><h2>Customer SMS <span class="sub">sender BNEONE · BSNL DLT approved templates through MSG91</span></h2>
+        <div id="smsTpl"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:12px">
+          <label><input type="checkbox" id="smsOn"> All customer SMS switched on</label>
+          <div class="field" style="min-width:280px"><label>Testing: send only to these mobiles <span class="muted">(empty = everyone)</span></label><input class="inp" id="smsOnly" placeholder="e.g. 9620210101" style="width:100%"></div>
+          <button class="btn" onclick="smsSave()">Save</button> <span id="msgSms"></span>
+        </div>
+        <p class="hint">An SMS is sent once per event (a repeat of the same event is ignored). Invalid numbers are skipped. Meeting-code SMS is controlled under Check-in rules.</p>
+      </div>
+      <div class="panel"><h2>SMS log</h2>
+        <div class="toolbar">
+          <select class="inp" id="smsF"><option value="">All templates</option></select>
+          <select class="inp" id="smsS"><option value="">Any status</option><option value="sent">Sent</option><option value="failed">Failed</option><option value="queued">Queued</option></select>
+          <input class="inp" id="smsQ" placeholder="Mobile">
+          <button class="btn sec" onclick="loadSmsLog()">Refresh</button>
+        </div>
+        <div id="smsSum" class="hint"></div><div id="smsTbl"></div>
+      </div>
+    </div>
+
     <div id="salesreports" class="view">
       <div class="panel"><h2>Sales email reports <span class="sub">daily 9:00 PM (same day) · weekly Monday 8:15 AM · monthly 1st 8:30 AM — one email per branch</span></h2>
         <div class="toolbar">
@@ -876,6 +898,16 @@
         <p class="hint">An OEM user signs in to the BNEOne app with this mobile number (SMS code) or email (emailed code) and sees one screen: Stock check. They cannot see customers, prices, invoices, service jobs or anything else. Switch a person off to sign them out immediately.</p></div>
     </div>
     <div id="settings" class="view">
+      <div class="panel">
+        <h2>App version <span class="sub">force everyone onto a new release</span></h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          <div class="field"><label>Minimum build <span class="muted">(older apps are blocked)</span></label><input class="inp" type="number" id="auMin" min="0" placeholder="e.g. 160"></div>
+          <div class="field"><label>Latest build <span class="muted">(older apps see “Update” hint)</span></label><input class="inp" type="number" id="auLatest" min="0"></div>
+          <div class="field" style="grid-column:span 2"><label>Message on the update screen</label><input class="inp" id="auMsg" placeholder="Please update to continue" style="width:100%"></div>
+        </div>
+        <div style="margin-top:10px"><button class="btn" onclick="saveAppUpdate()">Save</button> <span id="msgAu"></span></div>
+        <p class="hint">Build = the last number of the version, e.g. 1.0.<b>160</b> → 160. Set the minimum only after the new build is live on the Play Store for everyone, otherwise people cannot update yet. 0 = no block.</p>
+      </div>
       <div class="panel">
         <h2>Customer app contact <span class="sub">shown on the “Contact us” screen of customers and channel partners</span></h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
@@ -1166,6 +1198,7 @@
           <div class="kv" id="ovKv"></div>
           <div id="ovActions" style="margin-top:18px"></div>
           <div id="ovPayments"></div>
+          <div id="ovInvoices"></div>
           <div id="ovBilling"></div>
           <div class="toolbar" style="margin-top:10px"><input id="ovNote" placeholder="Add a note…" style="flex:1" onkeydown="if(event.key==='Enter')addOppNote()"><button class="btn sec sm" onclick="addOppNote()">Add note</button></div>
           <div id="ovMsg"></div>
@@ -1654,6 +1687,7 @@ function show(v) {
   if (v === 'settings') renderSettings();
   if (v === 'oem') loadOem();
   if (v === 'salesreports') loadSalesReports();
+  if (v === 'smslog') { renderSmsSettings(); loadSmsLog(); }
   if (v === 'svcTickets') loadSvcTickets();
   if (v === 'svcTechs') loadSvcTechs();
   if (v === 'svcBoard') loadSvcBoard();
@@ -1686,6 +1720,51 @@ function fillFilters() {
   const terr = [...new Set(cache.users.map(u => u.territory).filter(Boolean))];
   document.getElementById('terrList').innerHTML = terr.map(t => `<option value="${esc(t)}">`).join('');
 }
+/* ---------- customer SMS ---------- */
+const SMS_LABELS = {
+  service_request_registered: ['Service request registered', 'Customer raises a ticket', 'Your service request {ticket} is registered with B N Enterprises. Our team will contact you shortly.'],
+  technician_assigned: ['Technician assigned', 'A technician is assigned / changed', 'Our technician {name & mobile} will visit you for service request {ticket}.'],
+  warranty_activated: ['Warranty activated', 'Commissioning report saved with warranty', 'Warranty for your machine serial {serial} is active till {date}. Commissioning report {report}.'],
+  payment_received: ['Payment received', 'Accounts verifies a payment', 'We have received your payment of Rs {amount} against {PO}.'],
+  quotation_ready: ['Quotation ready', 'Quote team marks a quote Ready', 'Your quotation {ref} from B N Enterprises is ready.'],
+  verification_code: ['Verification code', 'Mobile number change in the app', 'Your BNEOne verification code is {code}.'],
+  service_start_code: ['Service start code', 'Technician starts a job', 'Your BNE service start code is {code}.'],
+  service_completion_code: ['Service completion code', 'Technician closes a job', 'Your BNE service completion code is {code}.'],
+};
+function renderSmsSettings() {
+  const c = S('sms_templates', {}), t = c.templates || {};
+  document.getElementById('smsOn').checked = c.enabled !== false;
+  document.getElementById('smsOnly').value = (c.only_to || []).join(', ');
+  document.getElementById('smsTpl').innerHTML = tbl(['On', 'SMS', 'Sent when', 'Text', 'DLT template'], Object.keys(SMS_LABELS).map(k => {
+    const [n, w, txt] = SMS_LABELS[k], x = t[k] || {};
+    return [`<input type="checkbox" data-smsk="${k}" ${x.on ? 'checked' : ''}>`, `<b>${esc(n)}</b>`, esc(w), `<span class="muted">${esc(txt)} - Team BNE</span>`, `<span class="muted">${esc(x.dlt || '')}</span>`];
+  }));
+  const f = document.getElementById('smsF');
+  if (f.options.length <= 1) for (const k of Object.keys(SMS_LABELS)) f.add(new Option(SMS_LABELS[k][0], k));
+}
+async function smsSave() {
+  const c = S('sms_templates', {}), t = { ...(c.templates || {}) };
+  document.querySelectorAll('[data-smsk]').forEach(cb => { t[cb.dataset.smsk] = { ...(t[cb.dataset.smsk] || {}), on: cb.checked }; });
+  const only = document.getElementById('smsOnly').value.split(/[\s,]+/).map(x => x.replace(/\D/g, '').slice(-10)).filter(Boolean);
+  if (only.some(m => !/^[6-9]\d{9}$/.test(m))) { flash('msgSms', 'Enter 10-digit mobile numbers', false); return; }
+  await saveSetting('sms_templates', { ...c, enabled: document.getElementById('smsOn').checked, only_to: only, templates: t }, 'msgSms');
+}
+async function loadSmsLog() {
+  let q = db.from('sms_log').select('*').order('created_at', { ascending: false }).limit(300);
+  const f = document.getElementById('smsF').value, s = document.getElementById('smsS').value, m = document.getElementById('smsQ').value.replace(/\D/g, '').slice(-10);
+  if (f) q = q.eq('template', f); if (s) q = q.eq('status', s); if (m) q = q.eq('mobile', m);
+  const { data, error } = await q;
+  if (error) { document.getElementById('smsTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  const rows = data || [], n = st => rows.filter(r => r.status === st).length;
+  document.getElementById('smsSum').innerHTML = `${rows.length} shown · <b style="color:#15803d">${n('sent')} sent</b> · <b style="color:#b91c1c">${n('failed')} failed</b> · ${n('queued')} queued`;
+  document.getElementById('smsTbl').innerHTML = rows.length ? tbl(['When', 'SMS', 'Mobile', 'Details', 'Status'], rows.map(r => [
+    new Date(r.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }),
+    esc((SMS_LABELS[r.template] || [r.template])[0]), esc(r.mobile),
+    `<span class="muted">${esc(Object.values(r.vars || {}).join(' · '))}${r.ref && r.ref.startsWith('test:') ? ' (test)' : ''}</span>`,
+    r.status === 'sent' ? '<span style="color:#15803d;font-weight:700">Sent</span>' : r.status === 'failed' ? `<span style="color:#b91c1c;font-weight:700">Failed</span> <span class="muted">${esc(r.error || '')}</span>` : esc(r.status)]))
+    : '<div class="empty">No SMS yet.</div>';
+}
+
 /* ---------- sales email reports ---------- */
 let SR_LAST = [];
 async function srCall(body) {
@@ -1872,9 +1951,19 @@ async function loadNotifLog() {
     esc(lbl[r.category] || r.category) + (r.channel === 'buzzer' ? ' 🔔' : ''), `<b>${esc(r.title)}</b><br><span class="muted">${esc(r.body || '')}</span>`,
     `<span class="${r.status === 'sent' ? '' : 'stale'}">${esc(NOTIF_STATUS[r.status] || r.status)}</span>${r.error && r.status === 'failed' ? `<br><span class="muted" style="font-size:11px">${esc(r.error.slice(0, 80))}</span>` : ''}`]));
 }
+function renderAppUpdate() {
+  const a = S('app_update', {});
+  document.getElementById('auMin').value = a.min_build || 0; document.getElementById('auLatest').value = a.latest_build || 0; document.getElementById('auMsg').value = a.message || '';
+}
+async function saveAppUpdate() {
+  const min = Math.max(0, parseInt(document.getElementById('auMin').value || '0', 10) || 0), latest = Math.max(0, parseInt(document.getElementById('auLatest').value || '0', 10) || 0);
+  if (min > 0 && !confirm(`Block every app older than 1.0.${min}? People on older versions must update from the Play Store before they can work.`)) return;
+  await saveSetting('app_update', { ...S('app_update', {}), min_build: min, latest_build: Math.max(latest, min), message: document.getElementById('auMsg').value.trim() }, 'msgAu');
+}
 function renderSettings() {
   loadCategories();
   renderPortalContact();
+  renderAppUpdate();
   renderNotifSettings();
   renderBillingSettings();
   renderPaySettings();
@@ -2892,7 +2981,40 @@ async function openOpp(id) {
   loadOppExtras(o.id);
   loadOppBilling(o.id);
   loadOppPayments(o.id);
+  loadOppInvoices(o);
 }
+/* ---------- Odoo invoices on a won deal ---------- */
+const ODOO_PAY = { paid: 'Paid', in_payment: 'Payment in process', partial: 'Part paid', not_paid: 'Not paid', reversed: 'Reversed' };
+async function odooDeal(body) {
+  const { data, error } = await db.functions.invoke('odoo', { body });
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+async function loadOppInvoices(o) {
+  const box = document.getElementById('ovInvoices');
+  if (o.stage !== 'won') { box.innerHTML = ''; return; }
+  const { data } = await db.from('order_invoices').select('*').eq('order_id', o.id).order('invoice_date');
+  const rows = data || [], billed = rows.reduce((a, r) => a + Number(r.amount_total || 0), 0), due = rows.reduce((a, r) => a + Number(r.amount_due || 0), 0);
+  box.innerHTML = `<h4 style="font-size:13px;margin:14px 0 6px">Odoo invoices ${rows.length ? `<span class="muted" style="font-weight:400">· billed ${rs(billed)} · due <b style="color:${due > 0 ? '#b45309' : '#15803d'}">${rs(due)}</b></span>` : ''}</h4>
+    ${rows.length ? tbl(['Invoice', 'Date', 'Amount', 'Due', 'Status', ''], rows.map(r => [`<b>${esc(r.number)}</b><div class="muted" style="font-size:11px">${r.matched_by === 'auto_po' ? 'linked by PO' : 'linked by hand'}</div>`, esc(r.invoice_date || ''), rs(r.amount_total), rs(r.amount_due), esc(ODOO_PAY[r.payment_state] || r.payment_state || ''),
+      `<button class="btn sm sec" onclick="oppInvUnlink('${o.id}',${Number(r.odoo_move_id)},'${esc(r.number)}')">Unlink</button>`]))
+      : '<div class="muted" style="font-size:12.5px">No invoice linked yet. Invoices carrying the PO number are linked every night on their own.</div>'}
+    <div class="toolbar" style="margin-top:6px"><button class="btn sm sec" onclick="oppInvFind('${o.id}')">Find invoice in Odoo</button>${rows.length ? `<button class="btn sm sec" onclick="oppInvRefresh('${o.id}')">Refresh from Odoo</button>` : ''}</div><div id="ovInvFind"></div>`;
+}
+async function oppInvFind(id) {
+  const el = document.getElementById('ovInvFind'); el.innerHTML = '<div class="muted">Checking Odoo…</div>';
+  try {
+    const r = await odooDeal({ action: 'deal_inv_find', order_id: id });
+    el.innerHTML = `<div class="muted" style="font-size:12px;margin:6px 0">${r.matched_customer ? 'Matched by the customer\'s mobile / email' + (r.po ? ' and PO ' + esc(r.po) : '') : 'Customer not found in Odoo by mobile/email — showing invoices carrying the PO number only.'}</div>` +
+      (r.items.length ? tbl(['Invoice', 'Date', 'Customer', 'Amount', 'Ref', 'Match', ''], r.items.map(i => [`<b>${esc(i.number)}</b>`, esc(i.invoice_date || ''), esc(i.partner_name || ''), rs(i.amount_total), esc(i.ref || ''),
+        [i.po_match ? 'PO' : '', i.value_close ? 'value' : ''].filter(Boolean).join(' + ') || '—',
+        i.linked ? '<span class="chip won">Linked</span>' : `<button class="btn sm" onclick="oppInvLink('${id}',${Number(i.odoo_move_id)})">Link</button>`])) : '<div class="empty">No posted invoice found in Odoo yet.</div>');
+  } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+async function oppInvLink(id, mid) { try { await odooDeal({ action: 'deal_inv_link', order_id: id, odoo_move_id: mid }); qtToast('Invoice linked'); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
+async function oppInvUnlink(id, mid, num) { if (!confirm('Unlink ' + num + ' from this deal? It stays in Odoo.')) return; try { await odooDeal({ action: 'deal_inv_unlink', order_id: id, odoo_move_id: mid }); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
+async function oppInvRefresh(id) { try { await odooDeal({ action: 'deal_inv_refresh', order_id: id }); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
 async function loadOppExtras(id) {
   const [{ data: ev }, { data: md }] = await Promise.all([
     db.from('order_events').select('*').eq('order_id', id).order('at', { ascending: false }).limit(100),
