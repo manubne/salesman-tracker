@@ -247,6 +247,23 @@
   table.qtb textarea { resize:vertical; min-height:32px; } table.qtb .qi { background:#FFF8DC; } table.qtb th.qi { background:#FBE9A7; }
   table.qtb tr.qhead td, table.qtb tr.qtext td { background:#FAFBFE; }
   .qa a, .qx { cursor:pointer; padding:5px 5px; font-weight:700; color:var(--muted); user-select:none; display:inline-block; } .qa { white-space:nowrap; }
+
+/* ---------- VRF board ---------- */
+.vrf-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
+.vrf-col{flex:0 0 268px;background:#f1f4f9;border-radius:14px;padding:10px;max-height:calc(100vh - 260px);overflow-y:auto}
+.vrf-col h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:2px 4px 10px;display:flex;justify-content:space-between}
+.vrf-card{background:#fff;border:1px solid #e5e9f0;border-radius:12px;padding:10px 11px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.vrf-card:hover{border-color:#22779A}
+.vrf-card .no{font-size:11px;color:#64748b;font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.vrf-card .pn{font-weight:800;font-size:13.5px;margin:3px 0 2px;color:#0F172A}
+.vrf-card .ln{font-size:12px;color:#64748b}
+.vrf-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin:5px 4px 0 0}
+.vrf-g{background:#dcfce7;color:#166534}.vrf-a{background:#fef3c7;color:#92400e}.vrf-r{background:#fee2e2;color:#991b1b}.vrf-n{background:#e2e8f0;color:#334155}.vrf-b{background:#dbeafe;color:#1e40af}
+.vrf-tl{max-height:340px;overflow-y:auto;border:1px solid #e5e9f0;border-radius:12px;padding:8px;background:#fafbfd}
+.vrf-msg{margin:6px 0;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid #eef1f6;font-size:13px}
+.vrf-msg.q{border-color:#fdba74;background:#fff7ed}.vrf-msg.sys{background:transparent;border:0;color:#64748b;font-size:12px;padding:2px 6px}
+.vrf-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.vrf-stats div{background:#fff;border:1px solid #e5e9f0;border-radius:12px;padding:10px 12px}.vrf-stats b{font-size:20px;display:block}
 </style>
 </head>
 <body>
@@ -300,6 +317,7 @@
 
       <div class="navlabel" data-roles="admin,head,manager,coordinator,telecaller">Sales</div>
       <button data-v="stock" onclick="show('stock')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>Stock check</span></button>
+      <button data-v="vrf" id="vrfNav" style="display:none" onclick="show('vrf')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/></svg><span>VRF projects</span><span class="badge" id="vrfBadge" style="display:none"></span></button>
       <button data-v="quoteReqs" onclick="show('quoteReqs')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span>Quote requests</span><span class="badge" id="qrBadge" style="display:none"></span></button>
       <button data-v="pipeline" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('pipeline')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="7" rx="1"/></svg><span>Pipeline</span><span class="badge" id="stuckBadge" style="display:none"></span></button>
       <button data-v="billing" data-roles="admin,head,manager,coordinator,telecaller" onclick="show('billing')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Billing requests</span><span class="badge" id="brBadge" style="display:none"></span></button>
@@ -832,6 +850,20 @@
     </div>
 
     <!-- ================= SETTINGS ================= -->
+    <div id="vrf" class="view">
+      <div class="vrf-stats" id="vrfStats"></div>
+      <div class="toolbar" style="flex-wrap:wrap">
+        <input class="inp" id="vrfQ" placeholder="Search project, location, VRF no." oninput="renderVrf()" style="min-width:220px">
+        <select class="inp" id="vrfOwner" onchange="renderVrf()"><option value="">Everyone</option><option value="me">Mine</option><option value="none">Not picked</option></select>
+        <select class="inp" id="vrfBrand" onchange="renderVrf()"><option value="">All brands</option></select>
+        <select class="inp" id="vrfView" onchange="renderVrf()"><option value="board">Open – board</option><option value="overdue">Overdue only</option><option value="done">Closed / lost / on hold</option></select>
+        <button class="btn" id="vrfNewBtn" onclick="vrfForm()">+ New VRF enquiry</button>
+        <button class="btn sec" onclick="loadVrf()">Refresh</button>
+        <button class="btn sec" id="vrfSetBtn" style="display:none" onclick="vrfSettings()">Settings</button>
+      </div>
+      <div id="vrfBoard"></div>
+    </div>
+
     <div id="smslog" class="view">
       <div class="panel"><h2>Customer SMS <span class="sub">sender BNEONE · BSNL DLT approved templates through MSG91</span></h2>
         <div id="smsTpl"></div>
@@ -1617,7 +1649,8 @@ async function init() {
   const svcDesk = can('svc.ticket.view_all') || can('svc.job.view_all') || can('svc.amc.view');
   const qtDesk = can('quote.create') || can('quote.view_all') || can('quote.master');
   if (ME && ME.can_switch_role) { const h = roleSwitchHtml(); document.getElementById('noAccessRole').innerHTML = h; }
-  if (!ME || !ME.active || !(isStaff() || ((svcDesk || qtDesk) && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
+  const vrfDesk = can('vrf.design') || can('vrf.head');
+  if (!ME || !ME.active || !(isStaff() || vrfDesk || ((svcDesk || qtDesk) && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
   document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
   if (ME.can_switch_role) document.getElementById('meBox').insertAdjacentHTML('beforeend', roleSwitchHtml());
@@ -1629,6 +1662,8 @@ async function init() {
   document.getElementById('mapTeam').style.display = isManager() ? '' : 'none';
   if (svcOnlyTrack()) document.querySelectorAll('#mapMode button').forEach(b => { if (b.dataset.m === 'visits') b.style.display = 'none'; else if (b.dataset.m === 'live') b.textContent = 'Live technicians'; });
   svcBadge(); qrSubscribe(); sbBadge();
+  document.getElementById('vrfNav').style.display = (isStaff() || vrfDesk) ? '' : 'none';
+  if (isStaff() || vrfDesk) vrfSubscribe();
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
@@ -1649,11 +1684,14 @@ async function init() {
     loadBilling();
     Promise.all([loadCustomers(), loadOrders(), loadFollowUps()]);
     show('pipeline');
+  } else if (!isStaff() && vrfDesk && (ME.role === 'design_engineer' || !(qtDesk || svcDesk))) {
+    show('vrf');
   } else if (!isStaff()) {
     show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quoteReqs' : 'svcTickets');
   } else {
     show('leads');
   }
+  vrfDeepLink();
 }
 
 function toggleSidebar(open) {
@@ -1688,6 +1726,7 @@ function show(v) {
   if (v === 'oem') loadOem();
   if (v === 'salesreports') loadSalesReports();
   if (v === 'smslog') { renderSmsSettings(); loadSmsLog(); }
+  if (v === 'vrf') loadVrf();
   if (v === 'svcTickets') loadSvcTickets();
   if (v === 'svcTechs') loadSvcTechs();
   if (v === 'svcBoard') loadSvcBoard();
@@ -1720,6 +1759,263 @@ function fillFilters() {
   const terr = [...new Set(cache.users.map(u => u.territory).filter(Boolean))];
   document.getElementById('terrList').innerHTML = terr.map(t => `<option value="${esc(t)}">`).join('');
 }
+/* ---------- VRF projects (sales + design team) ---------- */
+let VRF = [], VRF_TEAM = [], VRF_CUR = null, _vrfCh = null;
+const VRF_COLS = [['new', 'New enquiry'], ['picked', 'Picked – review'], ['preparing', 'Preparing quote'], ['vendor', 'Awaiting vendor price'], ['quote_sent', 'Quote sent to sales'], ['client', 'Sent to client'], ['finalised', 'Finalised'], ['won_docs', 'Won – final documents']];
+const VRF_LBL = Object.fromEntries([...VRF_COLS, ['closed', 'Closed'], ['lost', 'Lost'], ['on_hold', 'On hold']]);
+const VRF_FROM = { channel_partner: 'Channel partner', consultant: 'Consultant', architect: 'Architect', end_user: 'End user' };
+const VRF_SCOPE = { supply: 'Supply only', supply_install: 'Supply + installation' };
+const VRF_FILE = { input: 'Enquiry file', quote: 'Quote', boq: 'Final BOQ', drawings: 'Drawings', cad: 'CAD file', other: 'Other' };
+const vrfDesign = () => can('vrf.design') || can('vrf.head') || ['admin', 'head'].includes(ME?.role);
+const vrfHead = () => can('vrf.head') || ['admin', 'head'].includes(ME?.role);
+const vrfToday = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+const vrfDays = d => Math.round((Date.parse(vrfToday()) - Date.parse(d)) / 864e5);
+function vrfDue(v) {
+  if (!['picked', 'preparing', 'vendor'].includes(v.status)) return '';
+  if (!v.promised_at) return '<span class="vrf-chip vrf-n">No date yet</span>';
+  const late = vrfDays(v.promised_at), d = new Date(v.promised_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return late > 0 ? `<span class="vrf-chip vrf-r">Overdue ${late}d · ${d}</span>` : late >= -1 ? `<span class="vrf-chip vrf-a">Due ${late === 0 ? 'today' : 'tomorrow'}</span>` : `<span class="vrf-chip vrf-g">Due ${d}</span>`;
+}
+async function vrfRpc(fn, args) {
+  const { data, error } = await db.rpc(fn, args);
+  if (error) throw new Error(String(error.message || 'Something went wrong'));
+  return data;
+}
+async function loadVrf() {
+  try { VRF = (await vrfRpc('vrf_list', {})) || []; } catch (e) { document.getElementById('vrfBoard').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (!VRF_TEAM.length) { try { VRF_TEAM = (await vrfRpc('vrf_team', {})) || []; } catch (_) {} }
+  const b = document.getElementById('vrfBrand'), cur = b.value;
+  b.innerHTML = '<option value="">All brands</option>' + [...new Set([...(S('vrf', {}).brands || []), ...VRF.map(v => v.brand)])].map(x => `<option>${esc(x)}</option>`).join('');
+  b.value = cur;
+  document.getElementById('vrfSetBtn').style.display = ['admin', 'head'].includes(ME.role) ? '' : 'none';
+  vrfBadge(); renderVrf();
+}
+function vrfBadge() {
+  const n = VRF.filter(v => (v.status === 'new' && vrfDesign()) || v.unread > 0 || (v.waiting_on_sales && v.sales_id === ME.id)).length, el = document.getElementById('vrfBadge');
+  if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+}
+function renderVrf() {
+  const q = document.getElementById('vrfQ').value.trim().toLowerCase(), who = document.getElementById('vrfOwner').value, br = document.getElementById('vrfBrand').value, view = document.getElementById('vrfView').value;
+  let L = VRF.filter(v => (!q || `${v.vrf_no} ${v.project_name} ${v.location} ${v.city || ''} ${v.sales_name || ''}`.toLowerCase().includes(q)) && (!br || v.brand === br)
+    && (!who || (who === 'me' ? (v.owner_id === ME.id || v.sales_id === ME.id) : !v.owner_id)));
+  const open = VRF.filter(v => !['closed', 'lost', 'on_hold'].includes(v.status));
+  const overdue = open.filter(v => ['picked', 'preparing', 'vendor'].includes(v.status) && v.promised_at && vrfDays(v.promised_at) > 0);
+  const picked = VRF.filter(v => v.picked_at), avgPick = picked.length ? (picked.reduce((a, v) => a + (Date.parse(v.picked_at) - Date.parse(v.created_at)), 0) / picked.length / 36e5).toFixed(1) : '—';
+  document.getElementById('vrfStats').innerHTML = [['Open', open.length], ['Not picked', open.filter(v => v.status === 'new').length], ['Overdue', overdue.length],
+    ['With client', open.filter(v => v.status === 'client').length], ['Avg time to pick', avgPick + (avgPick === '—' ? '' : ' h')],
+    ['Won (open docs)', open.filter(v => v.status === 'won_docs').length]].map(([k, n]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${n}</b></div>`).join('');
+  const card = v => `<div class="vrf-card" onclick="vrfOpen('${v.id}')">
+      <div class="no"><span>${esc(v.vrf_no)}${v.revision ? ` <span class="vrf-chip vrf-b" style="margin:0">R${v.revision}</span>` : ''}</span><span>${vrfDays(v.created_at.slice(0, 10))}d</span></div>
+      <div class="pn">${esc(v.project_name)}</div>
+      <div class="ln">${esc(v.location)}${v.city ? ', ' + esc(v.city) : ''}</div>
+      <div class="ln">${esc(v.brand)} · ${esc(VRF_SCOPE[v.scope] || '')}</div>
+      <div class="ln">Sales: ${esc(v.sales_name || '—')}${v.owner_name ? ' · Design: ' + esc(v.owner_name) : ''}</div>
+      ${vrfDue(v)}${v.waiting_on_sales ? '<span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
+      ${v.status === 'won_docs' ? `<span class="vrf-chip vrf-a">Docs ${v.docs.length}/3</span>` : ''}${v.quote_value && ['quote_sent', 'client', 'finalised'].includes(v.status) ? `<span class="vrf-chip vrf-n">${rs(v.final_value || v.quote_value)}</span>` : ''}
+    </div>`;
+  const box = document.getElementById('vrfBoard');
+  if (view === 'done') {
+    const D = L.filter(v => ['closed', 'lost', 'on_hold'].includes(v.status));
+    box.innerHTML = D.length ? tbl(['VRF', 'Project', 'Sales', 'Design', 'Status', 'Value', 'Updated'], D.map(v => [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name), esc(v.sales_name || ''), esc(v.owner_name || '—'),
+      esc(VRF_LBL[v.status]) + (v.lost_reason ? `<div class="muted" style="font-size:11px">${esc(v.lost_reason)}</div>` : v.hold_reason ? `<div class="muted" style="font-size:11px">${esc(v.hold_reason)}</div>` : ''), v.final_value ? rs(v.final_value) : v.quote_value ? rs(v.quote_value) : '—', fmtDT(v.updated_at)])) : '<div class="empty">Nothing here.</div>';
+    return;
+  }
+  if (view === 'overdue') L = L.filter(v => overdue.includes(v));
+  box.innerHTML = `<div class="vrf-board">${VRF_COLS.map(([k, t]) => { const C = L.filter(v => v.status === k).sort((a, b) => (a.promised_at || '9') .localeCompare(b.promised_at || '9'));
+    return `<div class="vrf-col"><h3><span>${t}</span><span>${C.length}</span></h3>${C.map(card).join('') || '<div class="muted" style="font-size:12px;padding:6px">—</div>'}</div>`; }).join('')}</div>`;
+}
+function vrfSubscribe() {
+  if (_vrfCh) return;
+  let t = null; const re = () => { clearTimeout(t); t = setTimeout(async () => { if (document.getElementById('vrf').classList.contains('active') || VRF_CUR) { await loadVrf(); if (VRF_CUR && document.getElementById('svcBg').classList.contains('show')) vrfOpen(VRF_CUR, true); } else { try { VRF = (await vrfRpc('vrf_list', {})) || []; vrfBadge(); } catch (_) {} } }, 600); };
+  _vrfCh = db.channel('vrf-live').on('postgres_changes', { event: '*', schema: 'public', table: 'vrf_projects' }, re).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vrf_events' }, re).subscribe();
+  vrfRpc('vrf_list', {}).then(d => { VRF = d || []; vrfBadge(); }).catch(() => {});
+}
+function vrfDeepLink() {
+  const id = new URLSearchParams(location.search).get('vrf'); if (!id || !document.getElementById('vrfNav') || document.getElementById('vrfNav').style.display === 'none') return;
+  show('vrf'); if (/^[0-9a-f-]{36}$/.test(id)) setTimeout(() => vrfOpen(id), 600);
+}
+
+/* new enquiry (dashboard) */
+async function vrfForm(prefill) {
+  const c = S('vrf', {}), p = prefill || {};
+  const { data: deals } = await db.from('orders').select('id, title, stage, customers(name), leads(name)').not('stage', 'in', '(won,lost)').order('created_at', { ascending: false }).limit(200);
+  svcModal(`<h3 style="margin-top:0">New VRF enquiry for the design team</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field" style="grid-column:span 2"><label>Link to deal <span class="muted">(optional)</span></label><select class="inp" id="vfOrder" style="width:100%"><option value="">— none —</option>${(deals || []).map(d => `<option value="${d.id}" ${p.order_id === d.id ? 'selected' : ''}>${esc((d.customers?.name || d.leads?.name || '') + ' — ' + (d.title || 'Deal'))}</option>`).join('')}</select></div>
+      <div class="field" style="grid-column:span 2"><label>Project name *</label><input class="inp" id="vfName" style="width:100%" value="${esc(p.project_name || '')}"></div>
+      <div class="field"><label>Project location *</label><input class="inp" id="vfLoc" style="width:100%" placeholder="Site address / area"></div>
+      <div class="field"><label>City</label><input class="inp" id="vfCity" style="width:100%"></div>
+      <div class="field"><label>Scope *</label><select class="inp" id="vfScope" style="width:100%"><option value="">Choose</option><option value="supply">Supply only</option><option value="supply_install">Supply + installation</option></select></div>
+      <div class="field"><label>Quote asked by *</label><select class="inp" id="vfFrom" style="width:100%"><option value="">Choose</option>${Object.entries(VRF_FROM).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
+      <div class="field"><label>Their name / firm</label><input class="inp" id="vfFromName" style="width:100%"></div>
+      <div class="field"><label>Preferred brand *</label><select class="inp" id="vfBrand" style="width:100%"><option value="">Choose</option>${(c.brands || []).map(b => `<option>${esc(b)}</option>`).join('')}</select></div>
+      <div class="field"><label>Building type</label><select class="inp" id="vfType" style="width:100%"><option value="">—</option>${(c.building_types || []).map(b => `<option>${esc(b)}</option>`).join('')}</select></div>
+      <div class="field"><label>Quote needed by</label><input class="inp" type="date" id="vfNeed" style="width:100%"></div>
+      <div class="field"><label>Area (sq ft)</label><input class="inp" type="number" id="vfArea" style="width:100%"></div>
+      <div class="field"><label>Floors</label><input class="inp" type="number" id="vfFloors" style="width:100%"></div>
+      <div class="field"><label>Approx. TR</label><input class="inp" type="number" id="vfTr" style="width:100%"></div>
+      <div class="field" style="grid-column:span 2"><label>Notes for the design team</label><textarea class="inp" id="vfNotes" rows="3" style="width:100%"></textarea></div>
+      <div class="field" style="grid-column:span 2"><label>Drawings / BOQ / tender / photos</label><input type="file" id="vfFiles" multiple></div>
+    </div>
+    <div id="vfMsg" style="margin-top:8px"></div>
+    <div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="vfGo" onclick="vrfCreate()">Send to design team</button></div>`, true);
+}
+async function vrfUploadFiles(id, files, kind) {
+  let n = 0;
+  for (const f of files) {
+    const path = `${id}/${Date.now()}_${f.name.replace(/[^\w.\-]+/g, '_').slice(-80)}`;
+    const up = await db.storage.from('vrf').upload(path, f, { upsert: false });
+    if (up.error) throw new Error('Upload failed: ' + up.error.message);
+    await vrfRpc('vrf_add_file', { p_id: id, p_kind: kind, p_name: f.name, p_path: path }); n++;
+  }
+  return n;
+}
+async function vrfCreate(force) {
+  const g = id => document.getElementById(id).value.trim(), btn = document.getElementById('vfGo');
+  const p = { project_name: g('vfName'), location: g('vfLoc'), city: g('vfCity'), scope: g('vfScope'), enquiry_from: g('vfFrom'), enquiry_from_name: g('vfFromName'), brand: g('vfBrand'),
+    building_type: g('vfType'), needed_by: g('vfNeed') || null, area_sqft: g('vfArea'), floors: g('vfFloors'), approx_tr: g('vfTr'), notes: g('vfNotes'), order_id: g('vfOrder') || null, force: !!force };
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const v = await vrfRpc('vrf_create', { p });
+    const files = [...document.getElementById('vfFiles').files];
+    if (files.length) await vrfUploadFiles(v.id, files, 'input');
+    closeModal('svcBg'); qtToast(`${v.vrf_no} sent to the design team`); await loadVrf();
+  } catch (e) {
+    const m = e.message;
+    if (m.startsWith('DUPLICATE|')) { if (confirm(m.slice(10) + '\n\nSend it anyway?')) return vrfCreate(true); }
+    else document.getElementById('vfMsg').innerHTML = `<div class="err">${esc(m)}</div>`;
+  } finally { btn.disabled = false; btn.textContent = 'Send to design team'; }
+}
+
+/* project detail */
+async function vrfOpen(id, keepTab) {
+  VRF_CUR = id;
+  const [{ data: v }, { data: ev }, { data: files }, { data: revs }] = await Promise.all([
+    db.from('vrf_projects').select('*').eq('id', id).maybeSingle(), db.from('vrf_events').select('*').eq('project_id', id).order('id'),
+    db.from('vrf_files').select('*').eq('project_id', id).order('id'), db.from('vrf_revisions').select('*').eq('project_id', id).order('rev')]);
+  let NM = {}; try { NM = (await vrfRpc('vrf_people', { p_id: id })) || {}; } catch (_) {}
+  const nm = u => (u && NM[u]) || uname(u);
+  if (!v) { qtToast('Project not found', true); return; }
+  db.rpc('vrf_read', { p_id: id }).then(() => { const x = VRF.find(y => y.id === id); if (x) { x.unread = 0; vrfBadge(); } });
+  const mineSales = v.sales_id === ME.id || v.created_by === ME.id || ['admin', 'head'].includes(ME.role) || (ME.role === 'manager');
+  const mineDesign = v.owner_id === ME.id || vrfHead();
+  const A = [];
+  const b = (lbl, fn, cls = 'sec') => A.push(`<button class="btn sm ${cls}" onclick="${fn}">${lbl}</button>`);
+  if (v.status === 'new' && vrfDesign()) b('Pick this enquiry', `vrfDo('pick')`, '');
+  if (vrfHead() && !['closed', 'lost'].includes(v.status)) b(v.owner_id ? 'Reassign' : 'Assign', `vrfAssign()`);
+  if (mineDesign && ['picked', 'preparing', 'vendor'].includes(v.status)) b(v.promised_at ? 'Change promised date' : 'Set promised date', `vrfPromise()`, v.promised_at ? 'sec' : '');
+  if (mineDesign && v.status === 'picked' && v.promised_at) b('Start preparing', `vrfDo('move','preparing')`);
+  if (mineDesign && ['picked', 'preparing'].includes(v.status)) b('Waiting for vendor price', `vrfVendor()`);
+  if (mineDesign && v.status === 'vendor') b('Vendor price received', `vrfDo('move','preparing')`);
+  if (mineDesign && ['picked', 'preparing', 'vendor'].includes(v.status)) b('Upload quote & send to sales', `vrfSendQuote()`, '');
+  if (mineSales && v.status === 'quote_sent') b('Sent to client', `vrfDo('move','client')`, '');
+  if (mineSales && ['quote_sent', 'client', 'finalised'].includes(v.status)) b(`Ask revision (R${v.revision + 1})`, `vrfRevision()`);
+  if (mineSales && ['quote_sent', 'client'].includes(v.status)) b('Finalised', `vrfFinal()`);
+  if (mineSales && ['quote_sent', 'client', 'finalised'].includes(v.status)) b('Mark WON', `vrfWon()`, '');
+  if ((mineSales || vrfHead()) && !['closed', 'lost', 'on_hold'].includes(v.status)) { b('On hold', `vrfReason('on_hold','Why is it on hold?')`); b('Lost', `vrfReason('lost','Why was it lost?')`, 'danger'); }
+  if ((mineSales || vrfHead()) && v.status === 'on_hold') b('Resume', `vrfDo('move','resume')`);
+  const docsNeed = (S('vrf', {}).docs_required || ['boq', 'drawings', 'cad']);
+  const urls = await signedUrlsFrom('vrf', (files || []).map(f => f.path));
+  const kv = [['Status', `<b>${esc(VRF_LBL[v.status])}</b>${v.revision ? ` · R${v.revision}` : ''}${v.waiting_on_sales ? ' · <span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}`],
+    ['Location', esc(v.location + (v.city ? ', ' + v.city : ''))], ['Scope', esc(VRF_SCOPE[v.scope])], ['Asked by', esc(VRF_FROM[v.enquiry_from] + (v.enquiry_from_name ? ' – ' + v.enquiry_from_name : ''))],
+    ['Brand', esc(v.brand)], ['Building', esc([v.building_type, v.area_sqft ? v.area_sqft + ' sq ft' : '', v.floors ? v.floors + ' floors' : '', v.approx_tr ? '~' + v.approx_tr + ' TR' : ''].filter(Boolean).join(' · ') || '—')],
+    ['Client needs it by', esc(v.needed_by || '—')], ['Salesperson', esc(nm(v.sales_id))], ['Design', esc(v.owner_id ? nm(v.owner_id) : 'Not picked')],
+    ['Promised to sales', v.promised_at ? esc(v.promised_at) + (v.promise_changes ? ` <span class="muted">(moved ${v.promise_changes}×)</span>` : '') : '—'],
+    ['Quote value', v.quote_value ? rs(v.quote_value) : '—'], ['Final value', v.final_value ? rs(v.final_value) : '—'],
+    ['Vendor', v.vendor_name ? esc(v.vendor_name) + ' · asked ' + fmtDT(v.vendor_asked_at) : '—'], ['Notes', esc(v.notes || '—')]];
+  const tl = (ev || []).map(e => {
+    const who = esc(nm(e.user_id)), at = fmtDT(e.created_at);
+    if (e.kind === 'message' || e.kind === 'query') return `<div class="vrf-msg ${e.kind === 'query' ? 'q' : ''}"><b>${who}</b> <span class="muted" style="font-size:11px">${at}${e.kind === 'query' ? ' · QUERY to sales' : ''}</span><div style="white-space:pre-wrap;margin-top:3px">${esc(e.body)}</div></div>`;
+    return `<div class="vrf-msg sys">• ${esc(e.body || '')} — ${who}, ${at}</div>`;
+  }).join('') || '<div class="muted">No messages yet.</div>';
+  const fileRows = (files || []).map((f, i) => [esc(VRF_FILE[f.kind] || f.kind) + (f.kind === 'quote' ? ' R' + f.revision : ''), urls[i] ? `<a href="${urls[i]}" target="_blank">${esc(f.name)}</a>` : esc(f.name), esc(nm(f.uploaded_by)), fmtDT(f.created_at)]);
+  const revRows = (revs || []).map(r => ['R' + r.rev, esc(r.reason || (r.rev === 0 ? 'First quote' : '')), esc(r.promised_at || '—'), r.delivered_at ? fmtDT(r.delivered_at) + (r.promised_at && r.delivered_at.slice(0, 10) > r.promised_at ? ' <span class="vrf-chip vrf-r">late</span>' : ' <span class="vrf-chip vrf-g">on time</span>') : '—', r.quote_value ? rs(r.quote_value) : '—']);
+  svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(v.vrf_no)}</div><h3 style="margin:2px 0 4px">${esc(v.project_name)}</h3></div><div>${vrfDue(v)}</div></div>
+    <div class="toolbar" style="flex-wrap:wrap;margin:6px 0 10px">${A.join(' ')}</div>
+    <div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.2fr);gap:16px">
+      <div><div class="kv" style="display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:13px">${kv.map(([k, x]) => `<div class="muted">${k}</div><div>${x}</div>`).join('')}</div>
+        <h4 style="font-size:13px;margin:14px 0 6px">Files</h4>${fileRows.length ? tbl(['Type', 'File', 'By', 'When'], fileRows) : '<div class="muted" style="font-size:12.5px">No files yet.</div>'}
+        <div class="toolbar" style="margin-top:6px;flex-wrap:wrap"><select class="inp" id="vfKind">${Object.entries(VRF_FILE).filter(([k]) => vrfDesign() || ['input', 'other'].includes(k)).map(([k, l]) => `<option value="${k}" ${v.status === 'won_docs' && k === 'boq' ? 'selected' : ''}>${l}</option>`).join('')}</select><input type="file" id="vfAdd" multiple><button class="btn sm sec" onclick="vrfAddFiles()">Upload</button></div>
+        ${v.status === 'won_docs' ? `<div class="hint">Final documents: ${docsNeed.map(k => (files || []).some(f => f.kind === k) ? `<span class="vrf-chip vrf-g">✓ ${VRF_FILE[k]}</span>` : `<span class="vrf-chip vrf-r">${VRF_FILE[k]} missing</span>`).join('')}<br>The project closes on its own when all are uploaded.</div>` : ''}
+        ${revRows.length ? `<h4 style="font-size:13px;margin:14px 0 6px">Quotes & revisions</h4>${tbl(['Rev', 'What changed', 'Promised', 'Delivered', 'Value'], revRows)}` : ''}
+      </div>
+      <div><h4 style="font-size:13px;margin:0 0 6px">Discussion & timeline</h4><div class="vrf-tl" id="vrfTl">${tl}</div>
+        <textarea class="inp" id="vrfMsg" rows="2" style="width:100%;margin-top:8px" placeholder="Write to the ${vrfDesign() && !mineSales ? 'salesperson' : 'design team'}…"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">${vrfDesign() && v.sales_id !== ME.id ? `<button class="btn sm sec" onclick="vrfSend(true)" title="Sales gets an email and the card shows Waiting on sales">Send as query to sales</button>` : ''}<button class="btn sm" onclick="vrfSend(false)">Send</button></div>
+      </div>
+    </div>`, true);
+  const t = document.getElementById('vrfTl'); if (t) t.scrollTop = t.scrollHeight;
+}
+async function signedUrlsFrom(bucket, paths) {
+  if (!paths.length) return [];
+  const { data } = await db.storage.from(bucket).createSignedUrls(paths, 3600 * 6);
+  return paths.map(p => (data || []).find(x => x.path === p)?.signedUrl || null);
+}
+async function vrfDo(kind, to, extra) {
+  try {
+    if (kind === 'pick') await vrfRpc('vrf_pick', { p_id: VRF_CUR });
+    else await vrfRpc('vrf_move', { p_id: VRF_CUR, p_to: to, p: extra || {} });
+    await loadVrf(); vrfOpen(VRF_CUR);
+  } catch (e) { alert(e.message); }
+}
+async function vrfPromise() {
+  const v = VRF.find(x => x.id === VRF_CUR) || {};
+  const d = prompt('Date you will send the quote to sales (YYYY-MM-DD):', v.promised_at || vrfToday()); if (!d) return;
+  let r = null; if (v.promised_at && v.promised_at !== d) { r = prompt('Why is the date changing? (sales will see this)'); if (!r) return; }
+  try { await vrfRpc('vrf_promise', { p_id: VRF_CUR, p_date: d, p_reason: r }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
+async function vrfAssign() {
+  const opts = VRF_TEAM.map((u, i) => `${i + 1}. ${u.name}`).join('\n');
+  if (!VRF_TEAM.length) return alert('No one is in the design team yet. Give people the "VRF design team" access under Team.');
+  const n = parseInt(prompt('Assign to:\n' + opts + '\n\nType the number:'), 10); if (!n || !VRF_TEAM[n - 1]) return;
+  try { await vrfRpc('vrf_assign', { p_id: VRF_CUR, p_user: VRF_TEAM[n - 1].id }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
+function vrfVendor() { const x = prompt('Which vendor / brand did you ask for the price?'); if (x) vrfDo('move', 'vendor', { vendor: x }); }
+function vrfReason(to, q) { const r = prompt(q); if (r) vrfDo('move', to, { reason: r }); }
+function vrfRevision() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const r = prompt(`What does the client want changed? (R${(v.revision || 0) + 1})`); if (r) vrfDo('move', 'revision', { reason: r }); }
+function vrfFinal() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const x = prompt('Final value agreed (₹):', v.quote_value || ''); if (x !== null) vrfDo('move', 'finalised', { value: x.replace(/[^\d.]/g, '') || null }); }
+function vrfWon() { const v = VRF.find(x => x.id === VRF_CUR) || {}; if (!confirm('Mark this project WON? The design team will be asked for the final BOQ, drawings and CAD files.')) return; vrfDo('move', 'won', { value: v.final_value || v.quote_value || null }); }
+async function vrfSendQuote() {
+  const v = VRF.find(x => x.id === VRF_CUR) || {};
+  svcModal(`<h3 style="margin-top:0">Send quote${v.revision ? ' R' + v.revision : ''} to sales</h3>
+    <div class="field"><label>Quote file(s) *</label><input type="file" id="vqFile" multiple></div>
+    <div class="field"><label>Quote value (₹) *</label><input class="inp" type="number" id="vqVal" style="width:100%"></div>
+    <div id="vqMsg"></div><div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="vrfOpen(VRF_CUR)">Back</button> <button class="btn" id="vqGo" onclick="vrfSendQuoteGo()">Send to sales</button></div>`);
+}
+async function vrfSendQuoteGo() {
+  const files = [...document.getElementById('vqFile').files], val = document.getElementById('vqVal').value, btn = document.getElementById('vqGo');
+  const v = VRF.find(x => x.id === VRF_CUR) || {};
+  if (!files.length && !v.has_quote_file) return document.getElementById('vqMsg').innerHTML = '<div class="err">Choose the quote file</div>';
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try { if (files.length) await vrfUploadFiles(VRF_CUR, files, 'quote'); await vrfRpc('vrf_move', { p_id: VRF_CUR, p_to: 'quote_sent', p: { value: val } }); qtToast('Quote sent to sales'); await loadVrf(); vrfOpen(VRF_CUR); }
+  catch (e) { document.getElementById('vqMsg').innerHTML = `<div class="err">${esc(e.message)}</div>`; btn.disabled = false; btn.textContent = 'Send to sales'; }
+}
+async function vrfAddFiles() {
+  const files = [...document.getElementById('vfAdd').files]; if (!files.length) return alert('Choose a file');
+  try { await vrfUploadFiles(VRF_CUR, files, document.getElementById('vfKind').value); qtToast('Uploaded'); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
+async function vrfSend(query) {
+  const t = document.getElementById('vrfMsg').value.trim(); if (!t) return;
+  try { await vrfRpc('vrf_post', { p_id: VRF_CUR, p_body: t, p_query: !!query }); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
+function vrfSettings() {
+  const c = S('vrf', {});
+  svcModal(`<h3 style="margin-top:0">VRF settings</h3>
+    <div class="field"><label>Brands (one per line)</label><textarea class="inp" id="vsBrands" rows="6" style="width:100%">${esc((c.brands || []).join('\n'))}</textarea></div>
+    <div class="field"><label>Building types (one per line)</label><textarea class="inp" id="vsTypes" rows="4" style="width:100%">${esc((c.building_types || []).join('\n'))}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="field"><label>Remind if not picked after (hours)</label><input class="inp" type="number" id="vsPick" value="${c.pick_alert_hours ?? 4}"></div>
+      <div class="field"><label>Chase vendor after (days)</label><input class="inp" type="number" id="vsVendor" value="${c.vendor_remind_days ?? 2}"></div>
+      <div class="field"><label>Client follow-up after (days)</label><input class="inp" type="number" id="vsClient" value="${c.client_follow_days ?? 5}"></div>
+    </div>
+    <p class="hint">Design team = people with the "VRF design team" access (all Design engineers have it). Design head = Head, or people given "VRF design head" access under Team → Access.</p>
+    <div style="text-align:right"><span id="msgVs"></span> <button class="btn sec sm" onclick="closeModal('svcBg')">Close</button> <button class="btn" onclick="vrfSaveSettings()">Save</button></div>`);
+}
+async function vrfSaveSettings() {
+  const lines = id => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean), n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d);
+  await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: n('vsClient', 5) }, 'msgVs');
+}
+
 /* ---------- customer SMS ---------- */
 const SMS_LABELS = {
   service_request_registered: ['Service request registered', 'Customer raises a ticket', 'Your service request {ticket} is registered with B N Enterprises. Our team will contact you shortly.'],
@@ -4829,7 +5125,7 @@ const SVC_PERMS = [
   ['svc.machine.manage', 'Edit machines & warranty'], ['svc.amc.view', 'See AMC'], ['svc.amc.manage', 'Create / edit AMC'],
   ['svc.tracking.view', 'Live location of technicians'], ['svc.reports', 'Service reports'], ['svc.warranty.override', 'Approve warranty overrides'],
   ['svc.billing', 'Service bill requests (accounts)'],
-  ['quote.create', 'Quotations: create and send'], ['quote.view_all', 'Quotations: see everyone’s'], ['quote.master', 'Quotations: price list, brands, standard text'], ['quote.approve', 'Quotations: approve high discounts']];
+  ['quote.create', 'Quotations: create and send'], ['quote.view_all', 'Quotations: see everyone’s'], ['quote.master', 'Quotations: price list, brands, standard text'], ['quote.approve', 'Quotations: approve high discounts'], ['vrf.design', 'VRF design team: pick and prepare VRF quotes'], ['vrf.head', 'VRF design head: assign, move dates, see all']];
 const SVC_ROLES = ['service_manager', 'manager', 'coordinator', 'telecaller', 'sales', 'quote', 'design_engineer', 'technician'];
 const svcW = s => String(s || '').replace(/_/g, ' ');
 const svcChip = s => `<span class="chip svc-${esc(s)}">${esc(svcW(s))}</span>`;
