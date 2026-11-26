@@ -731,7 +731,7 @@
         <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Any email you add here can sign in, including a personal one such as Gmail (use that for technicians who have no work email). Any @bne.org.in address can also sign in.</p>
       </div>
       <div class="panel" data-roles="admin,head"><h2>Add many people at once <span class="sub">fill the Excel format and upload</span></h2>
-        <div class="toolbar"><button class="btn sec" onclick="bulkTemplate()">Download Excel format</button>
+        <div class="toolbar"><button class="btn sec" onclick="bulkTemplate()">Download Excel format</button><button class="btn sec" onclick="bulkCurrent()">Download current people (to fill reporting manager / branch)</button>
           <label class="btn" style="cursor:pointer">Upload filled Excel<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="bulkRead(this)"></label></div>
         <div id="bulkOut"></div>
         <p class="hint">Columns: Name, Email, Mobile, Role, Branch, Designation, Reports to (email), Territory. The sheet is checked first and you see every problem before anything is saved. An email that already exists is updated, not duplicated. “Reports to” decides who approves that person’s expense claims.</p>
@@ -2263,12 +2263,15 @@ async function expSetupRender() {
       `<input class="inp" id="ecN${c.id}" value="${esc(c.name)}" style="min-width:220px">`, `<input class="inp" type="number" id="ecL${c.id}" value="${c.per_item_limit ?? ''}" placeholder="no limit" style="width:120px">`,
       `<input type="checkbox" id="ecR${c.id}" ${c.needs_receipt ? 'checked' : ''}>`, `<input type="checkbox" id="ecA${c.id}" ${c.active ? 'checked' : ''}>`, `<button class="btn sm sec" onclick="expCatSave(${c.id})">Save</button>`]))}
       <div class="toolbar" style="margin-top:10px"><input class="inp" id="ecNew" placeholder="New category name"><button class="btn" onclick="expCatSave(0)">Add category</button> <span id="msgEc"></span></div></div>
-    <div class="panel" ${isOwner() ? '' : 'style="display:none"'}><h2>Approval rules</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
-        <div class="field"><label>MD approval needed above ₹ <span class="muted">(0 = every claim goes to the MD)</span></label><input class="inp" type="number" id="esMd" value="${s.md_limit ?? 0}"></div>
-        <div class="field"><label>Oldest expense allowed (days back)</label><input class="inp" type="number" id="esBack" value="${s.max_back_days ?? 90}"></div></div>
-      <div style="margin-top:10px"><button class="btn" onclick="expRulesSave()">Save</button> <span id="msgEs"></span></div>
-      <p class="hint">Order: <b>Reporting manager → Finance → MD → payment by Finance</b>. Reporting manager = the person set under Team → Reporting managers (if none, the branch manager; if none, the Head). Finance = people given “Expenses: Finance” access under Team → Service access (until someone has it, Admin does this step). MD = people given “Expenses: MD” access (until then, the Head). Nobody can approve their own claim.</p></div>`;
+    <div class="panel" ${isOwner() ? '' : 'style="display:none"'}><h2>Who approves</h2>
+      <p class="hint" style="margin-top:0">Order: <b>Reporting manager → Finance → MD → payment by Finance</b>. Tick the people for each step. Nobody can approve their own claim.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+        <div><b>Finance</b> <span class="muted" style="font-size:12px">checks every claim and records the payment</span><div id="esFin" style="max-height:220px;overflow:auto;border:1px solid #e5e9f0;border-radius:10px;padding:8px;margin-top:6px">${expPeoplePick('fin', s.finance_users)}</div><div class="muted" style="font-size:12px;margin-top:4px">Nobody ticked = Admin does this step.</div></div>
+        <div><b>MD</b> <span class="muted" style="font-size:12px">final approval</span><div id="esMdU" style="max-height:220px;overflow:auto;border:1px solid #e5e9f0;border-radius:10px;padding:8px;margin-top:6px">${expPeoplePick('md', s.md_users)}</div><div class="muted" style="font-size:12px;margin-top:4px">Nobody ticked = the Head does this step.</div></div>
+        <div><div class="field"><label>MD approval needed above ₹</label><input class="inp" type="number" min="0" id="esMd" value="${s.md_limit ?? 0}" style="width:100%"><div class="muted" style="font-size:12px;margin-top:4px">0 = every claim goes to the MD. Example: 5000 = claims up to ₹5,000 are final after Finance.</div></div>
+          <div class="field" style="margin-top:10px"><label>Oldest expense allowed (days back)</label><input class="inp" type="number" min="1" id="esBack" value="${s.max_back_days ?? 90}" style="width:100%"></div></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="expRulesSave()">Save</button> <span id="msgEs"></span></div>
+      <p class="hint">Reporting manager = the person set under Team → Reporting managers (if none, the branch manager; if none, the Head).</p></div>`;
 }
 async function expCatSave(id) {
   const row = id ? { name: document.getElementById('ecN' + id).value.trim(), per_item_limit: document.getElementById('ecL' + id).value === '' ? null : Number(document.getElementById('ecL' + id).value), needs_receipt: document.getElementById('ecR' + id).checked, active: document.getElementById('ecA' + id).checked }
@@ -2278,10 +2281,38 @@ async function expCatSave(id) {
   if (error) return flash('msgEc', /duplicate/.test(error.message) ? 'This category already exists' : error.message, false);
   flash('msgEc', 'Saved'); expSetupRender();
 }
-async function expRulesSave() { await saveSetting('expenses', { ...S('expenses', {}), md_limit: Math.max(0, Number(document.getElementById('esMd').value) || 0), max_back_days: Math.max(1, parseInt(document.getElementById('esBack').value, 10) || 90) }, 'msgEs'); }
+function expPeoplePick(k, chosen) {
+  const ch = new Set(chosen || []), U = (cache.users || []).filter(u => u.active !== false && !u.deleted_at).sort((a, b) => (ch.has(b.id) - ch.has(a.id)) || String(a.name || '').localeCompare(String(b.name || '')));
+  return U.map(u => `<label style="display:flex;gap:8px;align-items:center;padding:3px 2px;font-size:13px"><input type="checkbox" data-esp="${k}" value="${u.id}" ${ch.has(u.id) ? 'checked' : ''}> ${esc(u.name || u.email || '')} <span class="muted" style="font-size:11.5px">${esc(ROLE_LABEL[u.role] || u.role)}</span></label>`).join('') || '<span class="muted">No people yet</span>';
+}
+async function expRulesSave() {
+  const pick = k => [...document.querySelectorAll(`[data-esp="${k}"]:checked`)].map(i => i.value), fin = pick('fin'), md = pick('md');
+  const both = fin.filter(x => md.includes(x)).map(uname);
+  if (both.length && !confirm(`${both.join(', ')} ${both.length === 1 ? 'is' : 'are'} ticked for both Finance and MD. The same person would approve twice. Save anyway?`)) return;
+  try {
+    const v = await expRpc('exp_set_approvers', { p_finance: fin, p_md: md, p_md_limit: Math.max(0, Number(document.getElementById('esMd').value) || 0) });
+    SETTINGS.expenses = v;
+    await saveSetting('expenses', { ...v, max_back_days: Math.max(1, parseInt(document.getElementById('esBack').value, 10) || 90) }, 'msgEs');
+    expBadge();
+  } catch (e) { flash('msgEs', e.message, false); }
+}
 
 /* ---------- bulk employees (Excel) + reporting managers ---------- */
 let BULK_ROWS = [];
+async function bulkCurrent() {
+  await loadXlsx();
+  const { data, error } = await db.from('users').select('id, name, email, mobile, role, branch_id, designation, reports_to, territory, active, deleted_at').eq('active', true).is('deleted_at', null).order('name');
+  if (error) return alert(error.message);
+  const U = data || [], byId = Object.fromEntries(U.map(u => [u.id, u])), br = Object.fromEntries((cache.branches || []).map(b => [b.id, b.name]));
+  const rows = U.map(u => [u.name || '', u.email || '', u.mobile || '', ROLE_LABEL_BULK[u.role] || u.role, br[u.branch_id] || '', u.designation || '', byId[u.reports_to]?.email || '', u.territory || '']);
+  const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([BULK_COLS, ...rows]);
+  ws['!cols'] = [22, 30, 14, 18, 22, 22, 30, 20].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Your branches', 'People and their email (for the Reports to column)', 'Notes'], ...Array.from({ length: Math.max(U.length, (cache.branches || []).length, 4) }, (_, i) => [(cache.branches || [])[i]?.name || '', U[i] ? `${U[i].name || ''} — ${U[i].email || 'no email'}` : '',
+    ['Fill the Branch and Reports to (email) columns, then upload this file on the same page.', 'Do not change the Email column – it is how each person is matched.', 'A blank cell leaves that detail as it is now.', 'People without an email cannot be updated by upload – set them in the Reporting managers table.'][i] || ''])]), 'Help');
+  XLSX.writeFile(wb, 'BNEOne_current_people.xlsx');
+}
+const ROLE_LABEL_BULK = { sales: 'Salesperson', manager: 'Branch manager', head: 'Head', admin: 'Admin', coordinator: 'Coordinator', telecaller: 'Tele-caller', quote: 'Quote team', technician: 'Technician', service_manager: 'Service manager', design_engineer: 'Design engineer' };
 const BULK_COLS = ['Name', 'Email', 'Mobile', 'Role', 'Branch', 'Designation', 'Reports to (email)', 'Territory'];
 async function bulkTemplate() {
   await loadXlsx(); const wb = XLSX.utils.book_new(), br = (cache.branches || [])[0]?.name || 'Bengaluru';
