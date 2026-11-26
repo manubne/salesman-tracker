@@ -265,6 +265,47 @@
 .vrf-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
 .vrf-stats div{background:#fff;border:1px solid #e5e9f0;border-radius:12px;padding:10px 12px}.vrf-stats b{font-size:20px;display:block}
 </style>
+
+<style id="uxPass">
+/* readability pass: nothing on screen below 13px (counters and column headings 12px). Printed documents are not touched. */
+@media screen {
+  .sidebar .me, .card .lbl, .panel h2 .sub, .chatday, .chatmsg .who, .chatmsg .meta, .chatmsg .replyq, .reacts span, .chatlink div, .chatack, .chatack button, .chatq, .chip, .svcph span, .flag, .btn.sm, .field label, .hint, .warnbox, .ph .cap, .ph .cap b, .khead .ksum, .kcard .ks, .kcard .kf, .kempty, .otp, .vrf-col h3, .vrf-card .no, .vrf-card .ln, .vrf-chip, .vrf-msg.sys { font-size:13px; }
+  th, .navlabel { font-size:12px; }
+  #appView [style*="font-size:10px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 10px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:11px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 11px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:12px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 12px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:10px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 10px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:11px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 11px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:12px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 12px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge) { font-size:13px !important; }
+}
+/* menu sections */
+.navlabel.navgrp { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; border-radius:8px; padding:11px 10px 7px; }
+.navlabel.navgrp:hover { color:#fff; }
+.navlabel.navgrp:focus-visible, .sidebar nav button:focus-visible, .btn:focus-visible { outline:2px solid #7DD3FC; outline-offset:1px; }
+.navlabel.navgrp .chev { margin-left:auto; transition:transform .15s; font-size:11px; }
+.navlabel.navgrp.shut .chev { transform:rotate(-90deg); }
+.navlabel.navgrp .dot { width:8px; height:8px; border-radius:50%; background:var(--red); display:none; }
+.navlabel.navgrp.shut.has .dot { display:inline-block; }
+.navsec.shut { display:none; }
+.navsec { display:flex; flex-direction:column; gap:2px; }
+/* in-page dialogs */
+#uiDlgBg { position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:400; display:grid; place-items:center; padding:16px; }
+#uiDlg { background:#fff; border-radius:16px; max-width:460px; width:100%; padding:20px; box-shadow:0 24px 60px rgba(15,23,42,.35); font-size:14px; color:#0F172A; }
+#uiDlg .msg { white-space:pre-wrap; line-height:1.5; max-height:50vh; overflow:auto; }
+#uiDlg .row { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+#uiDlg textarea { width:100%; margin-top:12px; font:inherit; padding:9px 11px; border:1px solid #CBD5E1; border-radius:10px; }
+/* approvals inbox */
+.appr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+.appr-card { background:#fff; border:1px solid #E5E9F0; border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:6px; cursor:pointer; text-align:left; font:inherit; }
+.appr-card:hover { border-color:#22779A; }
+.appr-card b.n { font-size:26px; line-height:1; }
+.appr-card.zero { opacity:.6; }
+/* expenses on a phone */
+@media screen and (max-width:720px) {
+  #exLines [style*="grid-template-columns"], #svcBody [style*="grid-template-columns:2fr 1fr 1fr"] { grid-template-columns:1fr 1fr !important; }
+  #exLines [data-exrow] > div:first-child > .field:nth-child(4) { grid-column:1 / -1; }
+  #expBody .panel, #svcBody, #eaOut .panel, #bulkOut, #rtTbl { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #expBody table, #svcBody table { min-width:560px; }
+  #expTabs { flex-wrap:wrap; gap:6px; }
+  #expBody .toolbar .inp, #expBody .toolbar select { flex:1 1 140px; min-width:0 !important; }
+  #svcBody .toolbar .btn { flex:1 1 auto; }
+}
+</style>
 </head>
 <body>
 
@@ -1711,7 +1752,9 @@ async function init() {
   } else {
     show('leads');
   }
+  navRegroup(); { const sec = document.querySelector('nav button.active')?.closest('.navsec'); if (sec) navSet(sec.dataset.g, true); }
   vrfDeepLink(); expDeepLink();
+  setTimeout(navDots, 2500);
 }
 
 function toggleSidebar(open) {
@@ -1805,7 +1848,7 @@ async function vrfRpc(fn, args) {
 }
 async function loadVrf() {
   try { VRF = (await vrfRpc('vrf_list', {})) || []; } catch (e) { document.getElementById('vrfBoard').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
-  if (!VRF_TEAM.length) { try { VRF_TEAM = (await vrfRpc('vrf_team', {})) || []; } catch (_) {} }
+  if (!VRF_TEAM.length) { try { VRF_TEAM = (await vrfRpc('vrf_team', {})) || []; } catch (e) { softErr('The design team list', e); } }
   const b = document.getElementById('vrfBrand'), cur = b.value;
   b.innerHTML = '<option value="">All brands</option>' + [...new Set([...(S('vrf', {}).brands || []), ...VRF.map(v => v.brand)])].map(x => `<option>${esc(x)}</option>`).join('');
   b.value = cur;
@@ -1904,7 +1947,7 @@ async function vrfCreate(force) {
     closeModal('svcBg'); qtToast(`${v.vrf_no} sent to the design team`); await loadVrf();
   } catch (e) {
     const m = e.message;
-    if (m.startsWith('DUPLICATE|')) { if (confirm(m.slice(10) + '\n\nSend it anyway?')) return vrfCreate(true); }
+    if (m.startsWith('DUPLICATE|')) { if (await uiConfirm(m.slice(10) + '\n\nSend it anyway?')) return vrfCreate(true); }
     else document.getElementById('vfMsg').innerHTML = `<div class="err">${esc(m)}</div>`;
   } finally { btn.disabled = false; btn.textContent = 'Send to design team'; }
 }
@@ -1915,7 +1958,7 @@ async function vrfOpen(id, keepTab) {
   const [{ data: v }, { data: ev }, { data: files }, { data: revs }] = await Promise.all([
     db.from('vrf_projects').select('*').eq('id', id).maybeSingle(), db.from('vrf_events').select('*').eq('project_id', id).order('id'),
     db.from('vrf_files').select('*').eq('project_id', id).order('id'), db.from('vrf_revisions').select('*').eq('project_id', id).order('rev')]);
-  let NM = {}; try { NM = (await vrfRpc('vrf_people', { p_id: id })) || {}; } catch (_) {}
+  let NM = {}; try { NM = (await vrfRpc('vrf_people', { p_id: id })) || {}; } catch (e) { softErr('Names on this project', e); }
   const nm = u => (u && NM[u]) || uname(u);
   if (!v) { qtToast('Project not found', true); return; }
   db.rpc('vrf_read', { p_id: id }).then(() => { const x = VRF.find(y => y.id === id); if (x) { x.unread = 0; vrfBadge(); } });
@@ -1982,21 +2025,21 @@ async function vrfDo(kind, to, extra) {
 }
 async function vrfPromise() {
   const v = VRF.find(x => x.id === VRF_CUR) || {};
-  const d = prompt('Date you will send the quote to sales (YYYY-MM-DD):', v.promised_at || vrfToday()); if (!d) return;
-  let r = null; if (v.promised_at && v.promised_at !== d) { r = prompt('Why is the date changing? (sales will see this)'); if (!r) return; }
+  const d = await uiPrompt('Date you will send the quote to sales (YYYY-MM-DD):', v.promised_at || vrfToday()); if (!d) return;
+  let r = null; if (v.promised_at && v.promised_at !== d) { r = await uiPrompt('Why is the date changing? (sales will see this)'); if (!r) return; }
   try { await vrfRpc('vrf_promise', { p_id: VRF_CUR, p_date: d, p_reason: r }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
 }
 async function vrfAssign() {
   const opts = VRF_TEAM.map((u, i) => `${i + 1}. ${u.name}`).join('\n');
   if (!VRF_TEAM.length) return alert('No one is in the design team yet. Give people the "VRF design team" access under Team.');
-  const n = parseInt(prompt('Assign to:\n' + opts + '\n\nType the number:'), 10); if (!n || !VRF_TEAM[n - 1]) return;
+  const n = parseInt(await uiPrompt('Assign to:\n' + opts + '\n\nType the number:'), 10); if (!n || !VRF_TEAM[n - 1]) return;
   try { await vrfRpc('vrf_assign', { p_id: VRF_CUR, p_user: VRF_TEAM[n - 1].id }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
 }
-function vrfVendor() { const x = prompt('Which vendor / brand did you ask for the price?'); if (x) vrfDo('move', 'vendor', { vendor: x }); }
-function vrfReason(to, q) { const r = prompt(q); if (r) vrfDo('move', to, { reason: r }); }
-function vrfRevision() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const r = prompt(`What does the client want changed? (R${(v.revision || 0) + 1})`); if (r) vrfDo('move', 'revision', { reason: r }); }
-function vrfFinal() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const x = prompt('Final value agreed (₹):', v.quote_value || ''); if (x !== null) vrfDo('move', 'finalised', { value: x.replace(/[^\d.]/g, '') || null }); }
-function vrfWon() { const v = VRF.find(x => x.id === VRF_CUR) || {}; if (!confirm('Mark this project WON? The design team will be asked for the final BOQ, drawings and CAD files.')) return; vrfDo('move', 'won', { value: v.final_value || v.quote_value || null }); }
+async function vrfVendor() { const x = await uiPrompt('Which vendor / brand did you ask for the price?'); if (x) vrfDo('move', 'vendor', { vendor: x }); }
+async function vrfReason(to, q) { const r = await uiPrompt(q); if (r) vrfDo('move', to, { reason: r }); }
+async function vrfRevision() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const r = await uiPrompt(`What does the client want changed? (R${(v.revision || 0) + 1})`); if (r) vrfDo('move', 'revision', { reason: r }); }
+async function vrfFinal() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const x = await uiPrompt('Final value agreed (₹):', v.quote_value || ''); if (x !== null) vrfDo('move', 'finalised', { value: x.replace(/[^\d.]/g, '') || null }); }
+async function vrfWon() { const v = VRF.find(x => x.id === VRF_CUR) || {}; if (!await uiConfirm('Mark this project WON? The design team will be asked for the final BOQ, drawings and CAD files.')) return; vrfDo('move', 'won', { value: v.final_value || v.quote_value || null }); }
 async function vrfSendQuote() {
   const v = VRF.find(x => x.id === VRF_CUR) || {};
   svcModal(`<h3 style="margin-top:0">Send quote${v.revision ? ' R' + v.revision : ''} to sales</h3>
@@ -2038,6 +2081,116 @@ async function vrfSaveSettings() {
   await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: n('vsClient', 5) }, 'msgVs');
 }
 
+
+/* ---------- UX pass: in-page dialogs, grouped menu, approvals inbox ---------- */
+function uiDialog({ msg, input, def, okText, cancel }) {
+  return new Promise(res => {
+    document.getElementById('uiDlgBg')?.remove();
+    const bg = document.createElement('div'); bg.id = 'uiDlgBg';
+    bg.innerHTML = `<div id="uiDlg" role="dialog" aria-modal="true"><div class="msg"></div>${input ? '<textarea rows="2"></textarea>' : ''}<div class="row">${cancel ? '<button class="btn sec" data-x="0">Cancel</button>' : ''}<button class="btn" data-x="1">${okText || 'OK'}</button></div></div>`;
+    bg.querySelector('.msg').textContent = String(msg ?? '');
+    const ta = bg.querySelector('textarea'); if (ta) ta.value = def == null ? '' : String(def);
+    const prev = document.activeElement;
+    const done = ok => { document.removeEventListener('keydown', key, true); bg.remove(); try { prev?.focus?.(); } catch (_) {} res(input ? (ok ? ta.value : null) : ok); };
+    const key = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); done(true); } };
+    bg.addEventListener('click', e => { const x = e.target.closest('[data-x]'); if (x) done(x.dataset.x === '1'); });
+    document.addEventListener('keydown', key, true);
+    document.body.appendChild(bg); (ta || bg.querySelector('[data-x="1"]')).focus(); if (ta) ta.select();
+  });
+}
+const uiConfirm = msg => uiDialog({ msg, cancel: true, okText: 'Yes' });
+const uiPrompt = (msg, def) => uiDialog({ msg, input: true, def, cancel: true });
+const uiAlert = msg => uiDialog({ msg });
+window.alert = uiAlert;
+const _softSeen = {};
+function softErr(what, e) { console.warn(what, e); if (_softSeen[what]) return; _softSeen[what] = 1; try { qtToast(`${what} could not be loaded. Reload the page if something looks missing.`, true); } catch (_) {} }
+
+const NAV_GROUPS = [
+  ['home', 'Home', ['overview', 'approvals']],
+  ['sales', 'Sales', ['leads', 'pipeline', 'quoteReqs', 'vrf', 'customers', 'followups', 'reqs', 'stock', 'billing', 'payments']],
+  ['field', 'Field team', ['visits', 'photos', 'mapv', 'travel', 'attendance']],
+  ['service', 'Service', ['svcTickets', 'svcOdoo', 'svcBoard', 'svcTechs', '#svcMapNav', 'svcWarranty', 'svcComm', 'svcBilling', 'svcAmc', 'svcReports']],
+  ['reports', 'Reports', ['analytics', 'reports', 'incentives']],
+  ['people', 'Expenses & people', ['expenses', 'team']],
+  ['admin', 'Admin', ['smslog', 'salesreports', 'oem', 'settings']],
+];
+function navRegroup() {
+  const nav = document.querySelector('.sidebar nav'); if (!nav || nav.dataset.grouped) return; nav.dataset.grouped = '1';
+  try {
+    if (!document.getElementById('approvals')) {
+      const v = document.createElement('div'); v.id = 'approvals'; v.className = 'view'; v.innerHTML = '<div id="apprBody"></div>';
+      document.getElementById('expenses').parentNode.insertBefore(v, document.getElementById('expenses'));
+      const b = document.createElement('button'); b.dataset.v = 'approvals'; b.setAttribute('onclick', "show('approvals')");
+      b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>My approvals</span><span class="badge" id="apprBadge" style="display:none"></span>';
+      nav.insertBefore(b, nav.firstChild);
+    }
+    const pick = k => k[0] === '#' ? nav.querySelector(k) : [...nav.querySelectorAll(`button[data-v="${k}"]`)].find(b => b.id !== 'svcMapNav');
+    let open = {}; try { open = JSON.parse(localStorage.getItem('bne_nav') || '{}'); } catch (_) {}
+    const grouped = new Set(NAV_GROUPS.flatMap(g => g[2].map(pick)).filter(Boolean));
+    const tail = [...nav.children].filter(el => el.tagName === 'BUTTON' && !grouped.has(el));
+    nav.querySelectorAll('.navlabel').forEach(l => l.remove());
+    const frag = document.createDocumentFragment();
+    for (const [key, label, items] of NAV_GROUPS) {
+      const btns = items.map(pick).filter(Boolean); if (!btns.length) continue;
+      const sec = document.createElement('div'); sec.className = 'navsec'; sec.dataset.g = key; btns.forEach(b => sec.appendChild(b));
+      const lab = document.createElement('div'); lab.className = 'navlabel navgrp'; lab.dataset.g = key; lab.tabIndex = 0; lab.setAttribute('role', 'button');
+      lab.innerHTML = `<span>${label}</span><span class="dot"></span><span class="chev">▾</span>`;
+      const toggle = () => navSet(key, sec.classList.contains('shut'));
+      lab.addEventListener('click', toggle); lab.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      frag.appendChild(lab); frag.appendChild(sec);
+      if (!(open[key] ?? key === 'home')) { sec.classList.add('shut'); lab.classList.add('shut'); }
+      lab.setAttribute('aria-expanded', String(!sec.classList.contains('shut')));
+    }
+    nav.insertBefore(frag, nav.firstChild);
+    tail.forEach(b => nav.appendChild(b));
+    navDots(); setInterval(navDots, 4000);
+  } catch (e) { console.warn('menu grouping', e); }
+}
+function navSet(key, openIt) {
+  const sec = document.querySelector(`.navsec[data-g="${key}"]`), lab = document.querySelector(`.navgrp[data-g="${key}"]`); if (!sec || !lab) return;
+  sec.classList.toggle('shut', !openIt); lab.classList.toggle('shut', !openIt); lab.setAttribute('aria-expanded', String(openIt));
+  try { const o = JSON.parse(localStorage.getItem('bne_nav') || '{}'); o[key] = openIt; localStorage.setItem('bne_nav', JSON.stringify(o)); } catch (_) {}
+  navDots();
+}
+function navDots() {
+  document.querySelectorAll('.navsec').forEach(sec => {
+    const lab = document.querySelector(`.navgrp[data-g="${sec.dataset.g}"]`); if (!lab) return;
+    const visible = [...sec.children].some(b => b.style.display !== 'none'); lab.style.display = visible ? '' : 'none'; sec.style.display = visible ? '' : 'none';
+    lab.classList.toggle('has', [...sec.querySelectorAll('.badge')].some(b => b.id !== 'apprBadge' && b.style.display !== 'none' && b.closest('button').style.display !== 'none' && Number(b.textContent) > 0));
+  });
+  apprBadge();
+}
+/* My approvals: everything that is waiting for this person, in one place */
+const APPR_SRC = [
+  ['expenses', 'expBadge', 'Expense claims', 'Claims waiting for your approval or payment'],
+  ['payments', 'payBadge', 'Payments to verify', 'Payments reported by salespeople'],
+  ['billing', 'brBadge', 'Billing requests', 'Invoices asked for on won deals'],
+  ['travel', 'claimBadge', 'Fuel claims', 'Monthly travel claims to approve'],
+  ['svcBilling', 'sbBadge', 'Service billing & zero-bill', 'Service jobs waiting for billing or approval'],
+  ['quoteReqs', 'qrBadge', 'Quote requests', 'Quotes waiting to be prepared or sent'],
+  ['vrf', 'vrfBadge', 'VRF projects', 'VRF enquiries that need attention'],
+];
+function apprItems() {
+  return APPR_SRC.map(([v, bid, title, sub]) => { const btn = document.querySelector(`nav button[data-v="${v}"]`), b = document.getElementById(bid);
+    if (!btn || btn.style.display === 'none') return null;
+    return { v, title, sub, n: b && b.style.display !== 'none' ? (Number(b.textContent) || 0) : 0 }; }).filter(Boolean);
+}
+function apprBadge() { const n = apprItems().reduce((a, x) => a + x.n, 0), el = document.getElementById('apprBadge'); if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; } return n; }
+function apprRender() {
+  const box = document.getElementById('apprBody'); if (!box) return; const L = apprItems().sort((a, b) => b.n - a.n), total = L.reduce((a, x) => a + x.n, 0);
+  box.innerHTML = `<div class="panel"><h2>${total ? `${total} item${total === 1 ? '' : 's'} waiting for you` : 'Nothing is waiting for you'}</h2>
+    <div class="appr-grid">${L.map(x => `<button class="appr-card ${x.n ? '' : 'zero'}" onclick="show('${x.v}')${x.v === 'expenses' ? ";expTab('todo')" : ''}"><b class="n" style="color:${x.n ? '#B45309' : '#94A3B8'}">${x.n}</b><b>${esc(x.title)}</b><span class="muted">${esc(x.sub)}</span></button>`).join('')}</div>
+    <p class="hint">Counts refresh by themselves. Click a card to open that list.</p></div>`;
+}
+(function () {
+  const _show = show;
+  show = function (v) {
+    _show(v);
+    const sec = document.querySelector(`nav button[data-v="${v}"]`)?.closest('.navsec'); if (sec && sec.classList.contains('shut')) navSet(sec.dataset.g, true);
+    if (v === 'approvals') { apprRender(); setTimeout(apprRender, 1500); }
+  };
+})();
+
 /* ---------- Expense claims: employee -> reporting manager -> Finance -> MD -> paid ---------- */
 const EXP = { tab: 'mine', list: [], cats: [], cur: null, form: null, an: null };
 const EXP_CHIP = { draft: 'vrf-n', pending_manager: 'vrf-a', pending_finance: 'vrf-a', pending_md: 'vrf-a', approved: 'vrf-b', paid: 'vrf-g', rejected: 'vrf-r', returned: 'vrf-r' };
@@ -2045,7 +2198,7 @@ const expSeesAll = () => isOwner() || can('exp.finance') || can('exp.md') || can
 const expSetup = () => isOwner() || can('exp.finance');
 async function expRpc(fn, args) { const { data, error } = await db.rpc(fn, args); if (error) throw new Error(error.message || 'Something went wrong'); return data; }
 async function expBadge() {
-  try { const t = await expRpc('exp_list', { p_scope: 'todo' }); const el = document.getElementById('expBadge'); EXP.todo = (t || []).length; if (el) { el.textContent = EXP.todo; el.style.display = EXP.todo ? '' : 'none'; } } catch (_) {}
+  try { const t = await expRpc('exp_list', { p_scope: 'todo' }); const el = document.getElementById('expBadge'); EXP.todo = (t || []).length; if (el) { el.textContent = EXP.todo; el.style.display = EXP.todo ? '' : 'none'; } } catch (e) { softErr('Your expense approvals', e); }
 }
 function expDeepLink() { const id = new URLSearchParams(location.search).get('exp'); if (!id) return; show('expenses'); if (/^[0-9a-f-]{36}$/.test(id)) setTimeout(() => expOpen(id), 500); }
 function expTab(t) { EXP.tab = t; expLoad(); }
@@ -2189,7 +2342,7 @@ async function expDecide(action) {
   const note = document.getElementById('expNote').value.trim(), amounts = {};
   document.querySelectorAll('[data-expappr]').forEach(i => amounts[i.dataset.expappr] = Number(i.value) || 0);
   if (action !== 'approve' && note.length < 3) return alert('Write the reason – the employee will see it.');
-  if (action === 'reject' && !confirm('Reject this claim? The employee cannot submit it again.')) return;
+  if (action === 'reject' && !await uiConfirm('Reject this claim? The employee cannot submit it again.')) return;
   try { const c = await expRpc('exp_decide', { p_id: EXP.cur.claim.id, p: { action, note, amounts } }); qtToast(action === 'approve' ? 'Approved' : action === 'return' ? 'Sent back to the employee' : 'Rejected'); closeModal('svcBg'); expLoad(); } catch (e) { alert(e.message); }
 }
 async function expPay() {
@@ -2201,7 +2354,7 @@ async function expPay() {
   } catch (e) { msg.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
 }
 async function expComment() { const t = document.getElementById('expCom').value.trim(); if (!t) return; try { await expRpc('exp_comment', { p_id: EXP.cur.claim.id, p_body: t }); expOpen(EXP.cur.claim.id); } catch (e) { alert(e.message); } }
-async function expDelete() { if (!confirm('Delete this draft?')) return; try { await expRpc('exp_delete_draft', { p_id: EXP.cur.claim.id }); closeModal('svcBg'); expLoad(); } catch (e) { alert(e.message); } }
+async function expDelete() { if (!await uiConfirm('Delete this draft?')) return; try { await expRpc('exp_delete_draft', { p_id: EXP.cur.claim.id }); closeModal('svcBg'); expLoad(); } catch (e) { alert(e.message); } }
 /* analysis */
 async function expAnalysis() {
   const box = document.getElementById('expBody'), d0 = new Date(); d0.setMonth(d0.getMonth() - 2); d0.setDate(1);
@@ -2288,7 +2441,7 @@ function expPeoplePick(k, chosen) {
 async function expRulesSave() {
   const pick = k => [...document.querySelectorAll(`[data-esp="${k}"]:checked`)].map(i => i.value), fin = pick('fin'), md = pick('md');
   const both = fin.filter(x => md.includes(x)).map(uname);
-  if (both.length && !confirm(`${both.join(', ')} ${both.length === 1 ? 'is' : 'are'} ticked for both Finance and MD. The same person would approve twice. Save anyway?`)) return;
+  if (both.length && !await uiConfirm(`${both.join(', ')} ${both.length === 1 ? 'is' : 'are'} ticked for both Finance and MD. The same person would approve twice. Save anyway?`)) return;
   try {
     const v = await expRpc('exp_set_approvers', { p_finance: fin, p_md: md, p_md_limit: Math.max(0, Number(document.getElementById('esMd').value) || 0) });
     SETTINGS.expenses = v;
@@ -2341,7 +2494,7 @@ function bulkShow(r, saved) {
     ${saved ? '' : `<div class="toolbar" style="margin-top:8px">${r.ok ? `<button class="btn" onclick="bulkSave()">Add / update ${r.ok} ${r.ok === 1 ? 'person' : 'people'}</button>` : ''}${r.errors ? '<span class="muted">Rows with a problem are skipped. Fix them in the Excel and upload again.</span>' : ''}</div>`}`;
 }
 async function bulkSave() {
-  if (!confirm('Add / update these people? They can then sign in with their email.')) return;
+  if (!await uiConfirm('Add / update these people? They can then sign in with their email.')) return;
   try { const r = await expRpc('invite_users_bulk', { p_rows: BULK_ROWS, p_dry: false }); bulkShow(r, true); qtToast(`${r.ok} people added / updated`); loadInvites(); loadUsers(true); rtRender(); } catch (e) { alert(e.message); }
 }
 async function rtRender() {
@@ -2444,7 +2597,7 @@ async function srTest() {
 }
 async function srSendNow() {
   const b = srBody('send');
-  if (!confirm(`Email the ${b.kind} report${b.branch_id ? '' : ' for every branch'} to the branch managers with the cc list now?`)) return;
+  if (!await uiConfirm(`Email the ${b.kind} report${b.branch_id ? '' : ' for every branch'} to the branch managers with the cc list now?`)) return;
   const info = document.getElementById('srInfo'); info.textContent = 'Sending…';
   try { const j = await srCall({ ...b, force: true }); info.textContent = j.results.map(x => `${x.branch}: ${x.sent ? 'sent' : (x.error || x.skipped)}`).join(' · ') || 'Nothing to send.'; loadSalesReports(); }
   catch (e) { info.textContent = e.message; }
@@ -2517,13 +2670,13 @@ async function oemSave(id) {
 }
 async function oemToggle(id) {
   const o = OEM.find(x => x.id === id); if (!o) return;
-  if (o.active && !confirm(`Switch off ${o.name}? They will be signed out and cannot sign in again until you switch them on.`)) return;
+  if (o.active && !await uiConfirm(`Switch off ${o.name}? They will be signed out and cannot sign in again until you switch them on.`)) return;
   const { error } = await db.from('oem_users').update({ active: !o.active }).eq('id', id);
   if (error) return alert(oemErr(error.message)); loadOem();
 }
 async function oemDelete(id) {
   const o = OEM.find(x => x.id === id); if (!o) return;
-  if (!confirm(`Remove ${o.name} permanently? They will be signed out and lose access.`)) return;
+  if (!await uiConfirm(`Remove ${o.name} permanently? They will be signed out and lose access.`)) return;
   const { error } = await db.from('oem_users').delete().eq('id', id);
   if (error) return alert(error.message); loadOem();
 }
@@ -2589,7 +2742,7 @@ function renderAppUpdate() {
 }
 async function saveAppUpdate() {
   const min = Math.max(0, parseInt(document.getElementById('auMin').value || '0', 10) || 0), latest = Math.max(0, parseInt(document.getElementById('auLatest').value || '0', 10) || 0);
-  if (min > 0 && !confirm(`Block every app older than 1.0.${min}? People on older versions must update from the Play Store before they can work.`)) return;
+  if (min > 0 && !await uiConfirm(`Block every app older than 1.0.${min}? People on older versions must update from the Play Store before they can work.`)) return;
   await saveSetting('app_update', { ...S('app_update', {}), min_build: min, latest_build: Math.max(latest, min), message: document.getElementById('auMsg').value.trim() }, 'msgAu');
 }
 function renderSettings() {
@@ -3131,7 +3284,7 @@ function selAllUsers(cb) { document.querySelectorAll('.userSel').forEach(x => { 
 async function deleteSelectedUsers() {
   const ids = [..._selUsers]; if (!ids.length) return;
   const names = cache.users.filter(u => ids.includes(u.id)).map(u => u.name || u.email || u.mobile).slice(0, 8).join(', ');
-  if (!confirm(`Delete ${ids.length} ${ids.length === 1 ? 'person' : 'people'}?\n\n${names}${ids.length > 8 ? '…' : ''}\n\nPeople with no work history are removed completely. People who have visits, leads, deals or payments are archived instead: they disappear from lists and can no longer sign in, but their past records stay for reports.`)) return;
+  if (!await uiConfirm(`Delete ${ids.length} ${ids.length === 1 ? 'person' : 'people'}?\n\n${names}${ids.length > 8 ? '…' : ''}\n\nPeople with no work history are removed completely. People who have visits, leads, deals or payments are archived instead: they disappear from lists and can no longer sign in, but their past records stay for reports.`)) return;
   const btn = document.getElementById('delUsersBtn'); btn.disabled = true;
   const { data, error } = await db.rpc('admin_delete_users', { p_ids: ids });
   btn.disabled = false;
@@ -3144,7 +3297,7 @@ function updDelInv() { const b = document.getElementById('delInvBtn'); if (b) { 
 function togInv(cb) { cb.checked ? _selInv.add(cb.dataset.id) : _selInv.delete(cb.dataset.id); updDelInv(); }
 function selAllInv(cb) { document.querySelectorAll('.invSel').forEach(x => { x.checked = cb.checked; cb.checked ? _selInv.add(x.dataset.id) : _selInv.delete(x.dataset.id); }); updDelInv(); }
 async function deleteSelectedInvites() {
-  const ids = [..._selInv]; if (!ids.length || !confirm(`Delete ${ids.length} pending invite(s)? They will no longer be able to join with these details.`)) return;
+  const ids = [..._selInv]; if (!ids.length || !await uiConfirm(`Delete ${ids.length} pending invite(s)? They will no longer be able to join with these details.`)) return;
   const { error } = await db.rpc('admin_delete_invites', { p_ids: ids });
   if (error) { alert(error.message); return; }
   loadInvites();
@@ -3266,7 +3419,7 @@ async function mergeSelected() {
   const [a, b] = [..._custSel].map(id => cache.customers.find(c => c.id === id));
   if (!a || !b) return;
   const keep = (a._n.v + a._n.l) >= (b._n.v + b._n.l) ? a : b, rem = keep === a ? b : a;
-  if (!confirm(`Merge duplicates?\n\nKEEP: ${keep.name} ${keep.company ? '(' + keep.company + ')' : ''} · ${keep.mobile || ''}\nMERGE INTO IT: ${rem.name} ${rem.company ? '(' + rem.company + ')' : ''} · ${rem.mobile || ''}\n\nAll leads, visits, deals and follow-ups move to the kept customer. Visits are renumbered. This cannot be undone.`)) return;
+  if (!await uiConfirm(`Merge duplicates?\n\nKEEP: ${keep.name} ${keep.company ? '(' + keep.company + ')' : ''} · ${keep.mobile || ''}\nMERGE INTO IT: ${rem.name} ${rem.company ? '(' + rem.company + ')' : ''} · ${rem.mobile || ''}\n\nAll leads, visits, deals and follow-ups move to the kept customer. Visits are renumbered. This cannot be undone.`)) return;
   const { error } = await db.rpc('merge_customers', { p_keep: keep.id, p_remove: rem.id });
   if (error) return alert(error.message);
   await loadCustomers();
@@ -3286,7 +3439,7 @@ async function loadLocationRequests() {
           : `<span class="otp otp-${r.status === 'approved' ? 'green' : 'red'}">${esc(r.status)}</span>${r.decision_note ? '<div class="muted" style="font-size:11px">' + esc(r.decision_note) + '</div>' : ''}`]; }));
 }
 async function decideLoc(id, approve) {
-  const note = approve ? '' : (prompt('Reason for rejecting (optional)') ?? null);
+  const note = approve ? '' : (await uiPrompt('Reason for rejecting (optional)') ?? null);
   if (note === null) return;
   const { error } = await db.rpc('decide_location_change', { p_id: id, p_approve: approve, p_note: note || null });
   if (error) return alert(error.message);
@@ -3605,7 +3758,7 @@ async function openOpp(id) {
       <label class="muted" style="font-size:12px">Chance %</label><input id="ovProb" class="inp" type="number" min="0" max="100" value="${o.probability ?? ''}" style="width:80px">
       <button class="btn sm sec" onclick="saveOppMeta()">Save</button></div>`;
   } else if (isOwner()) {
-    act += `<button class="btn sm sec" onclick="if(confirm('Reopen this deal and move it back to Negotiation?'))moveStage(_ov.id,'negotiation')">Reopen deal</button>`;
+    act += `<button class="btn sm sec" onclick="(async()=>{if(await uiConfirm('Reopen this deal and move it back to Negotiation?'))moveStage(_ov.id,'negotiation')})()">Reopen deal</button>`;
   }
   document.getElementById('ovActions').innerHTML = act;
   document.getElementById('ovNote').value = ''; document.getElementById('ovMsg').innerHTML = '';
@@ -3645,7 +3798,7 @@ async function oppInvFind(id) {
   } catch (e) { el.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
 async function oppInvLink(id, mid) { try { await odooDeal({ action: 'deal_inv_link', order_id: id, odoo_move_id: mid }); qtToast('Invoice linked'); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
-async function oppInvUnlink(id, mid, num) { if (!confirm('Unlink ' + num + ' from this deal? It stays in Odoo.')) return; try { await odooDeal({ action: 'deal_inv_unlink', order_id: id, odoo_move_id: mid }); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
+async function oppInvUnlink(id, mid, num) { if (!await uiConfirm('Unlink ' + num + ' from this deal? It stays in Odoo.')) return; try { await odooDeal({ action: 'deal_inv_unlink', order_id: id, odoo_move_id: mid }); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
 async function oppInvRefresh(id) { try { await odooDeal({ action: 'deal_inv_refresh', order_id: id }); loadOppInvoices(_ov); } catch (e) { alert(e.message); } }
 async function loadOppExtras(id) {
   const [{ data: ev }, { data: md }] = await Promise.all([
@@ -3942,16 +4095,16 @@ async function generateStatements() {
   await loadIncentives();
 }
 async function setIncStatus(id, status) {
-  if (status === 'paid' && !confirm('Mark this incentive as paid?')) return;
+  if (status === 'paid' && !await uiConfirm('Mark this incentive as paid?')) return;
   const { error } = await db.rpc('incentive_update', { p_id: id, p_status: status, p_adjustment: null, p_note: null });
   if (error) { alert(error.message); return; }
   loadIncentives();
 }
 async function adjustInc(id) {
   const st = _payouts.find(x => x.id === id); if (!st) return;
-  const v = prompt('Adjustment in ₹ (use a minus sign to deduct, 0 to remove):', st.adjustment || 0); if (v === null) return;
+  const v = await uiPrompt('Adjustment in ₹ (use a minus sign to deduct, 0 to remove):', st.adjustment || 0); if (v === null) return;
   const amt = Number(v); if (isNaN(amt)) { alert('Enter a number'); return; }
-  const note = amt ? prompt('Reason (shown on the statement):', st.adjustment_note || '') : null;
+  const note = amt ? await uiPrompt('Reason (shown on the statement):', st.adjustment_note || '') : null;
   if (amt && !note) return;
   const { error } = await db.rpc('incentive_update', { p_id: id, p_status: null, p_adjustment: amt, p_note: note });
   if (error) { alert(error.message); return; }
@@ -4073,7 +4226,7 @@ async function savePlan() {
   closeModal('planBg'); loadIncentives();
 }
 async function deletePlan() {
-  if (!_plEdit || !confirm('Delete this plan? Statements already generated keep their numbers.')) return;
+  if (!_plEdit || !await uiConfirm('Delete this plan? Statements already generated keep their numbers.')) return;
   const { error } = await db.from('incentive_plans').delete().eq('id', _plEdit.id);
   if (error) { document.getElementById('plErr').textContent = error.message; return; }
   closeModal('planBg'); loadIncentives();
@@ -4204,7 +4357,7 @@ async function attachPayProof(inp) {
 }
 async function reviewPayment(status) {
   let reason = null;
-  if (status === 'rejected') { reason = prompt('Reason for rejecting (the salesperson sees this):', ''); if (reason === null) return; if (!reason.trim()) { flash('pvMsg', 'A reason is required', false); return; } }
+  if (status === 'rejected') { reason = await uiPrompt('Reason for rejecting (the salesperson sees this):', ''); if (reason === null) return; if (!reason.trim()) { flash('pvMsg', 'A reason is required', false); return; } }
   const { error } = await db.rpc('payment_review', { p_id: _payView.id, p_status: status, p_reason: reason });
   if (error) { flash('pvMsg', error.message, false); return; }
   await loadPayments(); await openPayment(_payView.id);
@@ -4321,8 +4474,8 @@ async function resendBilling() {
 }
 async function setBillingStatus(status) {
   let note = null;
-  if (status === 'processed') { note = prompt('Note from accounts (invoice number etc.) — optional:', _brView.accounts_note || ''); if (note === null) return; }
-  if (status === 'cancelled' && !confirm('Cancel this billing request?')) return;
+  if (status === 'processed') { note = await uiPrompt('Note from accounts (invoice number etc.) — optional:', _brView.accounts_note || ''); if (note === null) return; }
+  if (status === 'cancelled' && !await uiConfirm('Cancel this billing request?')) return;
   const upd = { status, accounts_note: note ?? _brView.accounts_note };
   if (status === 'processed') { upd.processed_by = ME.id; upd.processed_at = new Date().toISOString(); }
   const { error } = await db.from('billing_requests').update(upd).eq('id', _brView.id);
@@ -4733,16 +4886,16 @@ function renderTravel() {
 function routeFromTravel(uid, d) { show('mapv'); setTimeout(() => routeFor(uid, d), 150); }
 async function adjustKm(uid, d) {
   const t = _travel.find(x => x.user_id === uid && x.day === d); if (!t) return;
-  const v = prompt(`Km for ${uname(uid)} on ${d} (calculated ${Number(t.km_final).toFixed(1)} km). Leave empty to remove the adjustment:`, t.adjusted_km ?? '');
+  const v = await uiPrompt(`Km for ${uname(uid)} on ${d} (calculated ${Number(t.km_final).toFixed(1)} km). Leave empty to remove the adjustment:`, t.adjusted_km ?? '');
   if (v === null) return;
   let reason = null;
-  if (v.trim() !== '') { reason = prompt('Reason for the adjustment (shown to the salesperson):', t.adjust_reason || ''); if (!reason) return; }
+  if (v.trim() !== '') { reason = await uiPrompt('Reason for the adjustment (shown to the salesperson):', t.adjust_reason || ''); if (!reason) return; }
   const { error } = await db.from('daily_travel').update({ adjusted_km: v.trim() === '' ? null : Number(v), adjust_reason: v.trim() === '' ? null : reason }).eq('user_id', uid).eq('day', d);
   if (error) { alert(error.message); return; }
   loadTravel();
 }
 async function decideClaim(uid, status) {
-  const note = status === 'rejected' ? prompt('Reason for rejecting (shown to the salesperson):') : (status === 'approved' ? (prompt('Note (optional):') ?? null) : null);
+  const note = status === 'rejected' ? await uiPrompt('Reason for rejecting (shown to the salesperson):') : (status === 'approved' ? (await uiPrompt('Note (optional):') ?? null) : null);
   if (status === 'rejected' && !note) return;
   const [s] = monthRange();
   const { error } = await db.rpc('fuel_claim_decide', { p_user: uid, p_month: s, p_status: status, p_note: note || null });
@@ -5144,7 +5297,7 @@ async function chatReact(id, e) { const { error } = await db.rpc('chat_react', {
 function chatSetReply(id) { _chatReply = _chatMsgs.find(m => m.id === id); _chatEdit = null; renderComposerExtras(); document.getElementById('chatInput').focus(); }
 function chatSetEdit(id) { _chatEdit = _chatMsgs.find(m => m.id === id); _chatReply = null; document.getElementById('chatInput').value = _chatEdit.body || ''; renderComposerExtras(); document.getElementById('chatInput').focus(); }
 function chatCancelExtra() { _chatReply = null; if (_chatEdit) document.getElementById('chatInput').value = ''; _chatEdit = null; renderComposerExtras(); }
-async function chatDelete(id) { if (!confirm('Delete this message?')) return; const { error } = await db.rpc('chat_delete', { p_id: id }); if (error) alert(error.message); }
+async function chatDelete(id) { if (!await uiConfirm('Delete this message?')) return; const { error } = await db.rpc('chat_delete', { p_id: id }); if (error) alert(error.message); }
 function renderComposerExtras() {
   const el = document.getElementById('chatExtra'); if (!el) return;
   let h = '';
@@ -5198,10 +5351,10 @@ async function sendChat() {
 async function chatNew(kind) {
   try {
     if (kind === 'dm') { const ids = await pickPeople(true); if (!ids) return; const { data, error } = await db.rpc('chat_create_dm', { p_other: ids[0] }); if (error) throw error; await loadChat(); openChat(data.id); }
-    else if (kind === 'group') { const ids = await pickPeople(false); if (!ids || !ids.length) return; const name = prompt('Group name (optional):', '') ; const { data, error } = await db.rpc('chat_create_group', { p_name: name || null, p_members: ids }); if (error) throw error; await loadChat(); openChat(data.id); }
-    else if (kind === 'channel') { const name = prompt('Channel name:'); if (!name) return; const priv = confirm('Make it private (invite-only)? OK = private, Cancel = open to everyone'); const { data, error } = await db.rpc('chat_create_channel', { p_name: name, p_private: priv, p_members: [] }); if (error) throw error; await loadChat(); openChat(data.id); }
+    else if (kind === 'group') { const ids = await pickPeople(false); if (!ids || !ids.length) return; const name = await uiPrompt('Group name (optional):', '') ; const { data, error } = await db.rpc('chat_create_group', { p_name: name || null, p_members: ids }); if (error) throw error; await loadChat(); openChat(data.id); }
+    else if (kind === 'channel') { const name = await uiPrompt('Channel name:'); if (!name) return; const priv = await uiConfirm('Make it private (invite-only)? OK = private, Cancel = open to everyone'); const { data, error } = await db.rpc('chat_create_channel', { p_name: name, p_private: priv, p_members: [] }); if (error) throw error; await loadChat(); openChat(data.id); }
     else { const { data } = await db.rpc('chat_discover'); const list = data || []; if (!list.length) { alert('No other public channels to join.'); return; }
-      const pick = prompt('Public channels:\n' + list.map((c, i) => `${i + 1}. ${c.name} (${c.member_count})`).join('\n') + '\n\nEnter a number to join:'); const c = list[Number(pick) - 1]; if (!c) return;
+      const pick = await uiPrompt('Public channels:\n' + list.map((c, i) => `${i + 1}. ${c.name} (${c.member_count})`).join('\n') + '\n\nEnter a number to join:'); const c = list[Number(pick) - 1]; if (!c) return;
       const { error } = await db.rpc('chat_join', { p_channel: c.id }); if (error) throw error; await loadChat(); openChat(c.id); }
   } catch (e) { alert(e.message || e); }
 }
@@ -5220,7 +5373,7 @@ function pickPeople(single) {
   });
 }
 async function chatAddPeople() { const ids = await pickPeople(false); if (!ids || !ids.length) return; const { error } = await db.rpc('chat_add_members', { p_channel: _chatCur.id, p_members: ids }); if (error) alert(error.message); else openChat(_chatCur.id, true); }
-async function chatLeave() { if (!confirm('Leave this chat?')) return; const { error } = await db.rpc('chat_leave', { p_channel: _chatCur.id }); if (error) { alert(error.message); return; } _chatCur = null; await loadChat(); renderChatRoom(); }
+async function chatLeave() { if (!await uiConfirm('Leave this chat?')) return; const { error } = await db.rpc('chat_leave', { p_channel: _chatCur.id }); if (error) { alert(error.message); return; } _chatCur = null; await loadChat(); renderChatRoom(); }
 async function chatToggleMute() { await db.rpc('chat_set_muted', { p_channel: _chatCur.id, p_muted: !_chatCur.muted }); await loadChat(); }
 function chatMembersSheet() {
   const canManage = isOwner() || ['owner', 'admin'].includes(_chatMembers[ME.id]?._role);
@@ -5372,10 +5525,10 @@ function chatCardList() {
   document.getElementById('cardList').innerHTML = rows.map((r, i) => `<div class="pickrow" style="cursor:pointer" onclick="chatSendCard(${i})"><span style="flex:1"><b>${esc(r.title)}</b><br><span class="muted" style="font-size:12px">${esc(r.subtitle)}</span></span></div>`).join('') || '<div class="empty">Nothing found</div>';
 }
 async function chatSendCard(i) { const r = window._cardPick[i]; if (r && await chatSendKind('card', r)) closeModal('htmlBg'); }
-function chatShareLocation() {
+async function chatShareLocation() {
   chatCloseDd();
   if (!navigator.geolocation) { alert('Location is not available in this browser'); return; }
-  if (!confirm('Share your current location in this chat?')) return;
+  if (!await uiConfirm('Share your current location in this chat?')) return;
   navigator.geolocation.getCurrentPosition(p => chatSendKind('location', { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Math.round(p.coords.accuracy) }), e => alert('Could not get your location: ' + e.message), { enableHighAccuracy: true, timeout: 15000 });
 }
 async function chatForward(id) {
@@ -5571,7 +5724,7 @@ async function openSvcTicket(id) {
 }
 async function svcTicketStatus(id, s) { await svcRpc('svc_ticket_status', { p_ticket: id, p_status: s, p_note: null }); openSvcTicket(id); loadSvcTickets(); }
 async function svcAddMsg(id) { const b = document.getElementById('svcMsg').value.trim(); if (!b) return; await svcRpc('svc_ticket_message', { p_ticket: id, p_kind: document.getElementById('svcMsgKind').value, p_body: b }); openSvcTicket(id); }
-async function svcJobCancel(jobId, ticketId) { const r = prompt('Cancel this job? Reason:'); if (r === null) return; await svcRpc('svc_job_action', { p_job: jobId, p_action: 'cancel', p: { reason: r } }); openSvcTicket(ticketId); loadSvcTickets(); }
+async function svcJobCancel(jobId, ticketId) { const r = await uiPrompt('Cancel this job? Reason:'); if (r === null) return; await svcRpc('svc_job_action', { p_job: jobId, p_action: 'cancel', p: { reason: r } }); openSvcTicket(ticketId); loadSvcTickets(); }
 async function svcAssign(ticketId, jobId) {
   svcModal('<div class="empty">Finding nearest technicians…</div>');
   const list = await svcRpc('svc_suggest_technicians', { p_ticket: ticketId });
@@ -5929,7 +6082,7 @@ async function crSave() {
 }
 async function crOpen(id) { const { data } = await db.from('commissioning_reports').select('*').eq('id', id).maybeSingle(); if (!data) { qtToast('Report not found', true); return; } crPrint(data); }
 async function crPrint(r) {
-  try { await qtLoadMasters(); } catch (_) {}
+  try { await qtLoadMasters(); } catch (e) { softErr('The quote price list', e); }
   const co = (QT.cfg || {}).company || {}, e = qtEsc, t = r.tests || {}, matsUsed = (r.materials || []).filter(m => m && String(m.particulars || '').trim()), mats = matsUsed, box = on => `<span class="bx">${r.report_on === on ? '✓' : ''}</span>`;
   const w = window.open('', '_blank'); if (!w) { qtToast('Allow pop-ups for bneone.com to see the report', true); return; }
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${e(r.report_no)} – ${e(String(r.customer_name || '').slice(0, 40))}</title><style>
@@ -5968,7 +6121,7 @@ async function sbBadge() {
 async function loadSvcBilling() {
   const { data, error } = await db.from('service_jobs').select('*, ticket:service_tickets(id, ticket_no, contact_name, contact_mobile, city, subject, odoo_ticket_ref, odoo_invoice_no, serial_no, product)').or('bill_amount.not.is.null,status.eq.pending_approval').order('updated_at', { ascending: false }).limit(1000);
   if (error) { document.getElementById('sbTbl').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  SB.list = data || []; if (!_svc.techs.length) { try { await svcLoadTechs(); } catch (_) {} } renderSvcBilling(); sbBadge();
+  SB.list = data || []; if (!_svc.techs.length) { try { await svcLoadTechs(); } catch (e) { softErr('The technician list', e); } } renderSvcBilling(); sbBadge();
 }
 function sbFilter(f) { SB.filter = f; renderSvcBilling(); }
 const sbCust = j => `<b>${esc((j.ticket || {}).contact_name || '—')}</b><div class="muted" style="font-size:11.5px">${esc([(j.ticket || {}).contact_mobile, (j.ticket || {}).city].filter(Boolean).join(' · '))}</div>`;
@@ -5994,12 +6147,12 @@ function renderSvcBilling() {
         `${can('svc.billing') || can('svc.job.assign') ? `<button class="btn sm ${j.bill_status === 'billed' ? 'sec' : ''}" onclick="sbBilled('${j.id}')">${j.bill_status === 'billed' ? 'Change invoice no.' : 'Mark billed'}</button>` : ''}${due(j) > 0 && (can('svc.billing') || can('svc.job.assign')) ? ` <button class="btn sm sec" onclick="sbPay('${j.id}')">Record payment</button>` : ''}`]));
 }
 async function sbApprove(id, yes) {
-  const note = prompt(yes ? 'Why is this paid service being closed without a bill? (recorded with your approval)' : 'Why is it rejected? The technician will be asked to add the bill.'); if (!note || !note.trim()) return;
+  const note = await uiPrompt(yes ? 'Why is this paid service being closed without a bill? (recorded with your approval)' : 'Why is it rejected? The technician will be asked to add the bill.'); if (!note || !note.trim()) return;
   const { data, error } = await db.rpc('svc_job_approval', { p_job: id, p_approve: yes, p_note: note }); if (error) { qtToast(error.message, true); return; }
   qtToast(yes ? 'Approved – job closed' : 'Rejected – sent back to the technician'); if (yes && data && data.ticket_id) svcOdooSync(data.ticket_id); loadSvcBilling();
 }
 async function sbBilled(id) {
-  const j = SB.list.find(x => x.id === id), no = prompt(`Odoo invoice number for ${j.job_no} (${rs(Math.round(j.bill_amount))})`, j.odoo_invoice_no || ''); if (!no || !no.trim()) return;
+  const j = SB.list.find(x => x.id === id), no = await uiPrompt(`Odoo invoice number for ${j.job_no} (${rs(Math.round(j.bill_amount))})`, j.odoo_invoice_no || ''); if (!no || !no.trim()) return;
   const { error } = await db.rpc('svc_job_billed', { p_job: id, p_invoice_no: no }); if (error) { qtToast(error.message, true); return; } qtToast('Marked as billed'); loadSvcBilling();
 }
 function sbPay(id) {
@@ -6162,8 +6315,8 @@ async function qrSubmit(id) {
   else { btn.disabled = false; btn.textContent = 'Submit quotation'; }
 }
 async function qrSent(id, via) { const r = QR.list.find(x => x.id === id); if (r && r.status === 'sent' && via !== 'other') return; await qrRpc('qr_sent', { p_id: id, p_via: via }, via === 'other' ? 'Marked as sent' : null); if (via === 'other') closeModal('svcBg'); }
-async function qrReopen(id) { const note = prompt('What should the quote team change?'); if (!note) return; if (await qrRpc('qr_reopen', { p_id: id, p_note: note }, 'Sent back to the quote team')) closeModal('svcBg'); }
-async function qrCancel(id) { const why = prompt('Why is this request cancelled? (optional)'); if (why === null) return; if (await qrRpc('qr_cancel', { p_id: id, p_reason: why }, 'Request cancelled')) closeModal('svcBg'); }
+async function qrReopen(id) { const note = await uiPrompt('What should the quote team change?'); if (!note) return; if (await qrRpc('qr_reopen', { p_id: id, p_note: note }, 'Sent back to the quote team')) closeModal('svcBg'); }
+async function qrCancel(id) { const why = await uiPrompt('Why is this request cancelled? (optional)'); if (why === null) return; if (await qrRpc('qr_cancel', { p_id: id, p_reason: why }, 'Request cancelled')) closeModal('svcBg'); }
 async function qrForm(deal) {
   QR.items = [{ machine: '', qty: 1, rate: '' }]; QR.deal = deal && deal.id ? deal : null; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
   svcModal(`<h3 style="margin-bottom:10px">Request a quote</h3>
@@ -6591,7 +6744,7 @@ function qtOrderBox() {
   const el = document.getElementById('qtOrderBox');
   if (el) el.innerHTML = QT.orders.length ? `<label>Link to deal</label><select ${QT.cur.status !== 'draft' ? 'disabled' : ''} onchange="QT.cur.order_id=this.value||null;QT.dirty=true"><option value="">— not linked —</option>${QT.orders.map(o => `<option value="${o.id}" ${QT.cur.order_id === o.id ? 'selected' : ''}>${esc(o.title || 'Deal')} (${esc(o.stage)})</option>`).join('')}</select>` : '';
 }
-function qtBack() { if (QT.dirty && !confirm('You have changes that are not saved. Leave anyway?')) return; QT.dirty = false; show('quotes'); }
+async function qtBack() { if (QT.dirty && !await uiConfirm('You have changes that are not saved. Leave anyway?')) return; QT.dirty = false; show('quotes'); }
 
 // ---------- builder ----------
 function qtRender() {
@@ -6691,7 +6844,7 @@ function qtAdd(ti, kind) { QT.cur.doc.tables[ti].rows.push(kind === 'item' ? { t
 function qtDel(ti, ri) { QT.cur.doc.tables[ti].rows.splice(ri, 1); QT.dirty = true; qtRender(); }
 function qtMove(ti, ri, dir) { const a = QT.cur.doc.tables[ti].rows, j = ri + dir; if (j < 0 || j >= a.length) return; [a[ri], a[j]] = [a[j], a[ri]]; QT.dirty = true; qtRender(); }
 function qtAddTable() { const D = (QT.cfg.defaults || {})[QT.cur.type] || {}, n = QT.cur.doc.tables.length; QT.cur.doc.tables.push({ kind: n ? 'lowside' : 'supply', title: n ? 'LOW SIDE BOQ' : '', cap: false, total_label: (n ? D.lowside_total_label : D.supply_total_label) || '', rows: [] }); QT.dirty = true; qtRender(); }
-function qtDelTable(ti) { if (!confirm('Remove this whole table?')) return; QT.cur.doc.tables.splice(ti, 1); QT.dirty = true; qtRender(); }
+async function qtDelTable(ti) { if (!await uiConfirm('Remove this whole table?')) return; QT.cur.doc.tables.splice(ti, 1); QT.dirty = true; qtRender(); }
 function qtBulkDisc(ti) {
   const cat = document.getElementById('qbc_' + ti).value, v = document.getElementById('qbd_' + ti).value; if (v === '') return; let n = 0;
   QT.cur.doc.tables[ti].rows.forEach(r => { if (r.t === 'item' && qtNum(r.base) != null && r.mode !== 'mrp' && (!cat || r.cat === cat)) { r.mode = 'disc'; r.disc = Number(v); r.rate = qtRateOf(r, qtGst()); n++; } });
@@ -6799,17 +6952,17 @@ async function qtSend() {
   QT.cur = data; qtRender(); qtToast('Marked as sent. Share the link below with the customer.');
 }
 async function qtMark(st) {
-  const note = st === 'lost' ? prompt('Why was it lost? (optional)') : prompt('Any note? e.g. PO number (optional)'); if (note === null) return;
+  const note = st === 'lost' ? await uiPrompt('Why was it lost? (optional)') : await uiPrompt('Any note? e.g. PO number (optional)'); if (note === null) return;
   const { data, error } = await db.rpc('quote_set_status', { p_id: QT.cur.id, p_status: st, p_note: note }); if (error) { qtToast(error.message, true); return; }
   QT.cur = data; qtRender();
 }
 async function qtRevise() {
-  if (!confirm('Make a new revision? The current one will be kept as an old revision and its customer link will show that a newer version exists.')) return;
+  if (!await uiConfirm('Make a new revision? The current one will be kept as an old revision and its customer link will show that a newer version exists.')) return;
   const { data, error } = await db.rpc('quote_revise', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; }
   QT.cur = data; QT.dirty = false; qtRender(); qtToast('Revision R' + data.revision + ' created – edit and send');
 }
 async function qtApproveDisc() { const { data, error } = await db.rpc('quote_approve_discount', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; } QT.cur = data; qtRender(); qtToast('Discount approved'); }
-async function qtDelete() { if (!confirm('Delete this draft?')) return; const { error } = await db.rpc('quote_delete', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; } QT.dirty = false; show('quotes'); }
+async function qtDelete() { if (!await uiConfirm('Delete this draft?')) return; const { error } = await db.rpc('quote_delete', { p_id: QT.cur.id }); if (error) { qtToast(error.message, true); return; } QT.dirty = false; show('quotes'); }
 
 // ---------- Excel upload -> quotation ----------
 async function qtImportFile(inp) {
@@ -6912,7 +7065,7 @@ async function qtPriceSave(id) {
   const { error } = id ? await db.from('quote_price_items').update(row).eq('id', id) : await db.from('quote_price_items').insert(row);
   if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup();
 }
-async function qtMasterDel(table, id) { if (!confirm('Delete this? Quotations already made are not affected.')) return; const { error } = await db.from(table).delete().eq('id', id); if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup(); }
+async function qtMasterDel(table, id) { if (!await uiConfirm('Delete this? Quotations already made are not affected.')) return; const { error } = await db.from(table).delete().eq('id', id); if (error) { qtToast(error.message, true); return; } closeModal('qtPickBg'); loadQtSetup(); }
 async function qtPriceTemplate() {
   await loadXlsx(); const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Brand', 'Type (VRF/DX)', 'Group (Outdoor/Indoor/Accessory/Other)', 'Item name', 'Model', 'Capacity', 'Unit', 'List price', 'Discount %', 'MRP'],
@@ -6939,7 +7092,7 @@ async function qtPriceUpload(inp) {
   if (!out.length) { qtToast('No usable rows. Each row needs a brand (or choose a brand filter first), an item name and a List price or MRP.', true); return; }
   const key = p => `${p.brand_id}|${p.system}|${(p.name || '').toLowerCase()}|${(p.model || '').toLowerCase()}|${(p.capacity || '').toLowerCase()}`, have = new Map(QT.prices.map(p => [key(p), p.id]));
   const upd = out.filter(p => have.has(key(p))), ins = out.filter(p => !have.has(key(p)));
-  if (!confirm(`${ins.length} new item(s) and ${upd.length} price update(s) found${bad.length ? `, ${bad.length} row(s) skipped (rows ${bad.slice(0, 8).join(', ')}${bad.length > 8 ? '…' : ''})` : ''}.\n\nSave them?`)) return;
+  if (!await uiConfirm(`${ins.length} new item(s) and ${upd.length} price update(s) found${bad.length ? `, ${bad.length} row(s) skipped (rows ${bad.slice(0, 8).join(', ')}${bad.length > 8 ? '…' : ''})` : ''}.\n\nSave them?`)) return;
   let err = null; for (let i = 0; i < ins.length && !err; i += 400) err = (await db.from('quote_price_items').insert(ins.slice(i, i + 400))).error;
   for (const p of upd) { if (err) break; err = (await db.from('quote_price_items').update({ base_price: p.base_price, discount_pct: p.discount_pct, mrp: p.mrp, unit: p.unit, category: p.category, updated_by: ME.id, updated_at: new Date().toISOString() }).eq('id', have.get(key(p)))).error; }
   if (err) qtToast(err.message, true); else qtToast(`Price list saved: ${ins.length} added, ${upd.length} updated`); loadQtSetup();
