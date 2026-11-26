@@ -273,6 +273,9 @@
   th, .navlabel { font-size:12px; }
   #appView [style*="font-size:10px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 10px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:11px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 11px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:12px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 12px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size:12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),#appView [style*="font-size: 12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:10px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 10px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 10.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:11px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 11px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 11.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:12px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 12px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size:12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge),.modal-bg [style*="font-size: 12.5px"]:not(.qdoc *):not(#plPreview *):not(.badge) { font-size:13px !important; }
 }
+/* big numbers stay inside their card */
+.card .num { overflow-wrap:anywhere; }
+.card .num.long { font-size:19px; letter-spacing:-0.4px; }
 /* menu sections */
 .navlabel.navgrp { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; border-radius:8px; padding:11px 10px 7px; }
 .navlabel.navgrp:hover { color:#fff; }
@@ -1608,7 +1611,7 @@ function tbl(headers, rows, rowAttrs) {
     '</tbody></table></div>';
 }
 function kpi(n, l, tone, icon, onclick) {
-  return `<div class="card t-${tone} ${onclick?'click':''}" ${onclick?`onclick="${onclick}"`:''}><div class="ico">${icon}</div><div><div class="num">${n}</div><div class="lbl">${l}</div></div></div>`;
+  return `<div class="card t-${tone} ${onclick?'click':''}" ${onclick?`onclick="${onclick}"`:''}><div class="ico">${icon}</div><div style="min-width:0"><div class="num${String(n).length > 9 ? ' long' : ''}">${n}</div><div class="lbl">${l}</div></div></div>`;
 }
 function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -2880,7 +2883,7 @@ function renderLeads() {
     kpi(L.filter(isStale).length, `Untouched > ${staleHours()} h`, 'red', '⚠', "setLeadFilter('stale')") +
     kpi(L.filter(l => !l.assigned_to && isOpen(l)).length, 'Unassigned', 'orange', '?', "setLeadFilter('unassigned')") +
     kpi(L.filter(l => l.status === 'converted' && new Date(l.updated_at) >= mStart).length, 'Converted this month', 'green', '✓', "setLeadFilter('converted')") +
-    kpi(rs(pipe), 'Open lead value', 'teal', '₹');
+    kpi(rs(Math.round(pipe)), 'Open lead value', 'teal', '₹');
   const rows = filteredLeads();
   document.getElementById('leadsTbl').innerHTML = tbl(
     ['Created','Lead','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
