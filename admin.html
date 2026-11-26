@@ -342,6 +342,8 @@
       <button data-v="svcBilling" data-perm="svc.billing,svc.warranty.override,svc.job.assign" onclick="show('svcBilling')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Service billing</span><span class="badge" id="sbBadge" style="display:none"></span></button>
       <button data-v="svcAmc" data-perm="svc.amc.view,svc.amc.manage" onclick="show('svcAmc')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>AMC contracts</span></button>
       <button data-v="svcReports" data-perm="svc.reports" onclick="show('svcReports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Service reports</span></button>
+      <div class="navlabel">Expenses</div>
+      <button data-v="expenses" onclick="show('expenses')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M15 16l2 2 3-4"/></svg><span>Expense claims</span><span class="badge" id="expBadge" style="display:none"></span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
       <button data-v="smslog" data-roles="admin,head" onclick="show('smslog')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Customer SMS</span></button>
@@ -728,6 +730,13 @@
         <div id="inviteMsg" style="font-size:13px;margin-top:4px"></div>
         <p class="hint">People sign in to the app and this dashboard with their <b>email</b> and a one-time code — no password. Any email you add here can sign in, including a personal one such as Gmail (use that for technicians who have no work email). Any @bne.org.in address can also sign in.</p>
       </div>
+      <div class="panel" data-roles="admin,head"><h2>Add many people at once <span class="sub">fill the Excel format and upload</span></h2>
+        <div class="toolbar"><button class="btn sec" onclick="bulkTemplate()">Download Excel format</button>
+          <label class="btn" style="cursor:pointer">Upload filled Excel<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="bulkRead(this)"></label></div>
+        <div id="bulkOut"></div>
+        <p class="hint">Columns: Name, Email, Mobile, Role, Branch, Designation, Reports to (email), Territory. The sheet is checked first and you see every problem before anything is saved. An email that already exists is updated, not duplicated. “Reports to” decides who approves that person’s expense claims.</p>
+      </div>
+      <div class="panel" data-roles="admin,head"><h2>Reporting managers <span class="sub">who approves whose expense claims first</span></h2><div id="rtTbl"></div></div>
       <div class="panel" data-roles="admin,head"><h2>Pending &amp; recent invites</h2><div class="toolbar"><button class="btn" id="delInvBtn" style="background:#DC2626;display:none" onclick="deleteSelectedInvites()">Delete selected invites</button></div><div id="invitesTbl"></div></div>
       <div class="panel" data-roles="admin,head"><h2>Service access <span class="sub">who is in the service team and what each role can do</span></h2><div id="svcAccess"></div></div>
       <div class="panel"><h2>People &amp; access <span class="sub">role decides what they can do; branch decides what they can see</span></h2>
@@ -862,6 +871,11 @@
         <button class="btn sec" id="vrfSetBtn" style="display:none" onclick="vrfSettings()">Settings</button>
       </div>
       <div id="vrfBoard"></div>
+    </div>
+
+    <div id="expenses" class="view">
+      <div class="toolbar" style="flex-wrap:wrap" id="expTabs"></div>
+      <div id="expBody"></div>
     </div>
 
     <div id="smslog" class="view">
@@ -1650,7 +1664,7 @@ async function init() {
   const qtDesk = can('quote.create') || can('quote.view_all') || can('quote.master');
   if (ME && ME.can_switch_role) { const h = roleSwitchHtml(); document.getElementById('noAccessRole').innerHTML = h; }
   const vrfDesk = can('vrf.design') || can('vrf.head');
-  if (!ME || !ME.active || !(isStaff() || vrfDesk || ((svcDesk || qtDesk) && ME.role !== 'technician'))) { document.getElementById('noAccess').style.display = 'flex'; return; }
+  if (!ME || !ME.active) { document.getElementById('noAccess').style.display = 'flex'; return; }
   document.getElementById('appView').style.display = 'flex';
   document.getElementById('meBox').innerHTML = `<b>${esc(ME.name || ME.mobile || session.user.email)}</b><span>${esc(ME.role)}</span>`;
   if (ME.can_switch_role) document.getElementById('meBox').insertAdjacentHTML('beforeend', roleSwitchHtml());
@@ -1664,6 +1678,7 @@ async function init() {
   svcBadge(); qrSubscribe(); sbBadge();
   document.getElementById('vrfNav').style.display = (isStaff() || vrfDesk) ? '' : 'none';
   if (isStaff() || vrfDesk) vrfSubscribe();
+  expBadge();
   const today = todayStr(), weekAgo = daysAgoStr(6);
   for (const id of ['vFrom','mFrom','aFrom','phFrom']) document.getElementById(id).value = weekAgo;
   for (const id of ['vTo','mTo','aTo','phTo','dayPick']) document.getElementById(id).value = today;
@@ -1686,12 +1701,14 @@ async function init() {
     show('pipeline');
   } else if (!isStaff() && vrfDesk && (ME.role === 'design_engineer' || !(qtDesk || svcDesk))) {
     show('vrf');
+  } else if (!isStaff() && !qtDesk && !svcDesk) {
+    show('expenses');   // field people: the dashboard is for their expense claims (the rest is in the app)
   } else if (!isStaff()) {
     show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quoteReqs' : 'svcTickets');
   } else {
     show('leads');
   }
-  vrfDeepLink();
+  vrfDeepLink(); expDeepLink();
 }
 
 function toggleSidebar(open) {
@@ -1727,6 +1744,8 @@ function show(v) {
   if (v === 'salesreports') loadSalesReports();
   if (v === 'smslog') { renderSmsSettings(); loadSmsLog(); }
   if (v === 'vrf') loadVrf();
+  if (v === 'expenses') expLoad();
+  if (v === 'team' && isOwner()) rtRender();
   if (v === 'svcTickets') loadSvcTickets();
   if (v === 'svcTechs') loadSvcTechs();
   if (v === 'svcBoard') loadSvcBoard();
@@ -2015,6 +2034,257 @@ async function vrfSaveSettings() {
   const lines = id => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean), n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d);
   await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: n('vsClient', 5) }, 'msgVs');
 }
+
+/* ---------- Expense claims: employee -> reporting manager -> Finance -> MD -> paid ---------- */
+const EXP = { tab: 'mine', list: [], cats: [], cur: null, form: null, an: null };
+const EXP_CHIP = { draft: 'vrf-n', pending_manager: 'vrf-a', pending_finance: 'vrf-a', pending_md: 'vrf-a', approved: 'vrf-b', paid: 'vrf-g', rejected: 'vrf-r', returned: 'vrf-r' };
+const expSeesAll = () => isOwner() || can('exp.finance') || can('exp.md') || can('exp.view_all');
+const expSetup = () => isOwner() || can('exp.finance');
+async function expRpc(fn, args) { const { data, error } = await db.rpc(fn, args); if (error) throw new Error(error.message || 'Something went wrong'); return data; }
+async function expBadge() {
+  try { const t = await expRpc('exp_list', { p_scope: 'todo' }); const el = document.getElementById('expBadge'); EXP.todo = (t || []).length; if (el) { el.textContent = EXP.todo; el.style.display = EXP.todo ? '' : 'none'; } } catch (_) {}
+}
+function expDeepLink() { const id = new URLSearchParams(location.search).get('exp'); if (!id) return; show('expenses'); if (/^[0-9a-f-]{36}$/.test(id)) setTimeout(() => expOpen(id), 500); }
+function expTab(t) { EXP.tab = t; expLoad(); }
+async function expLoad() {
+  if (!EXP.cats.length) { const { data } = await db.from('expense_categories').select('*').order('sort'); EXP.cats = data || []; }
+  await expBadge();
+  const tabs = [['mine', 'My claims'], ['todo', `Waiting for me${EXP.todo ? ' (' + EXP.todo + ')' : ''}`]];
+  if (expSeesAll() || isManager()) tabs.push(['all', expSeesAll() ? 'All claims' : 'My team’s claims']);
+  if (expSeesAll()) tabs.push(['analysis', 'Analysis']);
+  if (expSetup()) tabs.push(['setup', 'Categories & rules']);
+  if (!tabs.some(t => t[0] === EXP.tab)) EXP.tab = 'mine';
+  document.getElementById('expTabs').innerHTML = tabs.map(([k, l]) => `<button class="btn sm ${EXP.tab === k ? '' : 'sec'}" onclick="expTab('${k}')">${esc(l)}</button>`).join('') + ` <span style="flex:1"></span><button class="btn" onclick="expForm()">+ New expense claim</button>`;
+  const box = document.getElementById('expBody');
+  if (EXP.tab === 'analysis') return expAnalysis();
+  if (EXP.tab === 'setup') return expSetupRender();
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  try { EXP.list = (await expRpc('exp_list', { p_scope: EXP.tab })) || []; } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  const filt = EXP.tab === 'all' ? `<div class="toolbar"><input class="inp" id="expQ" placeholder="Search employee, claim no., title" oninput="expRenderList()" style="min-width:240px"><select class="inp" id="expSt" onchange="expRenderList()"><option value="">Any status</option>${[['pending_manager', 'With reporting manager'], ['pending_finance', 'With Finance'], ['pending_md', 'With MD'], ['approved', 'Approved – to be paid'], ['paid', 'Paid'], ['returned', 'Sent back'], ['rejected', 'Rejected']].map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>` : '';
+  box.innerHTML = `<div class="panel">${filt}<div id="expTbl"></div></div>`;
+  expRenderList();
+}
+function expRenderList() {
+  const q = (document.getElementById('expQ')?.value || '').toLowerCase(), st = document.getElementById('expSt')?.value || '';
+  const L = EXP.list.filter(c => (!q || `${c.claim_no} ${c.user_name} ${c.title}`.toLowerCase().includes(q)) && (!st || c.status === st));
+  document.getElementById('expTbl').innerHTML = L.length ? tbl(['Claim', 'Employee', 'For', 'Lines', 'Amount', 'Status', 'Updated', ''], L.map(c => [
+    `<a href="#" onclick="expOpen('${c.id}');return false"><b>${esc(c.claim_no)}</b></a>`, esc(c.user_name || '') + (c.branch_name ? `<div class="muted" style="font-size:11.5px">${esc(c.branch_name)}</div>` : ''), esc(c.title), c.lines,
+    `<b>${rs(c.approved_amount ?? c.total)}</b>${c.approved_amount != null && Number(c.approved_amount) < Number(c.total) ? `<div class="muted" style="font-size:11.5px">claimed ${rs(c.total)}</div>` : ''}`,
+    `<span class="vrf-chip ${EXP_CHIP[c.status] || 'vrf-n'}" style="margin:0">${esc(c.status_label)}</span>${c.comments ? ` <span class="muted" style="font-size:11.5px">💬 ${c.comments}</span>` : ''}`, fmtDT(c.updated_at),
+    `<button class="btn sm ${c.my_turn ? '' : 'sec'}" onclick="expOpen('${c.id}')">${c.my_turn ? (c.status === 'approved' ? 'Pay' : 'Review') : 'Open'}</button>`]))
+    : `<div class="empty">${EXP.tab === 'todo' ? 'Nothing is waiting for you.' : EXP.tab === 'mine' ? 'No claims yet. Click “+ New expense claim”.' : 'No claims.'}</div>`;
+}
+/* claim form */
+function expForm(det) {
+  const c = det?.claim, today = todayStr();
+  EXP.form = { id: c?.id || null, items: (det?.items || []).map(i => ({ ...i })) };
+  if (!EXP.form.items.length) EXP.form.items.push({ exp_date: today, receipt_paths: [] });
+  svcModal(`<h3 style="margin-top:0">${c ? 'Edit ' + esc(c.claim_no) : 'New expense claim'}</h3>
+    ${c?.status === 'returned' ? `<div class="err" style="margin-bottom:8px">Sent back: ${esc(c.decided_note || '')}</div>` : ''}
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+      <div class="field"><label>What is this claim for? *</label><input class="inp" id="exTitle" style="width:100%" placeholder="e.g. Hubli site visit 12–14 Nov" value="${esc(c?.title || '')}"></div>
+      <div class="field"><label>From</label><input class="inp" type="date" id="exFrom" style="width:100%" value="${c?.period_from || ''}"></div>
+      <div class="field"><label>To</label><input class="inp" type="date" id="exTo" style="width:100%" value="${c?.period_to || ''}"></div>
+    </div>
+    <div id="exLines"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><button class="btn sm sec" onclick="expLineAdd()">+ Add expense line</button><b id="exTotal"></b></div>
+    <div id="exMsg" style="margin-top:8px"></div>
+    <div style="text-align:right;margin-top:10px"><button class="btn sec sm" onclick="closeModal('svcBg')">Cancel</button> <button class="btn sec" id="exSaveBtn" onclick="expSave(false)">Save as draft</button> <button class="btn" id="exSubBtn" onclick="expSave(true)">Submit for approval</button></div>`, true);
+  expLinesRender();
+}
+function expLinesRead() {
+  document.querySelectorAll('[data-exrow]').forEach(r => { const i = EXP.form.items[+r.dataset.exrow]; if (!i) return; const g = k => r.querySelector(`[data-k="${k}"]`)?.value ?? '';
+    i.exp_date = g('exp_date'); i.category_id = g('category_id'); i.amount = g('amount'); i.description = g('description'); i.from_place = g('from_place'); i.to_place = g('to_place'); i.km = g('km');
+    const f = r.querySelector('[data-k="files"]'); if (f?.files?.length) i._files = [...f.files]; });
+}
+function expLinesRender() {
+  document.getElementById('exLines').innerHTML = EXP.form.items.map((i, n) => { const cat = EXP.cats.find(c => c.id == i.category_id);
+    return `<div data-exrow="${n}" style="border:1px solid #e5e9f0;border-radius:12px;padding:10px;margin-top:8px;background:#fafbfd">
+      <div style="display:grid;grid-template-columns:140px 1.4fr 120px 2fr 34px;gap:8px;align-items:end">
+        <div class="field"><label>Date *</label><input class="inp" type="date" data-k="exp_date" max="${todayStr()}" value="${i.exp_date || ''}" style="width:100%"></div>
+        <div class="field"><label>Category *</label><select class="inp" data-k="category_id" style="width:100%" onchange="expLinesRead();expLinesRender()"><option value="">Choose</option>${EXP.cats.filter(c => c.active || c.id == i.category_id).map(c => `<option value="${c.id}" ${c.id == i.category_id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Amount ₹ *</label><input class="inp" type="number" min="0" step="0.01" data-k="amount" value="${i.amount ?? ''}" oninput="expTotal()" style="width:100%"></div>
+        <div class="field"><label>Details</label><input class="inp" data-k="description" value="${esc(i.description || '')}" placeholder="Customer / purpose" style="width:100%"></div>
+        <button class="btn sm sec" title="Remove line" onclick="expLinesRead();EXP.form.items.splice(${n},1);if(!EXP.form.items.length)EXP.form.items.push({exp_date:todayStr(),receipt_paths:[]});expLinesRender()">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 90px 2fr;gap:8px;align-items:end;margin-top:6px">
+        <div class="field"><label>From <span class="muted">(travel)</span></label><input class="inp" data-k="from_place" value="${esc(i.from_place || '')}" style="width:100%"></div>
+        <div class="field"><label>To</label><input class="inp" data-k="to_place" value="${esc(i.to_place || '')}" style="width:100%"></div>
+        <div class="field"><label>Km</label><input class="inp" type="number" data-k="km" value="${i.km ?? ''}" style="width:100%"></div>
+        <div class="field"><label>Bill / receipt ${cat?.needs_receipt ? '*' : '<span class="muted">(optional)</span>'}${(i.receipt_paths || []).length ? ` <span class="vrf-chip vrf-g" style="margin:0">${i.receipt_paths.length} attached</span>` : ''}${i._files?.length ? ` <span class="vrf-chip vrf-b" style="margin:0">${i._files.length} to upload</span>` : ''}</label><input type="file" data-k="files" multiple accept="image/*,.pdf"></div>
+      </div>${cat?.per_item_limit ? `<div class="muted" style="font-size:11.5px;margin-top:4px">Limit for ${esc(cat.name)}: ${rs(cat.per_item_limit)} per line</div>` : ''}</div>`; }).join('');
+  expTotal();
+}
+function expLineAdd() { expLinesRead(); const last = EXP.form.items[EXP.form.items.length - 1]; EXP.form.items.push({ exp_date: last?.exp_date || todayStr(), receipt_paths: [] }); expLinesRender(); }
+function expTotal() { let t = 0; document.querySelectorAll('[data-exrow] [data-k="amount"]').forEach(i => t += Number(i.value) || 0); document.getElementById('exTotal').textContent = 'Total ' + rs(t); }
+async function expSave(submit) {
+  expLinesRead();
+  const msg = document.getElementById('exMsg'), b1 = document.getElementById('exSaveBtn'), b2 = document.getElementById('exSubBtn');
+  const items = EXP.form.items.filter(i => i.category_id || Number(i.amount) > 0 || i.description);
+  const payload = () => ({ id: EXP.form.id, title: document.getElementById('exTitle').value, period_from: document.getElementById('exFrom').value || null, period_to: document.getElementById('exTo').value || null,
+    items: items.map(i => ({ exp_date: i.exp_date, category_id: i.category_id, amount: i.amount, description: i.description, from_place: i.from_place, to_place: i.to_place, km: i.km, receipt_paths: i.receipt_paths || [] })) });
+  if (submit && !items.length) { msg.innerHTML = '<div class="err">Add at least one expense line</div>'; return; }
+  b1.disabled = b2.disabled = true; msg.innerHTML = '<span class="muted">Saving…</span>';
+  try {
+    let c = await expRpc('exp_save', { p: payload() }); EXP.form.id = c.id;
+    let up = 0;
+    for (const i of items) for (const f of (i._files || [])) {
+      if (f.size > 8 * 1024 * 1024) throw new Error(`${f.name} is larger than 8 MB`);
+      const path = `${c.id}/${Date.now()}_${up}_${f.name.replace(/[^\w.\-]+/g, '_').slice(-60)}`;
+      const r = await db.storage.from('expenses').upload(path, f); if (r.error) throw new Error('Could not upload ' + f.name + ': ' + r.error.message);
+      (i.receipt_paths = i.receipt_paths || []).push(path); up++;
+    }
+    for (const i of items) delete i._files;
+    if (up) c = await expRpc('exp_save', { p: payload() });
+    if (submit) c = await expRpc('exp_submit', { p_id: c.id });
+    closeModal('svcBg'); qtToast(submit ? `${c.claim_no} submitted for approval` : `${c.claim_no} saved as draft`); EXP.tab = 'mine'; expLoad();
+  } catch (e) { msg.innerHTML = `<div class="err">${esc(e.message)}</div>`; expLinesRender(); }
+  finally { b1.disabled = b2.disabled = false; }
+}
+/* claim detail: lines, approval trail, decision, payment, comments */
+async function expOpen(id) {
+  let d; try { d = await expRpc('exp_detail', { p_id: id }); } catch (e) { qtToast(e.message, true); return; }
+  if (!d) { qtToast('Claim not found', true); return; }
+  EXP.cur = d; const c = d.claim, can_ = d.can;
+  const paths = [...new Set(d.items.flatMap(i => i.receipt_paths || []).concat(c.pay_proof_path ? [c.pay_proof_path] : []))];
+  const urls = {}; if (paths.length) { const { data } = await db.storage.from('expenses').createSignedUrls(paths, 3600 * 4); (data || []).forEach(x => { if (x.signedUrl) urls[x.path] = x.signedUrl; }); }
+  const step = (lbl, who, at, on) => `<div style="flex:1;min-width:120px;padding:8px 10px;border-radius:10px;background:${at ? '#dcfce7' : on ? '#fef3c7' : '#f1f5f9'}"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">${lbl}</div><div style="font-size:13px;font-weight:700">${at ? '✓ ' + esc(who || '') : on ? 'Waiting' + (who ? ' · ' + esc(who) : '') : '—'}</div>${at ? `<div class="muted" style="font-size:11px">${fmtDT(at)}</div>` : ''}</div>`;
+  const rows = d.items.map(i => [esc(i.exp_date), esc(i.category), esc([i.description, i.from_place && (i.from_place + ' → ' + (i.to_place || '')), i.km && (i.km + ' km')].filter(Boolean).join(' · ')),
+    (i.receipt_paths || []).length ? i.receipt_paths.map((p, k) => urls[p] ? `<a href="${urls[p]}" target="_blank">Bill ${k + 1}</a>` : 'Bill').join(' · ') : '<span class="muted">none</span>', rs(i.amount),
+    can_.decide && c.status !== 'pending_md' ? `<input class="inp" type="number" min="0" max="${i.amount}" step="0.01" data-expappr="${i.id}" value="${i.approved_amount ?? i.amount}" style="width:110px">` : (i.approved_amount != null && Number(i.approved_amount) < Number(i.amount) ? `<b style="color:#b45309">${rs(i.approved_amount)}</b>` : rs(i.approved_amount ?? i.amount))]);
+  const com = d.comments.map(m => m.kind === 'status' ? `<div class="vrf-msg sys">• ${esc(m.body)} — ${fmtDT(m.created_at)}</div>` : `<div class="vrf-msg"><b>${esc(m.user_name || '')}</b> <span class="muted" style="font-size:11px">${fmtDT(m.created_at)}</span><div style="white-space:pre-wrap;margin-top:3px">${esc(m.body)}</div></div>`).join('') || '<div class="muted">No comments yet.</div>';
+  svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(c.claim_no)} · ${esc(c.user_name || '')}${c.designation ? ' · ' + esc(c.designation) : ''}${c.branch_name ? ' · ' + esc(c.branch_name) : ''}</div><h3 style="margin:2px 0 4px">${esc(c.title)}</h3>
+      <div class="muted" style="font-size:12.5px">${c.period_from ? esc(c.period_from) + ' to ' + esc(c.period_to || c.period_from) : ''}</div></div>
+      <div style="text-align:right"><span class="vrf-chip ${EXP_CHIP[c.status]}">${esc(c.status_label)}</span><div style="font-size:20px;font-weight:800;margin-top:4px">${rs(c.approved_amount ?? c.total)}</div>${c.approved_amount != null && Number(c.approved_amount) < Number(c.total) ? `<div class="muted" style="font-size:12px">claimed ${rs(c.total)}</div>` : ''}</div></div>
+    ${['rejected', 'returned'].includes(c.status) && c.decided_note ? `<div class="err" style="margin:8px 0">${c.status === 'rejected' ? 'Rejected' : 'Sent back'}: ${esc(c.decided_note)}</div>` : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">${step('Reporting manager', c.manager_by_name || c.manager_name, c.manager_at, c.status === 'pending_manager')}${step('Finance', c.finance_by_name, c.finance_at, c.status === 'pending_finance')}${step('MD', c.md_by_name, c.md_at, c.status === 'pending_md')}${step('Payment', c.paid_by_name, c.paid_at, c.status === 'approved')}</div>
+    ${tbl(['Date', 'Category', 'Details', 'Bills', 'Claimed', can_.decide && c.status !== 'pending_md' ? 'Approve ₹' : 'Approved'], rows)}
+    ${c.status === 'paid' ? `<div class="hint">Paid ${rs(c.approved_amount)} by <b>${esc((c.pay_mode || '').toUpperCase())}</b>${c.pay_ref ? ' · ref ' + esc(c.pay_ref) : ''} on ${esc(c.pay_date || '')}${c.pay_proof_path && urls[c.pay_proof_path] ? ` · <a href="${urls[c.pay_proof_path]}" target="_blank">Payment proof</a>` : ''}</div>` : ''}
+    ${can_.edit ? `<div class="toolbar" style="margin-top:10px"><button class="btn" onclick="expForm(EXP.cur)">${c.status === 'returned' ? 'Correct and submit again' : 'Edit / submit'}</button>${c.status === 'draft' ? ` <button class="btn sec danger" onclick="expDelete()">Delete draft</button>` : ''}</div>` : ''}
+    ${can_.decide ? `<div style="border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:12px;margin-top:12px"><b>Your decision</b><textarea class="inp" id="expNote" rows="2" style="width:100%;margin-top:6px" placeholder="Note (needed to send back or reject; the employee sees it)"></textarea>
+        <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="expDecide('approve')">Approve</button><button class="btn sec" onclick="expDecide('return')">Send back for correction</button><button class="btn sec danger" onclick="expDecide('reject')">Reject</button></div></div>` : ''}
+    ${can_.pay ? `<div style="border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:12px;margin-top:12px"><b>Record the payment of ${rs(c.approved_amount)}</b>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px">
+          <div class="field"><label>Paid by *</label><select class="inp" id="epMode" style="width:100%"><option value="neft">NEFT</option><option value="imps">IMPS</option><option value="upi">UPI</option><option value="rtgs">RTGS</option><option value="cheque">Cheque</option><option value="cash">Cash</option><option value="salary">With salary</option></select></div>
+          <div class="field"><label>UTR / reference</label><input class="inp" id="epRef" style="width:100%"></div>
+          <div class="field"><label>Paid on</label><input class="inp" type="date" id="epDate" value="${todayStr()}" style="width:100%"></div>
+          <div class="field"><label>Payment proof</label><input type="file" id="epProof" accept="image/*,.pdf"></div></div>
+        <div style="margin-top:8px"><button class="btn" onclick="expPay()">Mark as paid</button> <span id="epMsg"></span></div></div>` : ''}
+    <h4 style="font-size:13px;margin:14px 0 6px">Comments & history</h4><div class="vrf-tl" id="expTl">${com}</div>
+    <div style="display:flex;gap:8px;margin-top:8px"><textarea class="inp" id="expCom" rows="1" style="flex:1" placeholder="Ask or reply about this claim…"></textarea><button class="btn sm" onclick="expComment()">Send</button></div>`, true);
+  const t = document.getElementById('expTl'); if (t) t.scrollTop = t.scrollHeight;
+}
+async function expDecide(action) {
+  const note = document.getElementById('expNote').value.trim(), amounts = {};
+  document.querySelectorAll('[data-expappr]').forEach(i => amounts[i.dataset.expappr] = Number(i.value) || 0);
+  if (action !== 'approve' && note.length < 3) return alert('Write the reason – the employee will see it.');
+  if (action === 'reject' && !confirm('Reject this claim? The employee cannot submit it again.')) return;
+  try { const c = await expRpc('exp_decide', { p_id: EXP.cur.claim.id, p: { action, note, amounts } }); qtToast(action === 'approve' ? 'Approved' : action === 'return' ? 'Sent back to the employee' : 'Rejected'); closeModal('svcBg'); expLoad(); } catch (e) { alert(e.message); }
+}
+async function expPay() {
+  const id = EXP.cur.claim.id, f = document.getElementById('epProof').files[0], msg = document.getElementById('epMsg'); let proof = null;
+  try {
+    if (f) { proof = `${id}/pay_${Date.now()}_${f.name.replace(/[^\w.\-]+/g, '_').slice(-60)}`; const r = await db.storage.from('expenses').upload(proof, f); if (r.error) throw new Error(r.error.message); }
+    await expRpc('exp_pay', { p_id: id, p: { mode: document.getElementById('epMode').value, ref: document.getElementById('epRef').value, date: document.getElementById('epDate').value, proof_path: proof } });
+    qtToast('Marked as paid – the employee has been told'); closeModal('svcBg'); expLoad();
+  } catch (e) { msg.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+}
+async function expComment() { const t = document.getElementById('expCom').value.trim(); if (!t) return; try { await expRpc('exp_comment', { p_id: EXP.cur.claim.id, p_body: t }); expOpen(EXP.cur.claim.id); } catch (e) { alert(e.message); } }
+async function expDelete() { if (!confirm('Delete this draft?')) return; try { await expRpc('exp_delete_draft', { p_id: EXP.cur.claim.id }); closeModal('svcBg'); expLoad(); } catch (e) { alert(e.message); } }
+/* analysis */
+async function expAnalysis() {
+  const box = document.getElementById('expBody'), d0 = new Date(); d0.setMonth(d0.getMonth() - 2); d0.setDate(1);
+  const from = document.getElementById('eaFrom')?.value || d0.toISOString().slice(0, 10), to = document.getElementById('eaTo')?.value || todayStr();
+  box.innerHTML = `<div class="toolbar"><label class="muted">Expense dates</label><input class="inp" type="date" id="eaFrom" value="${from}"><input class="inp" type="date" id="eaTo" value="${to}"><button class="btn sec" onclick="expAnalysis()">Show</button><button class="btn sec" onclick="expExport()">Download Excel</button></div><div id="eaOut"><div class="empty">Loading…</div></div>`;
+  let a; try { a = await expRpc('exp_analytics', { p_from: from, p_to: to }); } catch (e) { document.getElementById('eaOut').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  EXP.an = a; const t = a.totals;
+  const cats = [...new Set(a.emp_cat.map(x => x.category))].sort(), emps = a.by_employee.map(x => x.name);
+  const piv = emps.map(n => [`<b>${esc(n || '')}</b>`, ...cats.map(k => { const v = a.emp_cat.find(x => x.name === n && x.category === k); return v ? rs(v.claimed) : '<span class="muted">—</span>'; })]);
+  document.getElementById('eaOut').innerHTML = `<div class="vrf-stats">${[['Claimed', rs(t.claimed)], ['Approved', rs(t.approved)], ['Paid', rs(t.paid)], ['Waiting for approval', rs(t.pending)], ['Rejected', rs(t.rejected)], ['Claims', t.claims], ['Employees', t.people]].map(([k, v]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${v}</b></div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"><div class="panel"><h2>By category</h2><div style="height:260px"><canvas id="eaCat"></canvas></div></div><div class="panel"><h2>By month</h2><div style="height:260px"><canvas id="eaMon"></canvas></div></div></div>
+    <div class="panel"><h2>Employee-wise</h2>${a.by_employee.length ? tbl(['Employee', 'Branch', 'Claims', 'Claimed', 'Approved', 'Paid'], a.by_employee.map(x => [`<b>${esc(x.name || '')}</b>`, esc(x.branch || '—'), x.claims, rs(x.claimed), rs(x.approved || 0), rs(x.paid || 0)])) : '<div class="empty">No expenses in these dates.</div>'}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+      <div class="panel"><h2>Category-wise</h2>${tbl(['Category', 'Lines', 'Claimed', '% of total'], a.by_category.map(x => [esc(x.category), x.lines, rs(x.claimed), (t.claimed > 0 ? Math.round(x.claimed * 100 / t.claimed) : 0) + '%']))}</div>
+      <div class="panel"><h2>Branch-wise</h2>${tbl(['Branch', 'Claimed'], a.by_branch.map(x => [esc(x.branch), rs(x.claimed)]))}<h2 style="margin-top:14px">By status</h2>${tbl(['Status', 'Claims', 'Amount'], a.by_status.map(x => [esc(x.status), x.claims, rs(x.claimed)]))}</div></div>
+    ${emps.length ? `<div class="panel"><h2>Employee × category</h2><div style="overflow-x:auto">${tbl(['Employee', ...cats.map(esc)], piv)}</div></div>` : ''}`;
+  const pal = ['#22779A', '#0F172A', '#F59E0B', '#16A34A', '#DC2626', '#7C3AED', '#0D9488', '#DB2777', '#64748B', '#EA580C', '#2563EB', '#65A30D', '#9333EA'];
+  mkChart('eaCat', { type: 'doughnut', data: { labels: a.by_category.map(x => x.category), datasets: [{ data: a.by_category.map(x => x.claimed), backgroundColor: pal }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
+  mkChart('eaMon', { type: 'bar', data: { labels: a.by_month.map(x => x.month), datasets: [{ label: 'Claimed', data: a.by_month.map(x => x.claimed), backgroundColor: '#22779A' }, { label: 'Paid', data: a.by_month.map(x => x.paid), backgroundColor: '#16A34A' }] }, options: { maintainAspectRatio: false } });
+}
+async function expExport() {
+  if (!EXP.an) return; await loadXlsx(); const a = EXP.an, wb = XLSX.utils.book_new();
+  const add = (n, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Note: 'No data' }]), n);
+  add('Expense lines', a.lines.map(l => ({ 'Claim no.': l.claim_no, Employee: l.employee, Branch: l.branch, Date: l.date, Category: l.category, Details: l.description, From: l.from, To: l.to, Km: l.km, Claimed: l.amount, Approved: l.approved, Status: l.status, 'Paid on': l.paid_on, 'Payment ref': l.pay_ref })));
+  add('By employee', a.by_employee.map(x => ({ Employee: x.name, Branch: x.branch, Claims: x.claims, Claimed: x.claimed, Approved: x.approved || 0, Paid: x.paid || 0 })));
+  add('By category', a.by_category.map(x => ({ Category: x.category, Lines: x.lines, Claimed: x.claimed })));
+  add('By month', a.by_month.map(x => ({ Month: x.month, Claimed: x.claimed, Paid: x.paid })));
+  add('By branch', a.by_branch.map(x => ({ Branch: x.branch, Claimed: x.claimed })));
+  XLSX.writeFile(wb, `expenses_${document.getElementById('eaFrom').value}_to_${document.getElementById('eaTo').value}.xlsx`);
+}
+/* categories & rules */
+async function expSetupRender() {
+  const { data } = await db.from('expense_categories').select('*').order('sort'); EXP.cats = data || []; const s = S('expenses', {});
+  document.getElementById('expBody').innerHTML = `<div class="panel"><h2>Expense categories</h2>${tbl(['Category', 'Limit per line ₹', 'Bill needed', 'In use', ''], EXP.cats.map(c => [
+      `<input class="inp" id="ecN${c.id}" value="${esc(c.name)}" style="min-width:220px">`, `<input class="inp" type="number" id="ecL${c.id}" value="${c.per_item_limit ?? ''}" placeholder="no limit" style="width:120px">`,
+      `<input type="checkbox" id="ecR${c.id}" ${c.needs_receipt ? 'checked' : ''}>`, `<input type="checkbox" id="ecA${c.id}" ${c.active ? 'checked' : ''}>`, `<button class="btn sm sec" onclick="expCatSave(${c.id})">Save</button>`]))}
+      <div class="toolbar" style="margin-top:10px"><input class="inp" id="ecNew" placeholder="New category name"><button class="btn" onclick="expCatSave(0)">Add category</button> <span id="msgEc"></span></div></div>
+    <div class="panel" ${isOwner() ? '' : 'style="display:none"'}><h2>Approval rules</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+        <div class="field"><label>MD approval needed above ₹ <span class="muted">(0 = every claim goes to the MD)</span></label><input class="inp" type="number" id="esMd" value="${s.md_limit ?? 0}"></div>
+        <div class="field"><label>Oldest expense allowed (days back)</label><input class="inp" type="number" id="esBack" value="${s.max_back_days ?? 90}"></div></div>
+      <div style="margin-top:10px"><button class="btn" onclick="expRulesSave()">Save</button> <span id="msgEs"></span></div>
+      <p class="hint">Order: <b>Reporting manager → Finance → MD → payment by Finance</b>. Reporting manager = the person set under Team → Reporting managers (if none, the branch manager; if none, the Head). Finance = people given “Expenses: Finance” access under Team → Service access (until someone has it, Admin does this step). MD = people given “Expenses: MD” access (until then, the Head). Nobody can approve their own claim.</p></div>`;
+}
+async function expCatSave(id) {
+  const row = id ? { name: document.getElementById('ecN' + id).value.trim(), per_item_limit: document.getElementById('ecL' + id).value === '' ? null : Number(document.getElementById('ecL' + id).value), needs_receipt: document.getElementById('ecR' + id).checked, active: document.getElementById('ecA' + id).checked }
+    : { name: document.getElementById('ecNew').value.trim(), sort: 150 };
+  if (row.name.length < 2) return flash('msgEc', 'Enter the category name', false);
+  const { error } = id ? await db.from('expense_categories').update(row).eq('id', id) : await db.from('expense_categories').insert(row);
+  if (error) return flash('msgEc', /duplicate/.test(error.message) ? 'This category already exists' : error.message, false);
+  flash('msgEc', 'Saved'); expSetupRender();
+}
+async function expRulesSave() { await saveSetting('expenses', { ...S('expenses', {}), md_limit: Math.max(0, Number(document.getElementById('esMd').value) || 0), max_back_days: Math.max(1, parseInt(document.getElementById('esBack').value, 10) || 90) }, 'msgEs'); }
+
+/* ---------- bulk employees (Excel) + reporting managers ---------- */
+let BULK_ROWS = [];
+const BULK_COLS = ['Name', 'Email', 'Mobile', 'Role', 'Branch', 'Designation', 'Reports to (email)', 'Territory'];
+async function bulkTemplate() {
+  await loadXlsx(); const wb = XLSX.utils.book_new(), br = (cache.branches || [])[0]?.name || 'Bengaluru';
+  const ws = XLSX.utils.aoa_to_sheet([BULK_COLS, ['Ravi Kumar', 'ravi.kumar@bne.org.in', '9876543210', 'Salesperson', br, 'Sales Engineer', 'manager.name@bne.org.in', 'North Bengaluru'], ['Suresh M', 'suresh.tech@gmail.com', '9876500000', 'Technician', br, 'Service Technician', 'service.manager@bne.org.in', '']]);
+  ws['!cols'] = [22, 30, 14, 18, 22, 22, 30, 20].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Allowed roles', 'Your branches', 'Notes'], ...Array.from({ length: Math.max(ROLE_LIST_BULK.length, (cache.branches || []).length, 6) }, (_, i) => [ROLE_LIST_BULK[i] || '', (cache.branches || [])[i]?.name || '',
+    ['Delete the two sample rows before uploading.', 'Name, Email and Role are required.', 'Email is how the person signs in (work or personal).', 'Mobile: 10 digits, optional.', 'Reports to: email of the reporting manager (must be an employee or in this sheet).', 'An email that already exists is updated.'][i] || ''])]), 'Help');
+  XLSX.writeFile(wb, 'BNEOne_employees_format.xlsx');
+}
+const ROLE_LIST_BULK = ['Salesperson', 'Branch manager', 'Head', 'Admin', 'Coordinator', 'Tele-caller', 'Quote team', 'Technician', 'Service manager', 'Design engineer'];
+async function bulkRead(inp) {
+  const f = inp.files[0]; inp.value = ''; if (!f) return; const out = document.getElementById('bulkOut'); out.innerHTML = '<div class="muted">Checking the sheet…</div>';
+  try {
+    await loadXlsx(); const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' }), raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
+    const pick = (r, ...names) => { for (const k of Object.keys(r)) { const kk = k.toLowerCase().replace(/[^a-z]/g, ''); if (names.some(n => kk === n || kk.startsWith(n))) return String(r[k]).trim(); } return ''; };
+    BULK_ROWS = raw.map(r => ({ name: pick(r, 'name', 'fullname', 'employeename'), email: pick(r, 'email'), mobile: pick(r, 'mobile', 'phone'), role: pick(r, 'role'), branch: pick(r, 'branch'), designation: pick(r, 'designation'), reports_to_email: pick(r, 'reportsto', 'reportingmanager', 'manager'), territory: pick(r, 'territory') }))
+      .filter(r => r.name || r.email);
+    if (!BULK_ROWS.length) throw new Error('No rows found. Use the downloaded format and keep the heading row.');
+    bulkShow(await expRpc('invite_users_bulk', { p_rows: BULK_ROWS, p_dry: true }), false);
+  } catch (e) { out.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function bulkShow(r, saved) {
+  document.getElementById('bulkOut').innerHTML = `<div style="margin:8px 0"><b style="color:#15803d">${r.ok} ready</b>${r.errors ? ` · <b style="color:#b91c1c">${r.errors} with a problem</b>` : ''}${saved ? ' · <b>saved</b>' : ''}</div>
+    ${tbl(['Row', 'Name', 'Email', 'Role', 'What happens', 'Problem'], r.rows.map(x => [x.row, esc(x.name), esc(x.email), esc(ROLE_LABEL[x.role] || x.role), x.error ? '<span class="muted">skipped</span>' : x.action === 'new' ? 'New person' : 'Updated', x.error ? `<span class="err">${esc(x.error)}</span>` : '<span style="color:#15803d">OK</span>']))}
+    ${saved ? '' : `<div class="toolbar" style="margin-top:8px">${r.ok ? `<button class="btn" onclick="bulkSave()">Add / update ${r.ok} ${r.ok === 1 ? 'person' : 'people'}</button>` : ''}${r.errors ? '<span class="muted">Rows with a problem are skipped. Fix them in the Excel and upload again.</span>' : ''}</div>`}`;
+}
+async function bulkSave() {
+  if (!confirm('Add / update these people? They can then sign in with their email.')) return;
+  try { const r = await expRpc('invite_users_bulk', { p_rows: BULK_ROWS, p_dry: false }); bulkShow(r, true); qtToast(`${r.ok} people added / updated`); loadInvites(); loadUsers(true); rtRender(); } catch (e) { alert(e.message); }
+}
+async function rtRender() {
+  const el = document.getElementById('rtTbl'); if (!el) return;
+  const { data } = await db.from('users').select('id, name, role, branch_id, reports_to, designation, active, deleted_at').eq('active', true).is('deleted_at', null).order('name');
+  const U = data || [], opt = (sel, self) => '<option value="">— branch manager (default) —</option>' + U.filter(u => u.id !== self).map(u => `<option value="${u.id}" ${u.id === sel ? 'selected' : ''}>${esc(u.name || '')} (${esc(ROLE_LABEL[u.role] || u.role)})</option>`).join('');
+  el.innerHTML = tbl(['Person', 'Role', 'Reports to (approves their expenses first)'], U.map(u => [`<b>${esc(u.name || '')}</b>${u.designation ? `<div class="muted" style="font-size:11.5px">${esc(u.designation)}</div>` : ''}`, esc(ROLE_LABEL[u.role] || u.role), `<select class="inp" onchange="rtSet('${u.id}', this.value)" style="min-width:260px">${opt(u.reports_to, u.id)}</select>`]));
+}
+async function rtSet(u, m) { try { await expRpc('set_reports_to', { p_user: u, p_manager: m || null }); qtToast('Saved'); } catch (e) { alert(e.message); rtRender(); } }
 
 /* ---------- customer SMS ---------- */
 const SMS_LABELS = {
@@ -5125,7 +5395,7 @@ const SVC_PERMS = [
   ['svc.machine.manage', 'Edit machines & warranty'], ['svc.amc.view', 'See AMC'], ['svc.amc.manage', 'Create / edit AMC'],
   ['svc.tracking.view', 'Live location of technicians'], ['svc.reports', 'Service reports'], ['svc.warranty.override', 'Approve warranty overrides'],
   ['svc.billing', 'Service bill requests (accounts)'],
-  ['quote.create', 'Quotations: create and send'], ['quote.view_all', 'Quotations: see everyone’s'], ['quote.master', 'Quotations: price list, brands, standard text'], ['quote.approve', 'Quotations: approve high discounts'], ['vrf.design', 'VRF design team: pick and prepare VRF quotes'], ['vrf.head', 'VRF design head: assign, move dates, see all']];
+  ['quote.create', 'Quotations: create and send'], ['quote.view_all', 'Quotations: see everyone’s'], ['quote.master', 'Quotations: price list, brands, standard text'], ['quote.approve', 'Quotations: approve high discounts'], ['vrf.design', 'VRF design team: pick and prepare VRF quotes'], ['vrf.head', 'VRF design head: assign, move dates, see all'], ['exp.finance', 'Expenses: Finance – check, approve and pay claims'], ['exp.md', 'Expenses: MD – final approval'], ['exp.view_all', 'Expenses: see everyone’s claims and the analysis']];
 const SVC_ROLES = ['service_manager', 'manager', 'coordinator', 'telecaller', 'sales', 'quote', 'design_engineer', 'technician'];
 const svcW = s => String(s || '').replace(/_/g, ' ');
 const svcChip = s => `<span class="chip svc-${esc(s)}">${esc(svcW(s))}</span>`;
