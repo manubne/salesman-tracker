@@ -1,0 +1,64 @@
+name: iOS build check (unsigned)
+# Proves the app compiles for iPhone. No signing, nothing is published. Signing + TestFlight are added once the Apple Developer account exists.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['appcode.b64', '.github/workflows/ios-check.yml']
+concurrency:
+  group: ios-check
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack app from base64
+        run: |
+          base64 -D -i appcode.b64 -o app.zip || base64 -d appcode.b64 > app.zip
+          rm -rf app
+          unzip -o -q app.zip
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Create the iOS project (org.bne)
+        working-directory: app
+        run: flutter create --org org.bne --platforms=ios .
+      - name: iPhone settings (name, permissions, background location, minimum iOS)
+        working-directory: app
+        run: |
+          P=ios/Runner/Info.plist
+          pl() { /usr/libexec/PlistBuddy -c "$1" "$P"; }
+          pl "Set :CFBundleDisplayName BNEOne" || pl "Add :CFBundleDisplayName string BNEOne"
+          add() { pl "Delete :$1" 2>/dev/null || true; pl "Add :$1 string $2"; }
+          add NSLocationWhenInUseUsageDescription "BNEOne uses your location to verify customer visits and check-ins."
+          add NSLocationAlwaysAndWhenInUseUsageDescription "While you are on duty, BNEOne records your route so visits and travel claims are verified. Tracking stops when you end your day."
+          add NSCameraUsageDescription "BNEOne uses the camera for site photos, bills, visiting cards and machine serial numbers."
+          add NSPhotoLibraryUsageDescription "BNEOne lets you attach photos and bills from your gallery."
+          add NSMicrophoneUsageDescription "BNEOne does not record audio; the camera screen asks for this permission."
+          pl "Delete :UIBackgroundModes" 2>/dev/null || true
+          pl "Add :UIBackgroundModes array"
+          pl "Add :UIBackgroundModes:0 string location"
+          pl "Add :UIBackgroundModes:1 string fetch"
+          pl "Add :UIBackgroundModes:2 string remote-notification"
+          pl "Delete :ITSAppUsesNonExemptEncryption" 2>/dev/null || true
+          pl "Add :ITSAppUsesNonExemptEncryption bool false"
+          # ML Kit text recognition needs iOS 15.5 or later
+          sed -i '' "s/^# platform :ios.*/platform :ios, '15.5'/" ios/Podfile
+          grep -q "^platform :ios" ios/Podfile || sed -i '' "1s/^/platform :ios, '15.5'\n/" ios/Podfile
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g' ios/Runner.xcodeproj/project.pbxproj
+          echo "--- Info.plist ---"; cat "$P"; echo "--- Podfile ---"; head -5 ios/Podfile
+      - name: Get packages
+        working-directory: app
+        run: flutter pub get
+      - name: Build for iPhone (no signing)
+        working-directory: app
+        run: flutter build ios --release --no-codesign --build-number=${GITHUB_RUN_NUMBER} --build-name=1.0.${GITHUB_RUN_NUMBER} --dart-define=BUILD_NO=${GITHUB_RUN_NUMBER}
+      - name: Result
+        working-directory: app
+        run: |
+          du -sh build/ios/iphoneos/Runner.app
+          echo "iOS build compiled. It is unsigned, so it cannot be installed on a phone yet."
