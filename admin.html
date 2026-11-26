@@ -2060,13 +2060,21 @@ async function expLoad() {
   if (EXP.tab === 'setup') return expSetupRender();
   box.innerHTML = '<div class="empty">Loading…</div>';
   try { EXP.list = (await expRpc('exp_list', { p_scope: EXP.tab })) || []; } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
-  const filt = EXP.tab === 'all' ? `<div class="toolbar"><input class="inp" id="expQ" placeholder="Search employee, claim no., title" oninput="expRenderList()" style="min-width:240px"><select class="inp" id="expSt" onchange="expRenderList()"><option value="">Any status</option>${[['pending_manager', 'With reporting manager'], ['pending_finance', 'With Finance'], ['pending_md', 'With MD'], ['approved', 'Approved – to be paid'], ['paid', 'Paid'], ['returned', 'Sent back'], ['rejected', 'Rejected']].map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>` : '';
+  const uq = a => [...new Set(a.filter(Boolean))].sort(), stOpts = [['draft', 'Draft'], ['pending_manager', 'With reporting manager'], ['pending_finance', 'With Finance'], ['pending_md', 'With MD'], ['approved', 'Approved – to be paid'], ['paid', 'Paid'], ['returned', 'Sent back'], ['rejected', 'Rejected']];
+  const filt = `<div class="toolbar"><input class="inp" id="expQ" placeholder="Search claim no., title${EXP.tab === 'mine' ? '' : ', employee'}" oninput="expRenderList()" style="min-width:200px">
+    <label class="muted">Expense dates</label><input class="inp" type="date" id="expF" onchange="expRenderList()"><input class="inp" type="date" id="expT" onchange="expRenderList()">
+    ${EXP.tab === 'mine' ? '' : `<select class="inp" id="expEmp" onchange="expRenderList()"><option value="">All employees</option>${uq(EXP.list.map(c => c.user_name)).map(n => `<option>${esc(n)}</option>`).join('')}</select>`}
+    <select class="inp" id="expCat" onchange="expRenderList()"><option value="">All categories</option>${uq(EXP.list.flatMap(c => c.cat_names || [])).map(n => `<option>${esc(n)}</option>`).join('')}</select>
+    <select class="inp" id="expSt" onchange="expRenderList()"><option value="">Any status</option>${stOpts.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
+    <button class="btn sm sec" onclick="['expQ','expF','expT','expEmp','expCat','expSt'].forEach(i=>{const e=document.getElementById(i);if(e)e.value=''});expRenderList()">Clear</button> <span class="muted" id="expCount"></span></div>`;
   box.innerHTML = `<div class="panel">${filt}<div id="expTbl"></div></div>`;
   expRenderList();
 }
 function expRenderList() {
-  const q = (document.getElementById('expQ')?.value || '').toLowerCase(), st = document.getElementById('expSt')?.value || '';
-  const L = EXP.list.filter(c => (!q || `${c.claim_no} ${c.user_name} ${c.title}`.toLowerCase().includes(q)) && (!st || c.status === st));
+  const v = id => document.getElementById(id)?.value || '', q = v('expQ').toLowerCase(), st = v('expSt'), f = v('expF'), t = v('expT'), em = v('expEmp'), ct = v('expCat');
+  const L = EXP.list.filter(c => (!q || `${c.claim_no} ${c.user_name} ${c.title}`.toLowerCase().includes(q)) && (!st || c.status === st) && (!em || c.user_name === em) && (!ct || (c.cat_names || []).includes(ct))
+    && (!f || (c.last_date || '') >= f) && (!t || (c.first_date || '9999') <= t));
+  const cn = document.getElementById('expCount'); if (cn) cn.textContent = `${L.length} claim${L.length === 1 ? '' : 's'} · ${rs(L.reduce((a, c) => a + Number(c.approved_amount ?? c.total ?? 0), 0))}`;
   document.getElementById('expTbl').innerHTML = L.length ? tbl(['Claim', 'Employee', 'For', 'Lines', 'Amount', 'Status', 'Updated', ''], L.map(c => [
     `<a href="#" onclick="expOpen('${c.id}');return false"><b>${esc(c.claim_no)}</b></a>`, esc(c.user_name || '') + (c.branch_name ? `<div class="muted" style="font-size:11.5px">${esc(c.branch_name)}</div>` : ''), esc(c.title), c.lines,
     `<b>${rs(c.approved_amount ?? c.total)}</b>${c.approved_amount != null && Number(c.approved_amount) < Number(c.total) ? `<div class="muted" style="font-size:11.5px">claimed ${rs(c.total)}</div>` : ''}`,
@@ -2195,27 +2203,51 @@ async function expDelete() { if (!confirm('Delete this draft?')) return; try { a
 async function expAnalysis() {
   const box = document.getElementById('expBody'), d0 = new Date(); d0.setMonth(d0.getMonth() - 2); d0.setDate(1);
   const from = document.getElementById('eaFrom')?.value || d0.toISOString().slice(0, 10), to = document.getElementById('eaTo')?.value || todayStr();
-  box.innerHTML = `<div class="toolbar"><label class="muted">Expense dates</label><input class="inp" type="date" id="eaFrom" value="${from}"><input class="inp" type="date" id="eaTo" value="${to}"><button class="btn sec" onclick="expAnalysis()">Show</button><button class="btn sec" onclick="expExport()">Download Excel</button></div><div id="eaOut"><div class="empty">Loading…</div></div>`;
+  box.innerHTML = `<div class="toolbar"><label class="muted">Expense dates</label><input class="inp" type="date" id="eaFrom" value="${from}"><input class="inp" type="date" id="eaTo" value="${to}"><button class="btn sec" onclick="expAnalysis()">Show</button>
+    <select class="inp" id="eaEmp" onchange="expAnRender()"></select><select class="inp" id="eaCat" onchange="expAnRender()"></select><select class="inp" id="eaBr" onchange="expAnRender()"></select><select class="inp" id="eaSt" onchange="expAnRender()"></select>
+    <button class="btn sec" onclick="expExport()">Download Excel</button></div><div id="eaOut"><div class="empty">Loading…</div></div>`;
   let a; try { a = await expRpc('exp_analytics', { p_from: from, p_to: to }); } catch (e) { document.getElementById('eaOut').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
-  EXP.an = a; const t = a.totals;
-  const cats = [...new Set(a.emp_cat.map(x => x.category))].sort(), emps = a.by_employee.map(x => x.name);
+  EXP.an = a; const uq = k => [...new Set(a.lines.map(l => l[k]).filter(Boolean))].sort();
+  const fill = (id, all, vals) => document.getElementById(id).innerHTML = `<option value="">${all}</option>` + vals.map(v => `<option>${esc(v)}</option>`).join('');
+  fill('eaEmp', 'All employees', uq('employee')); fill('eaCat', 'All categories', uq('category')); fill('eaBr', 'All branches', uq('branch')); fill('eaSt', 'Any status', uq('status'));
+  expAnRender();
+}
+function expAnLines() {
+  const v = id => document.getElementById(id)?.value || '', e = v('eaEmp'), c = v('eaCat'), b = v('eaBr'), s = v('eaSt');
+  return (EXP.an?.lines || []).filter(l => (!e || l.employee === e) && (!c || l.category === c) && (!b || l.branch === b) && (!s || l.status === s));
+}
+function expAnAgg(L) {
+  const n = x => Number(x) || 0, grp = (key, init) => { const m = new Map(); for (const l of L) { const k = key(l); if (!m.has(k)) m.set(k, init(l)); const g = m.get(k); g.claimed += n(l.amount); g.lines++; g.ids.add(l.claim_no);
+    if (['approved', 'paid'].includes(l.status_code)) g.approved += n(l.approved); if (l.status_code === 'paid') g.paid += n(l.approved); } return [...m.values()].map(g => ({ ...g, claims: g.ids.size })); };
+  const mk = extra => l => ({ ...extra(l), claimed: 0, approved: 0, paid: 0, lines: 0, ids: new Set() }), by = (k, lbl) => grp(l => l[k] || '—', mk(l => ({ [lbl]: l[k] || '—' }))).sort((x, y) => y.claimed - x.claimed);
+  const all = grp(() => 1, mk(() => ({})))[0] || { claimed: 0, approved: 0, paid: 0, claims: 0 };
+  return { totals: { ...all, pending: L.filter(l => /^pending/.test(l.status_code)).reduce((a, l) => a + n(l.amount), 0), rejected: L.filter(l => l.status_code === 'rejected').reduce((a, l) => a + n(l.amount), 0), people: new Set(L.map(l => l.employee)).size },
+    by_employee: grp(l => l.employee, mk(l => ({ name: l.employee, branch: l.branch }))).sort((x, y) => y.claimed - x.claimed), by_category: by('category', 'category'), by_branch: by('branch', 'branch'), by_status: by('status', 'status'),
+    by_month: grp(l => String(l.date).slice(0, 7), mk(l => ({ month: String(l.date).slice(0, 7) }))).sort((x, y) => x.month < y.month ? -1 : 1),
+    emp_cat: grp(l => l.employee + '|' + l.category, mk(l => ({ name: l.employee, category: l.category }))) };
+}
+function expAnRender() {
+  const L = expAnLines(), a = expAnAgg(L), t = a.totals; EXP.anF = { L, a };
+  const cats = a.by_category.map(x => x.category), emps = a.by_employee.map(x => x.name);
   const piv = emps.map(n => [`<b>${esc(n || '')}</b>`, ...cats.map(k => { const v = a.emp_cat.find(x => x.name === n && x.category === k); return v ? rs(v.claimed) : '<span class="muted">—</span>'; })]);
   document.getElementById('eaOut').innerHTML = `<div class="vrf-stats">${[['Claimed', rs(t.claimed)], ['Approved', rs(t.approved)], ['Paid', rs(t.paid)], ['Waiting for approval', rs(t.pending)], ['Rejected', rs(t.rejected)], ['Claims', t.claims], ['Employees', t.people]].map(([k, v]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${v}</b></div>`).join('')}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"><div class="panel"><h2>By category</h2><div style="height:260px"><canvas id="eaCat"></canvas></div></div><div class="panel"><h2>By month</h2><div style="height:260px"><canvas id="eaMon"></canvas></div></div></div>
-    <div class="panel"><h2>Employee-wise</h2>${a.by_employee.length ? tbl(['Employee', 'Branch', 'Claims', 'Claimed', 'Approved', 'Paid'], a.by_employee.map(x => [`<b>${esc(x.name || '')}</b>`, esc(x.branch || '—'), x.claims, rs(x.claimed), rs(x.approved || 0), rs(x.paid || 0)])) : '<div class="empty">No expenses in these dates.</div>'}</div>
+    ${L.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"><div class="panel"><h2>By category</h2><div style="height:260px"><canvas id="eaCatC"></canvas></div></div><div class="panel"><h2>By month</h2><div style="height:260px"><canvas id="eaMon"></canvas></div></div></div>
+    <div class="panel"><h2>Employee-wise</h2>${tbl(['Employee', 'Branch', 'Claims', 'Claimed', 'Approved', 'Paid'], a.by_employee.map(x => [`<b>${esc(x.name || '')}</b>`, esc(x.branch || '—'), x.claims, rs(x.claimed), rs(x.approved), rs(x.paid)]))}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
       <div class="panel"><h2>Category-wise</h2>${tbl(['Category', 'Lines', 'Claimed', '% of total'], a.by_category.map(x => [esc(x.category), x.lines, rs(x.claimed), (t.claimed > 0 ? Math.round(x.claimed * 100 / t.claimed) : 0) + '%']))}</div>
       <div class="panel"><h2>Branch-wise</h2>${tbl(['Branch', 'Claimed'], a.by_branch.map(x => [esc(x.branch), rs(x.claimed)]))}<h2 style="margin-top:14px">By status</h2>${tbl(['Status', 'Claims', 'Amount'], a.by_status.map(x => [esc(x.status), x.claims, rs(x.claimed)]))}</div></div>
-    ${emps.length ? `<div class="panel"><h2>Employee × category</h2><div style="overflow-x:auto">${tbl(['Employee', ...cats.map(esc)], piv)}</div></div>` : ''}`;
+    <div class="panel"><h2>Employee × category</h2><div style="overflow-x:auto">${tbl(['Employee', ...cats.map(esc)], piv)}</div></div>
+    <div class="panel"><h2>Expense lines (${L.length})</h2><div style="overflow-x:auto;max-height:420px;overflow-y:auto">${tbl(['Date', 'Claim', 'Employee', 'Category', 'Details', 'Claimed', 'Approved', 'Status'], L.map(l => [esc(l.date), esc(l.claim_no), esc(l.employee || ''), esc(l.category), esc(l.description || ''), rs(l.amount), rs(l.approved), esc(l.status)]))}</div></div>` : '<div class="empty">No expenses match these filters.</div>'}`;
+  if (!L.length) return;
   const pal = ['#22779A', '#0F172A', '#F59E0B', '#16A34A', '#DC2626', '#7C3AED', '#0D9488', '#DB2777', '#64748B', '#EA580C', '#2563EB', '#65A30D', '#9333EA'];
-  mkChart('eaCat', { type: 'doughnut', data: { labels: a.by_category.map(x => x.category), datasets: [{ data: a.by_category.map(x => x.claimed), backgroundColor: pal }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
+  mkChart('eaCatC', { type: 'doughnut', data: { labels: cats, datasets: [{ data: a.by_category.map(x => x.claimed), backgroundColor: pal }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
   mkChart('eaMon', { type: 'bar', data: { labels: a.by_month.map(x => x.month), datasets: [{ label: 'Claimed', data: a.by_month.map(x => x.claimed), backgroundColor: '#22779A' }, { label: 'Paid', data: a.by_month.map(x => x.paid), backgroundColor: '#16A34A' }] }, options: { maintainAspectRatio: false } });
 }
 async function expExport() {
-  if (!EXP.an) return; await loadXlsx(); const a = EXP.an, wb = XLSX.utils.book_new();
+  if (!EXP.anF) return; await loadXlsx(); const { L, a } = EXP.anF, wb = XLSX.utils.book_new();
   const add = (n, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Note: 'No data' }]), n);
-  add('Expense lines', a.lines.map(l => ({ 'Claim no.': l.claim_no, Employee: l.employee, Branch: l.branch, Date: l.date, Category: l.category, Details: l.description, From: l.from, To: l.to, Km: l.km, Claimed: l.amount, Approved: l.approved, Status: l.status, 'Paid on': l.paid_on, 'Payment ref': l.pay_ref })));
-  add('By employee', a.by_employee.map(x => ({ Employee: x.name, Branch: x.branch, Claims: x.claims, Claimed: x.claimed, Approved: x.approved || 0, Paid: x.paid || 0 })));
+  add('Expense lines', L.map(l => ({ 'Claim no.': l.claim_no, Employee: l.employee, Branch: l.branch, Date: l.date, Category: l.category, Details: l.description, From: l.from, To: l.to, Km: l.km, Claimed: l.amount, Approved: l.approved, Status: l.status, 'Paid on': l.paid_on, 'Payment ref': l.pay_ref })));
+  add('By employee', a.by_employee.map(x => ({ Employee: x.name, Branch: x.branch, Claims: x.claims, Claimed: x.claimed, Approved: x.approved, Paid: x.paid })));
   add('By category', a.by_category.map(x => ({ Category: x.category, Lines: x.lines, Claimed: x.claimed })));
   add('By month', a.by_month.map(x => ({ Month: x.month, Claimed: x.claimed, Paid: x.paid })));
   add('By branch', a.by_branch.map(x => ({ Branch: x.branch, Claimed: x.claimed })));
