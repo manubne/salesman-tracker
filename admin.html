@@ -1671,6 +1671,8 @@ async function init() {
   // role-based navigation
   document.querySelectorAll('[data-roles]').forEach(el => { el.style.display = el.dataset.roles.split(',').includes(ME.role) ? '' : 'none'; });
   document.querySelectorAll('[data-perm]').forEach(el => { el.style.display = el.dataset.perm.split(',').some(can) ? '' : 'none'; });
+  // field people use the app for stock, quotes and chat; on the dashboard they only need their own pages
+  if (['sales', 'technician'].includes(ME.role)) document.querySelectorAll('nav [data-v="stock"], nav [data-v="quoteReqs"], nav [data-v="chat"]').forEach(el => { el.style.display = 'none'; });
   document.getElementById('topAddLead').style.display = isStaff() ? '' : 'none';
   document.getElementById('svcMapNav').style.display = svcOnlyTrack() ? '' : 'none';
   document.getElementById('mapTeam').style.display = isManager() ? '' : 'none';
@@ -1704,7 +1706,8 @@ async function init() {
   } else if (!isStaff() && !qtDesk && !svcDesk) {
     show('expenses');   // field people: the dashboard is for their expense claims (the rest is in the app)
   } else if (!isStaff()) {
-    show(qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quoteReqs' : 'svcTickets');
+    const land = qtDesk && (!svcDesk || ['quote', 'design_engineer'].includes(ME.role)) ? 'quoteReqs' : 'svcTickets';
+    show(land === 'quoteReqs' && ['sales', 'technician'].includes(ME.role) ? 'expenses' : land);
   } else {
     show('leads');
   }
