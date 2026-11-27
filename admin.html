@@ -1755,6 +1755,7 @@ async function init() {
   } else {
     show('leads');
   }
+  custAccessLoad();
   navRegroup(); { const sec = document.querySelector('nav button.active')?.closest('.navsec'); if (sec) navSet(sec.dataset.g, true); }
   vrfDeepLink(); expDeepLink();
   setTimeout(navDots, 2500);
@@ -2167,6 +2168,7 @@ function navDots() {
 const APPR_SRC = [
   ['expenses', 'expBadge', 'Expense claims', 'Claims waiting for your approval or payment'],
   ['payments', 'payBadge', 'Payments to verify', 'Payments reported by salespeople'],
+  ['customers', 'custBadge', 'Customer sharing requests', 'A salesperson wants a customer that is with someone else'],
   ['billing', 'brBadge', 'Billing requests', 'Invoices asked for on won deals'],
   ['travel', 'claimBadge', 'Fuel claims', 'Monthly travel claims to approve'],
   ['svcBilling', 'sbBadge', 'Service billing & zero-bill', 'Service jobs waiting for billing or approval'],
@@ -2191,8 +2193,34 @@ function apprRender() {
     _show(v);
     const sec = document.querySelector(`nav button[data-v="${v}"]`)?.closest('.navsec'); if (sec && sec.classList.contains('shut')) navSet(sec.dataset.g, true);
     if (v === 'approvals') { apprRender(); setTimeout(apprRender, 1500); }
+    if (v === 'customers' || v === 'approvals') custAccessLoad();
   };
 })();
+
+
+/* ---------- customers: a salesperson sees his own; the branch manager shares one that is with someone else ---------- */
+let CUST_REQ = [];
+async function custAccessLoad() {
+  if (!isManager()) return;
+  try { const { data, error } = await db.rpc('customer_access_list', { p_status: 'pending' }); if (error) throw error; CUST_REQ = data || []; } catch (e) { softErr('Customer sharing requests', e); return; }
+  const btn = document.querySelector('nav button[data-v="customers"]');
+  if (btn && !document.getElementById('custBadge')) btn.insertAdjacentHTML('beforeend', '<span class="badge" id="custBadge" style="display:none"></span>');
+  const b = document.getElementById('custBadge'); if (b) { b.textContent = CUST_REQ.length; b.style.display = CUST_REQ.length ? '' : 'none'; }
+  const view = document.getElementById('customers'); if (!view) return;
+  let box = document.getElementById('custReqBox'); if (!box) { box = document.createElement('div'); box.id = 'custReqBox'; view.insertBefore(box, view.firstChild); }
+  box.innerHTML = CUST_REQ.length ? `<div class="panel" style="border-color:#fed7aa;background:#fff7ed"><h2>Customer sharing requests <span class="sub">a salesperson tried to add a customer that is registered with someone else</span></h2>
+    ${tbl(['Customer', 'Registered with', 'Asked by', 'Note', 'When', ''], CUST_REQ.map(r => [`<b>${esc(r.company || r.customer || '')}</b><div class="muted">${esc([r.customer, r.mobile, r.city].filter(Boolean).join(' · '))}</div>`, esc(r.owner || '—'), `<b>${esc(r.requested_by || '')}</b><div class="muted">${esc(r.branch || '')}</div>`, esc(r.note || ''), fmtDT(r.created_at),
+      r.can_decide ? `<button class="btn sm" onclick="custAccessDecide('${r.id}', true)">Allow for both</button> <button class="btn sm sec" onclick="custAccessDecide('${r.id}', false)">Refuse</button>` : '']))}</div>` : '';
+}
+async function custAccessDecide(id, allow) {
+  const r = CUST_REQ.find(x => x.id === id); if (!r) return;
+  let note = null;
+  if (allow) { if (!await uiConfirm(`Share ${r.company || r.customer} with ${r.requested_by}? ${r.owner || 'The current salesperson'} keeps the customer too.`)) return; }
+  else { note = await uiPrompt('Reason for refusing (the salesperson will see it):'); if (note === null) return; }
+  const { error } = await db.rpc('customer_access_decide', { p_id: id, p_allow: allow, p_note: note });
+  if (error) return uiAlert(error.message);
+  qtToast(allow ? `Shared with ${r.requested_by}` : 'Refused'); custAccessLoad();
+}
 
 /* ---------- Expense claims: employee -> reporting manager -> Finance -> MD -> paid ---------- */
 const EXP = { tab: 'mine', list: [], cats: [], cur: null, form: null, an: null };
