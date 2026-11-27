@@ -390,6 +390,7 @@
       <button data-v="expenses" onclick="show('expenses')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M15 16l2 2 3-4"/></svg><span>Expense claims</span><span class="badge" id="expBadge" style="display:none"></span></button>
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
+      <button data-v="adoption" data-roles="admin,head,manager" onclick="show('adoption')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg><span>Adoption board</span></button>
       <button data-v="smslog" data-roles="admin,head" onclick="show('smslog')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Customer SMS</span></button>
       <button data-v="salesreports" data-roles="admin,head" onclick="show('salesreports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Sales email reports</span></button>
       <button data-v="oem" data-roles="admin,head,head" onclick="show('oem')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6 4V8l6 4V4h6v17z"/></svg><span>OEM access</span></button>
@@ -422,7 +423,7 @@
       <div class="panel">
         <div class="toolbar">
           <input id="lSearch" placeholder="Search name, company, mobile…" oninput="renderLeads()" style="min-width:220px">
-          <select id="lStatus" onchange="renderLeads()"><option value="">All statuses</option><option value="open">Open (not in pipeline / dropped)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">In pipeline</option><option value="dropped">Dropped</option><option value="stale">⚠ Untouched</option><option value="unassigned">Unassigned</option></select>
+          <select id="lStatus" onchange="renderLeads()"><option value="">All statuses</option><option value="open">Open (not in pipeline / dropped)</option><option value="new">New</option><option value="contacted">Contacted</option><option value="visit_scheduled">Visit scheduled</option><option value="visited">Visited</option><option value="converted">In pipeline</option><option value="dropped">Dropped</option><option value="stale">⚠ Untouched</option><option value="unassigned">Unassigned</option><option value="hot">Hot</option><option value="warm">Warm</option><option value="cold">Cold</option><option value="idle3">No activity for 3+ days</option><option value="idle7">No activity for 7+ days</option></select>
           <select id="lRep" onchange="renderLeads()"></select>
           <select id="lType" onchange="renderLeads()"></select>
           <select id="lSource" onchange="renderLeads()"></select>
@@ -922,6 +923,17 @@
       <div id="expBody"></div>
     </div>
 
+    <div id="adoption" class="view">
+      <div class="kpis" id="adKpis"></div>
+      <div class="panel"><h2>Who is using BNEOne <span class="sub">sign-in, notifications, field work and untouched leads, per person</span></h2>
+        <div class="toolbar" style="flex-wrap:wrap"><select class="inp" id="adRole" onchange="adRender()"><option value="">All roles</option></select>
+          <select class="inp" id="adShow" onchange="adRender()"><option value="">Everyone</option><option value="issue">Only people who need attention</option></select>
+          <input class="inp" id="adQ" placeholder="Search name…" oninput="adRender()"><span style="flex:1"></span>
+          <button class="btn sec" onclick="adExport()">Download Excel</button><button class="btn sec" onclick="loadAdoption()">Refresh</button></div>
+        <div id="adTbl" style="overflow-x:auto"></div></div>
+      <div class="panel" id="adInvBox" style="display:none"><h2>Invited, not joined yet</h2><div id="adInv"></div></div>
+      <div class="panel" id="adSetBox" style="display:none"><h2>Lead follow-up rules and the daily summary email</h2><div id="adSet"></div></div>
+    </div>
     <div id="smslog" class="view">
       <div class="panel"><h2>Customer SMS <span class="sub">sender BNEONE · BSNL DLT approved templates through MSG91</span></h2>
         <div id="smsTpl"></div>
@@ -1793,6 +1805,7 @@ function show(v) {
   if (v === 'oem') loadOem();
   if (v === 'salesreports') loadSalesReports();
   if (v === 'smslog') { renderSmsSettings(); loadSmsLog(); }
+  if (v === 'adoption') loadAdoption();
   if (v === 'vrf') loadVrf();
   if (v === 'expenses') expLoad();
   if (v === 'team' && isOwner()) rtRender();
@@ -2310,7 +2323,7 @@ const NAV_GROUPS = [
   ['sales', 'Sales', ['leads', 'pipeline', 'quoteReqs', 'vrf', 'customers', 'followups', 'reqs', 'stock', 'billing', 'payments']],
   ['field', 'Field team', ['visits', 'photos', 'mapv', 'travel', 'attendance']],
   ['service', 'Service', ['svcTickets', 'svcOdoo', 'svcBoard', 'svcTechs', '#svcMapNav', 'svcWarranty', 'svcComm', 'svcBilling', 'svcAmc', 'svcReports']],
-  ['reports', 'Reports', ['analytics', 'reports', 'incentives']],
+  ['reports', 'Reports', ['analytics', 'reports', 'incentives', 'adoption']],
   ['people', 'Expenses & people', ['expenses', 'team']],
   ['admin', 'Admin', ['smslog', 'salesreports', 'oem', 'settings']],
 ];
@@ -3070,6 +3083,7 @@ async function loadLeads() {
   const { data, error } = await db.from('leads').select('*').order('created_at', { ascending: false }).limit(2000);
   if (error) console.warn(error);
   cache.leads = data || [];
+  try { const sc = await db.rpc('lead_scores'); cache.leadScores = sc.data || {}; } catch (_) { cache.leadScores = cache.leadScores || {}; }
   renderLeadBadge();
   if (document.getElementById('leads').classList.contains('active')) renderLeads();
 }
@@ -3083,6 +3097,12 @@ function subscribeLeads() {
 const staleHours = () => (S('lead_assignment', {}).untouched_alert_hours) || 24;
 const isStale = l => l.status === 'new' && (Date.now() - new Date(l.last_activity_at || l.created_at)) > staleHours() * 36e5;
 const isOpen = l => !['converted','dropped'].includes(l.status);
+/* lead score: hot / warm / cold from value, recent activity and response (worked out on the server) */
+const leadSc = l => (cache.leadScores || {})[l.id] || null;
+const leadIdle = (l, days) => { const s = leadSc(l); return !!s && !s.p && s.d >= days; };
+const LEAD_T = { hot: ['Hot', 'vrf-r'], warm: ['Warm', 'vrf-a'], cold: ['Cold', 'vrf-n'] };
+function leadScoreCell(l) { const s = leadSc(l); if (!s) return '—';
+  return `<span class="vrf-chip ${LEAD_T[s.t][1]}" style="margin:0" title="${esc(s.w)}">${LEAD_T[s.t][0]} · ${s.s}</span>${!s.p && s.d >= 3 ? `<div style="color:#b91c1c;font-size:12px;font-weight:650">untouched ${s.d} d</div>` : s.p ? '<div class="muted" style="font-size:12px">follow-up planned</div>' : ''}`; }
 function renderLeadBadge() {
   const n = cache.leads.filter(isStale).length;
   const b = document.getElementById('leadBadge'); b.style.display = n ? '' : 'none'; b.textContent = n;
@@ -3093,7 +3113,7 @@ function filteredLeads() {
   const ty = document.getElementById('lType').value, src = document.getElementById('lSource').value;
   return cache.leads.filter(l =>
     (!q || [l.name, l.company, l.mobile, l.city, l.email].join(' ').toLowerCase().includes(q)) &&
-    (!st || (st === 'open' ? isOpen(l) : st === 'stale' ? isStale(l) : st === 'unassigned' ? !l.assigned_to : l.status === st)) &&
+    (!st || (st === 'open' ? isOpen(l) : st === 'stale' ? isStale(l) : st === 'unassigned' ? !l.assigned_to : ['hot', 'warm', 'cold'].includes(st) ? (leadSc(l) || {}).t === st : st === 'idle3' ? leadIdle(l, 3) : st === 'idle7' ? leadIdle(l, 7) : l.status === st)) &&
     (!rep || l.assigned_to === rep) && (!ty || l.contact_type === ty) && (!src || l.source === src) &&
     (!BRANCH || !l.assigned_to || inBranch(l.assigned_to)));
 }
@@ -3105,14 +3125,16 @@ function renderLeads() {
     kpi(L.filter(l => new Date(l.created_at) >= today0).length, 'New leads today', 'blue', '＋', "setLeadFilter('')") +
     kpi(L.filter(isOpen).length, 'Open leads', 'purple', '◎', "setLeadFilter('open')") +
     kpi(L.filter(isStale).length, `Untouched > ${staleHours()} h`, 'red', '⚠', "setLeadFilter('stale')") +
+    kpi(L.filter(l => (leadSc(l) || {}).t === 'hot').length, 'Hot leads', 'orange', '🔥', "setLeadFilter('hot')") +
+    kpi(L.filter(l => leadIdle(l, 3)).length, 'No activity for 3+ days', 'red', '⏳', "setLeadFilter('idle3')") +
     kpi(L.filter(l => !l.assigned_to && isOpen(l)).length, 'Unassigned', 'orange', '?', "setLeadFilter('unassigned')") +
     kpi(L.filter(l => l.status === 'converted' && new Date(l.updated_at) >= mStart).length, 'Converted this month', 'green', '✓', "setLeadFilter('converted')") +
     kpi(rs(Math.round(pipe)), 'Open lead value', 'teal', '₹');
   const rows = filteredLeads();
   document.getElementById('leadsTbl').innerHTML = tbl(
-    ['Created','Lead','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
+    ['Created','Lead','Score','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
     rows.map(l => [fmtDT(l.created_at),
-      `<b>${esc(l.name)}</b>${l.company ? '<br><span class="muted">' + esc(l.company) + '</span>' : ''}`,
+      `<b>${esc(l.name)}</b>${l.company ? '<br><span class="muted">' + esc(l.company) + '</span>' : ''}`, leadScoreCell(l),
       esc(l.mobile) || '—', esc(typeLabel(l.contact_type)), esc(l.source) || '—', esc(catName(l.category_id)),
       l.est_value ? rs(l.est_value) : '—',
       l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>',
@@ -3120,6 +3142,83 @@ function renderLeads() {
     i => `class="rowlink" onclick="openLead('${rows[i].id}')"`);
 }
 function setLeadFilter(v) { document.getElementById('lStatus').value = v; show('leads'); }
+
+/* ---------- Adoption board: who is using the system, and who is sitting on untouched leads ---------- */
+let AD = null;
+async function loadAdoption() {
+  const box = document.getElementById('adTbl'); box.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await db.rpc('adoption_board'); if (error) { box.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  AD = data || { users: [], invites: [] };
+  const roles = [...new Set(AD.users.map(u => u.role))].sort(), sel = document.getElementById('adRole'), cur = sel.value;
+  sel.innerHTML = '<option value="">All roles</option>' + roles.map(r => `<option value="${esc(r)}">${esc(r.replace(/_/g, ' '))}</option>`).join(''); sel.value = cur;
+  adRender(); adSettings();
+}
+const adDays = u => u.last_seen ? Math.floor((Date.now() - Date.parse(u.last_seen)) / 864e5) : null;
+const adIssue = u => adDays(u) === null || adDays(u) > 7 || !u.devices || u.stale_7 > 0 || !u.has_branch || (!u.has_manager && ['sales', 'technician', 'telecaller'].includes(u.role));
+function adRender() {
+  if (!AD) return; const U = AD.users, red = (x, on) => on ? `<b style="color:#b91c1c">${x}</b>` : x;
+  const seen7 = U.filter(u => adDays(u) !== null && adDays(u) <= 7).length;
+  document.getElementById('adKpis').innerHTML = kpi(U.length, 'Active people', 'blue', '👥') + kpi(seen7, 'Signed in during the last 7 days', 'green', '✓') +
+    kpi(U.filter(u => adDays(u) === null).length, 'Never signed in', 'red', '✕') + kpi(U.filter(u => adDays(u) !== null && !u.devices).length, 'No phone for notifications', 'orange', '🔕') +
+    kpi(U.reduce((a, u) => a + u.stale_7, 0), 'Leads untouched for 7+ days', 'red', '⏳') + kpi((AD.invites || []).length, 'Invited, not joined', 'purple', '✉');
+  const role = document.getElementById('adRole').value, q = document.getElementById('adQ').value.trim().toLowerCase(), only = document.getElementById('adShow').value === 'issue';
+  const rows = U.filter(u => (!role || u.role === role) && (!q || (u.name || '').toLowerCase().includes(q)) && (!only || adIssue(u)));
+  window._adRows = rows;
+  document.getElementById('adTbl').innerHTML = rows.length ? tbl(['Person', 'Last seen', 'Notifications', 'Days on duty (7d)', 'Visits (7d)', 'Leads added (7d)', 'Open leads', 'Untouched 3+ / 7+ / 14+ days', 'No follow-up date', 'Overdue follow-ups', 'Open deals', 'Set-up'],
+    rows.map(u => { const d = adDays(u), field = ['sales', 'technician'].includes(u.role);
+      return [`<b>${esc(u.name || '')}</b><div class="muted" style="font-size:12px">${esc([u.designation || u.role.replace(/_/g, ' '), u.branch].filter(Boolean).join(' · '))}</div>`,
+        d === null ? red('Never signed in', true) : d === 0 ? 'Today' : red(d + ' day' + (d > 1 ? 's' : '') + ' ago', d > 7),
+        !u.devices ? red(d === null ? '—' : 'No phone registered', d !== null) + (u.push_failed_14d ? `<div class="muted" style="font-size:12px">${u.push_failed_14d} not delivered</div>` : '') : `On${u.push_failed_14d ? `<div class="muted" style="font-size:12px">${u.push_failed_14d} not delivered</div>` : ''}`,
+        field ? red(u.days_worked_7d, u.days_worked_7d === 0) : (u.days_worked_7d || '—'), field ? u.visits_7d : (u.visits_7d || '—'), u.leads_added_7d || '—',
+        u.open_leads ? `${u.open_leads}${u.hot ? ` <span class="vrf-chip vrf-r" style="margin:0">${u.hot} hot</span>` : ''}` : '—',
+        u.open_leads ? `${red(u.stale_3, u.stale_3 > 0)} / ${red(u.stale_7, u.stale_7 > 0)} / ${red(u.stale_14, u.stale_14 > 0)}` : '—', red(u.no_followup || '—', u.no_followup > 0), red(u.overdue_followup || '—', u.overdue_followup > 0),
+        u.open_deals ? `${u.open_deals}${u.deals_idle_14 ? ` <span class="muted" style="font-size:12px">(${u.deals_idle_14} idle 14d)</span>` : ''}` : '—',
+        [!u.has_branch ? 'No branch' : '', !u.has_manager && ['sales', 'technician', 'telecaller'].includes(u.role) ? 'No manager' : ''].filter(Boolean).map(x => `<span class="vrf-chip vrf-a" style="margin:0 4px 0 0">${x}</span>`).join('') || '<span class="muted">OK</span>']; })) : '<div class="empty">Nobody matches.</div>';
+  const inv = AD.invites || []; document.getElementById('adInvBox').style.display = inv.length ? '' : 'none';
+  document.getElementById('adInv').innerHTML = tbl(['Name', 'Role', 'Email', 'Invited on'], inv.map(i => [esc(i.name || ''), esc((i.role || '').replace(/_/g, ' ')), esc(i.email || '—'), fmtDT(i.invited)]));
+}
+async function adExport() {
+  const R = window._adRows || []; if (!R.length) return; await loadXlsx(); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(u => ({ Name: u.name, Role: u.role, Branch: u.branch || '', Manager: u.manager || '', 'Last seen': (u.last_seen || '').slice(0, 10), 'Days since seen': adDays(u) ?? 'never',
+    'Phone registered for notifications': u.devices ? 'Yes' : 'No', 'Notifications not delivered (14d)': u.push_failed_14d, 'Days on duty (7d)': u.days_worked_7d, 'Visits (7d)': u.visits_7d, 'Leads added (7d)': u.leads_added_7d,
+    'Open leads': u.open_leads, 'Hot leads': u.hot, 'Untouched 3+ days': u.stale_3, 'Untouched 7+ days': u.stale_7, 'Untouched 14+ days': u.stale_14, 'No follow-up date': u.no_followup, 'Overdue follow-ups': u.overdue_followup, 'Open deals': u.open_deals, 'Deals idle 14+ days': u.deals_idle_14 }))), 'Adoption');
+  XLSX.writeFile(wb, `BNEOne_adoption_${todayStr()}.xlsx`);
+}
+function adSettings() {
+  const box = document.getElementById('adSetBox'); if (!['admin', 'head'].includes(ME?.role)) { box.style.display = 'none'; return; } box.style.display = '';
+  const sc = AD.scoring || {}, br = AD.brief || {}, num = (id, lbl, val) => `<div class="field"><label>${lbl}</label><input class="inp" type="number" min="1" id="${id}" value="${val}" style="width:100%"></div>`;
+  document.getElementById('adSet').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px">
+    <div><h4 style="font-size:13.5px;margin:0 0 8px">Untouched leads – who is told, and when</h4>
+      <label style="display:block;margin-bottom:8px"><input type="checkbox" id="asOn" ${sc.enabled === false ? '' : 'checked'}> Send the reminders every working morning</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">${num('asO', 'Salesperson after (days)', sc.owner_days ?? 3)}${num('asM', 'Their manager after (days)', sc.manager_days ?? 7)}${num('asH', 'Head and admin after (days)', sc.head_days ?? 14)}</div>
+      <p class="hint">A lead counts as untouched when there is no call, visit or note and no future follow-up date. Hot = score 60 or more, warm = 35 or more. The score adds value (up to 40), recent activity (35) and response (30).</p></div>
+    <div><h4 style="font-size:13.5px;margin:0 0 8px">Daily summary email <span class="muted" style="font-weight:400">· 8:30 AM, Monday to Saturday</span></h4>
+      <label style="display:block;margin-bottom:8px"><input type="checkbox" id="abOn" ${br.enabled === false ? '' : 'checked'}> Send it every working morning</label>
+      <div class="field"><label>Send to (one email per line)</label><textarea class="inp" id="abTo" rows="3" style="width:100%">${esc((br.to || []).join('\n'))}</textarea></div>
+      <div class="toolbar" style="flex-wrap:wrap"><button class="btn sec sm" onclick="adBriefPreview()">Preview today’s summary</button><button class="btn sec sm" onclick="adBriefTest()">Email it to me now</button></div></div></div>
+    <div style="text-align:right;margin-top:10px"><span id="msgAd"></span> <button class="btn" onclick="adSaveSettings()">Save</button></div>`;
+}
+async function adSaveSettings() {
+  const n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d), o = n('asO', 3), m = Math.max(o + 1, n('asM', 7)), h = Math.max(m + 1, n('asH', 14));
+  const mails = document.getElementById('abTo').value.split(/[\n,;]+/).map(x => x.trim().toLowerCase()).filter(Boolean), bad = mails.find(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  if (bad) return flash('msgAd', 'Not an email address: ' + bad, false);
+  const a = await saveSetting('lead_scoring', { ...(AD.scoring || {}), enabled: document.getElementById('asOn').checked, owner_days: o, manager_days: m, head_days: h }, 'msgAd');
+  const b = await saveSetting('daily_brief', { ...(AD.brief || {}), enabled: document.getElementById('abOn').checked, to: mails }, 'msgAd');
+  if (a && b) loadAdoption();
+}
+async function adBriefPreview() {
+  svcModal('<div class="empty">Writing the summary…</div>', true);
+  const { data, error } = await db.rpc('daily_brief_preview'); if (error) return svcModal(`<div class="err">${esc(error.message)}</div>`);
+  const head = /^[A-Z][A-Z ]{5,}$/;
+  svcModal(`<h3 style="margin-top:0">Daily summary · ${esc(data.day || '')}</h3>
+    <div style="font-size:14px;line-height:1.55">${(data.lines || []).map(x => head.test(x) ? `<div style="font-weight:800;margin:12px 0 4px;color:#22779A">${esc(x)}</div>` : `<div>${esc(x)}</div>`).join('')}</div>
+    <p class="hint" style="margin-top:14px">${data.ai ? 'Written by AI from yesterday’s data.' : 'This is the standard wording. For AI-written wording, add a secret named <b>anthropic_api_key</b> in Supabase → Vault; nothing else needs to change.'} Goes to: ${esc((data.to || []).join(', ') || 'nobody yet')}.</p>
+    <div style="text-align:right"><button class="btn sec sm" onclick="closeModal('svcBg')">Close</button></div>`, true);
+}
+async function adBriefTest() {
+  const { data, error } = await db.rpc('daily_brief_test'); if (error) return qtToast(error.message, true);
+  qtToast('Sent to ' + data);
+}
 
 // lead form
 function fillLeadFormSelects(l) {
