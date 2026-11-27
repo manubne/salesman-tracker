@@ -909,7 +909,7 @@
         <input class="inp" id="vrfQ" placeholder="Search project, location, VRF no." oninput="renderVrf()" style="min-width:220px">
         <select class="inp" id="vrfOwner" onchange="renderVrf()"><option value="">Everyone</option><option value="me">Mine</option><option value="none">Not picked</option></select>
         <select class="inp" id="vrfBrand" onchange="renderVrf()"><option value="">All brands</option></select>
-        <select class="inp" id="vrfView" onchange="renderVrf()"><option value="board">Open – board</option><option value="overdue">Overdue only</option><option value="done">Closed / lost / on hold</option></select>
+        <select class="inp" id="vrfView" onchange="renderVrf()"><option value="board">Open – board</option><option value="dash">Dashboard – analysis</option><option value="overdue">Overdue only</option><option value="done">Closed / lost / on hold</option></select>
         <button class="btn" id="vrfNewBtn" onclick="vrfForm()">+ New VRF enquiry</button>
         <button class="btn sec" onclick="loadVrf()">Refresh</button>
         <button class="btn sec" id="vrfSetBtn" style="display:none" onclick="vrfSettings()">Settings</button>
@@ -1883,6 +1883,7 @@ function renderVrf() {
       ${v.status === 'won_docs' ? `<span class="vrf-chip vrf-a">Docs ${v.docs.length}/3</span>` : ''}${v.quote_value && ['quote_sent', 'client', 'finalised'].includes(v.status) ? `<span class="vrf-chip vrf-n">${rs(v.final_value || v.quote_value)}</span>` : ''}
     </div>`;
   const box = document.getElementById('vrfBoard');
+  if (view === 'dash') return vrfDash(L, box);
   if (view === 'done') {
     const D = L.filter(v => ['closed', 'lost', 'on_hold'].includes(v.status));
     box.innerHTML = D.length ? tbl(['VRF', 'Project', 'Sales', 'Design', 'Status', 'Value', 'Updated'], D.map(v => [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name), esc(v.sales_name || ''), esc(v.owner_name || '—'),
@@ -1892,6 +1893,70 @@ function renderVrf() {
   if (view === 'overdue') L = L.filter(v => overdue.includes(v));
   box.innerHTML = `<div class="vrf-board">${VRF_COLS.map(([k, t]) => { const C = L.filter(v => v.status === k).sort((a, b) => (a.promised_at || '9') .localeCompare(b.promised_at || '9'));
     return `<div class="vrf-col"><h3><span>${t}</span><span>${C.length}</span></h3>${C.map(card).join('') || '<div class="muted" style="font-size:12px;padding:6px">—</div>'}</div>`; }).join('')}</div>`;
+}
+
+/* VRF dashboard: load per engineer, time to quote, ageing, outcome and sales follow-up */
+const _vd = (a, b) => (a && b) ? Math.max(0, (Date.parse(b) - Date.parse(a)) / 864e5) : null;
+const _vAvg = xs => { const v = xs.filter(x => x != null); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; };
+const _vFmtD = x => x == null ? '—' : (x < 1 ? (x * 24).toFixed(1) + ' h' : x.toFixed(1) + ' d');
+function vrfDashRows(L) {
+  const now = new Date().toISOString(), follow = Number(S('vrf', {}).client_follow_days) || 5;
+  return L.map(v => {
+    const open = !['closed', 'lost', 'on_hold'].includes(v.status), endAt = v.closed_at || v.won_at || (open ? now : v.updated_at);
+    const tat = _vd(v.created_at, v.quote_sent_at), sentRef = v.client_sent_at || v.quote_sent_at;
+    const waitingOutcome = ['quote_sent', 'client'].includes(v.status), sinceSent = waitingOutcome ? _vd(sentRef, now) : null;
+    const lastSales = v.sales_last?.at || null, sinceSales = waitingOutcome ? _vd(lastSales && lastSales > sentRef ? lastSales : sentRef, now) : null;
+    const late = v.quote_sent_at && v.promised_at ? v.quote_sent_at.slice(0, 10) > v.promised_at : null;
+    const outcome = v.status === 'lost' ? 'Lost' : ['won_docs', 'closed'].includes(v.status) && v.won_at ? 'Won' : v.status === 'closed' ? 'Closed' : v.status === 'on_hold' ? 'On hold'
+      : v.status === 'finalised' ? 'Finalised with client' : v.status === 'client' ? 'With client – awaiting decision' : v.status === 'quote_sent' ? 'Quote with sales – not yet sent to client' : v.details_pending ? 'Waiting for details from sales' : 'With design team';
+    return { v, open, age: _vd(v.created_at, endAt), tat, pick: _vd(v.created_at, v.picked_at), late, waitingOutcome, sinceSent, sinceSales, stale: sinceSales != null && sinceSales > follow, outcome };
+  });
+}
+function vrfDash(L, box) {
+  const R = vrfDashRows(L), open = R.filter(r => r.open), n = k => R.filter(r => r.v.status === k).length;
+  const quoted = R.filter(r => r.v.quote_sent_at), won = R.filter(r => r.outcome === 'Won'), lost = R.filter(r => r.outcome === 'Lost');
+  const pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—', onTime = quoted.filter(r => r.late === false).length, timed = quoted.filter(r => r.late != null).length;
+  const tiles = [['Enquiries', R.length], ['Open now', open.length], ['Not picked', n('new')], ['Avg time to pick', _vFmtD(_vAvg(R.map(r => r.pick)))], ['Avg time to quote (TAT)', _vFmtD(_vAvg(R.map(r => r.tat)))],
+    ['Quotes on promised date', pct(onTime, timed)], ['Quoted', quoted.length], ['Won', `${won.length} (${pct(won.length, won.length + lost.length)})`], ['Lost', lost.length],
+    ['Won value', rs(won.reduce((a, r) => a + Number(r.v.final_value || r.v.quote_value || 0), 0))], ['Awaiting outcome', R.filter(r => r.waitingOutcome).length], ['No sales update', R.filter(r => r.stale).length]];
+  // per engineer
+  const eng = new Map(); const row = (id, name) => { if (!eng.has(id)) eng.set(id, { name, all: [] }); return eng.get(id); };
+  VRF_TEAM.forEach(t => row(t.id, t.name + (t.head ? ' (head)' : '')));
+  R.forEach(r => row(r.v.owner_id || '-', r.v.owner_id ? (r.v.owner_name || '—') : 'Not picked yet').all.push(r));
+  const E = [...eng.values()].map(e => { const o = e.all.filter(r => r.open), q = e.all.filter(r => r.v.quote_sent_at), t = q.filter(r => r.late != null);
+    return [`<b>${esc(e.name)}</b>`, e.all.length, o.length, o.filter(r => ['new', 'picked'].includes(r.v.status)).length, o.filter(r => r.v.status === 'preparing').length, o.filter(r => r.v.status === 'vendor').length,
+      `<b style="color:${o.some(r => (vrfDays(r.v.promised_at || '9999-12-31') > 0) && ['picked', 'preparing', 'vendor'].includes(r.v.status)) ? '#b91c1c' : 'inherit'}">${o.filter(r => r.v.promised_at && vrfDays(r.v.promised_at) > 0 && ['picked', 'preparing', 'vendor'].includes(r.v.status)).length}</b>`,
+      q.length, _vFmtD(_vAvg(q.map(r => r.tat))), pct(t.filter(r => r.late === false).length, t.length), e.all.reduce((a, r) => a + (r.v.revision || 0), 0),
+      e.all.filter(r => r.outcome === 'Won').length, e.all.filter(r => r.outcome === 'Lost').length]; });
+  const buckets = [['0–2 days', 0, 2], ['3–7 days', 2, 7], ['8–15 days', 7, 15], ['16–30 days', 15, 30], ['Over 30 days', 30, 1e9]].map(([l, a, b]) => [l, open.filter(r => r.age > a && r.age <= b || (a === 0 && r.age === 0)).length]);
+  const fu = R.filter(r => r.waitingOutcome).sort((a, b) => (b.sinceSales || 0) - (a.sinceSales || 0));
+  const lostWhy = Object.entries(lost.reduce((m, r) => { const k = (r.v.lost_reason || 'No reason given').trim(); m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]);
+  box.innerHTML = `<div class="vrf-stats">${tiles.map(([k, v]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${v}</b></div>`).join('')}</div>
+    <div class="panel"><h2>Design engineers <span class="sub">load and turnaround</span></h2><div style="overflow-x:auto">${tbl(['Engineer', 'Total', 'Open', 'Not started', 'Preparing', 'Awaiting vendor', 'Overdue', 'Quotes sent', 'Avg TAT', 'On promised date', 'Revisions', 'Won', 'Lost'], E)}</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+      <div class="panel"><h2>Where the enquiries are</h2><div style="height:250px"><canvas id="vdStage"></canvas></div></div>
+      <div class="panel"><h2>Age of open enquiries</h2><div style="height:250px"><canvas id="vdAge"></canvas></div></div>
+      <div class="panel"><h2>Why enquiries were lost</h2>${lostWhy.length ? tbl(['Reason', 'Count'], lostWhy.map(([k, c]) => [esc(k), c])) : '<div class="empty">Nothing lost in this list.</div>'}</div></div>
+    <div class="panel"><h2>Sales follow-up <span class="sub">quotes given by design, outcome awaited</span></h2>${fu.length ? `<div style="overflow-x:auto">${tbl(['VRF', 'Project', 'Salesperson', 'Engineer', 'Quote value', 'Quote given', 'Sent to client', 'Days waiting', 'Last sales update', ''], fu.map(r => { const v = r.v; return [
+        `<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name), esc(v.sales_name || '—'), esc(v.owner_name || '—'), v.quote_value ? rs(v.quote_value) : '—', v.quote_sent_at ? fmtDT(v.quote_sent_at) : '—',
+        v.client_sent_at ? fmtDT(v.client_sent_at) : '<span class="vrf-chip vrf-a" style="margin:0">Not yet</span>', `<b>${Math.round(r.sinceSent || 0)}</b>`,
+        v.sales_last ? `${esc(v.sales_last.body || '')}<div class="muted" style="font-size:11.5px">${fmtDT(v.sales_last.at)}</div>` : '<span class="muted">No update from sales</span>',
+        r.stale ? '<span class="vrf-chip vrf-r" style="margin:0">Follow up</span>' : '']; }))}</div>` : '<div class="empty">No quotes are waiting for an outcome.</div>'}</div>
+    <div class="panel"><h2>All enquiries <span class="sub">${R.length} in this list</span> <button class="btn sm sec" style="float:right" onclick="vrfDashExport()">Download Excel</button></h2><div style="overflow-x:auto;max-height:520px;overflow-y:auto">${tbl(['VRF', 'Project', 'Brand', 'Salesperson', 'Engineer', 'Stage', 'Age', 'Time to pick', 'TAT to quote', 'Promised', 'Rev', 'Value', 'Outcome / where it stands'],
+      R.map(r => { const v = r.v; return [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name) + `<div class="muted" style="font-size:11.5px">${esc([v.location, v.city].filter(Boolean).join(', '))}</div>`, esc(v.brand), esc(v.sales_name || '—'), esc(v.owner_name || 'Not picked'),
+        esc(VRF_LBL[v.status] || v.status), Math.round(r.age || 0) + ' d', _vFmtD(r.pick), _vFmtD(r.tat) + (r.late === true ? ' <span class="vrf-chip vrf-r" style="margin:0">late</span>' : ''), v.promised_at ? esc(v.promised_at) : '—', v.revision ? 'R' + v.revision : '—',
+        v.final_value || v.quote_value ? rs(v.final_value || v.quote_value) : '—', esc(r.outcome) + (v.lost_reason ? `<div class="muted" style="font-size:11.5px">${esc(v.lost_reason)}</div>` : '')]; }))}</div></div>`;
+  window._vrfDash = R;
+  mkChart('vdStage', { type: 'bar', data: { labels: [...VRF_COLS.map(c => c[1]), 'On hold', 'Lost', 'Closed'], datasets: [{ label: 'Enquiries', data: [...VRF_COLS.map(c => n(c[0])), n('on_hold'), n('lost'), n('closed')], backgroundColor: '#22779A' }] }, options: { maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
+  mkChart('vdAge', { type: 'bar', data: { labels: buckets.map(b => b[0]), datasets: [{ label: 'Open enquiries', data: buckets.map(b => b[1]), backgroundColor: ['#16A34A', '#65A30D', '#F59E0B', '#EA580C', '#DC2626'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+}
+async function vrfDashExport() {
+  const R = window._vrfDash || []; if (!R.length) return; await loadXlsx();
+  const d = x => x == null ? '' : Math.round(x * 10) / 10, wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(r => { const v = r.v; return { 'VRF no.': v.vrf_no, Project: v.project_name, Location: [v.location, v.city].filter(Boolean).join(', '), Brand: v.brand, Salesperson: v.sales_name, Engineer: v.owner_name || '', Stage: VRF_LBL[v.status] || v.status,
+    'Received on': (v.created_at || '').slice(0, 10), 'Age (days)': d(r.age), 'Time to pick (days)': d(r.pick), 'TAT to quote (days)': d(r.tat), 'Promised date': v.promised_at || '', 'Quote late': r.late == null ? '' : r.late ? 'Yes' : 'No',
+    Revision: v.revision || 0, 'Quote value': v.quote_value || '', 'Final value': v.final_value || '', 'Sent to client on': (v.client_sent_at || '').slice(0, 10), 'Days waiting for outcome': d(r.sinceSent), 'Last sales update': v.sales_last?.body || '', Outcome: r.outcome, 'Lost reason': v.lost_reason || '' }; })), 'VRF enquiries');
+  XLSX.writeFile(wb, `VRF_enquiries_${todayStr()}.xlsx`);
 }
 function vrfSubscribe() {
   if (_vrfCh) return;
