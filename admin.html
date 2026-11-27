@@ -824,7 +824,7 @@
       <div class="panel"><h2>Quote requests <span class="sub">sales asks, the quote team prepares the quotation and attaches it here</span></h2>
         <div class="toolbar"><div class="seg" id="qrSeg"><button data-f="open" onclick="qrFilter('open')">To prepare</button><button data-f="ready" onclick="qrFilter('ready')">Ready to send</button><button data-f="sent" onclick="qrFilter('sent')">Sent</button><button data-f="all" onclick="qrFilter('all')">All</button></div>
           <input id="qrQ" placeholder="Search customer, request no., salesperson…" oninput="renderQuoteReqs()" style="min-width:240px"><span style="flex:1"></span>
-          <span class="muted" style="font-size:13px">To ask for a quote, open the deal in Pipeline and click “Request a quote”.</span></div>
+          <span class="muted" style="font-size:13px">To ask for a quote, open the deal in Pipeline and click “Request a quote”.</span> <button class="btn sec" id="qrSetBtn" style="display:none" onclick="qrSettings()">Settings</button></div>
         <div id="qrTbl"></div></div>
     </div>
     <!-- ================= WARRANTY CHECK ================= -->
@@ -1837,8 +1837,28 @@ const VRF_SCOPE = { supply: 'Supply only', supply_install: 'Supply + installatio
 const VRF_FILE = { input: 'Enquiry file', quote: 'Quote', boq: 'Final BOQ', drawings: 'Drawings', cad: 'CAD file', other: 'Other' };
 const vrfDesign = () => can('vrf.design') || can('vrf.head') || ['admin', 'head'].includes(ME?.role);
 const vrfHead = () => can('vrf.head') || ['admin', 'head'].includes(ME?.role);
+/* quote timer: counts office hours only (Settings → duty hours); green, then amber, then red */
+function workHours(a, b) {
+  const c = S('duty_hours', {}), hm = (x, d) => { const m = /^(\d{1,2}):(\d{2})/.exec(x || ''); return m ? m[1] * 60 + +m[2] : d; }, s0 = hm(c.start, 570), e0 = hm(c.end, 1110);
+  const days = Array.isArray(c.working_days) && c.working_days.length ? c.working_days.map(Number) : [1, 2, 3, 4, 5, 6], IST = 19800e3;
+  const t0 = Date.parse(a), t1 = b ? Date.parse(b) : Date.now(); if (!(t1 > t0)) return 0;
+  let tot = 0; const d0 = Math.floor((t0 + IST) / 864e5), d1 = Math.min(Math.floor((t1 + IST) / 864e5), d0 + 400);
+  for (let d = d0; d <= d1; d++) { const dow = new Date(d * 864e5).getUTCDay() || 7; if (!days.includes(dow)) continue;
+    tot += Math.max(0, Math.min(t1, d * 864e5 - IST + e0 * 6e4) - Math.max(t0, d * 864e5 - IST + s0 * 6e4)); }
+  return tot / 36e5;
+}
+function qTimer(kind, start, end) {
+  if (!start) return null; const c = S('quote_desk', {}), g = Number(c[kind + '_green']) || (kind === 'vrf' ? 12 : 3), am = Number(c[kind + '_amber']) || (kind === 'vrf' ? 12 : 6);
+  const h = workHours(start, end); return { h, g, am, done: !!end, lvl: h <= g ? 'g' : h <= g + am ? 'a' : 'r' };
+}
+const fmtWH = h => { const m = Math.round(h * 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' m' : ''); };
+const qTimerChip = (t, st = '') => !t ? '' : `<span class="vrf-chip vrf-${t.lvl}" style="${st}" title="Working hours only. Green up to ${t.g} h, amber up to ${t.g + t.am} h, red after that.">${t.done ? 'Took ' : '⏱ '}${fmtWH(t.h)}</span>`;
+const qrTimer = r => r.status === 'cancelled' ? null : qTimer('other', r.clock_start || r.created_at, ['open', 'in_progress'].includes(r.status) ? null : (r.ready_at || r.updated_at));
+const vrfTimer = v => v.details_pending ? null : ['new', 'picked', 'preparing', 'vendor'].includes(v.status) ? qTimer('vrf', v.tat_start || v.details_at || v.created_at, null)
+  : v.quote_sent_at && !['on_hold'].includes(v.status) ? qTimer('vrf', v.tat_start || v.details_at || v.created_at, v.quote_sent_at) : null;
 const VRF_OUT = { reviewing: 'Client is reviewing', negotiating: 'Negotiating price', changes: 'Client wants changes', delayed: 'Decision delayed', likely_win: 'Likely to win', likely_loss: 'Likely to lose' };
 const VRF_REV = { price: 'Price', brand: 'Brand change', layout: 'Layout / drawing change', capacity: 'Capacity / load change', scope: 'Scope change', budget: 'Client budget', other: 'Other' };
+const vrfCfg0 = (k, d) => { const x = Number(S('quote_desk', {})[k]); return x > 0 ? x : d; };
 const vrfCfg = (k, d) => { const x = Number(S('vrf', {})[k]); return x > 0 ? x : d; };
 const vrfOn = (k, d = true) => { const x = S('vrf', {})[k]; return x === undefined ? d : !!x; };
 const vrfNeedsDrawings = v => !!(v.details_pending && v.details_ok && !(v.inputs > 0));
@@ -1847,7 +1867,7 @@ function vrfPendChip(v) { return v.details_pending ? `<span class="vrf-chip vrf-
 function vrfTat(v) {   // text when the enquiry is past its target, otherwise null
   if (v.details_pending || ['closed', 'lost', 'on_hold'].includes(v.status)) return null;
   if (v.status === 'new') { const h = (Date.now() - Date.parse(v.details_at || v.created_at)) / 36e5; return h > vrfCfg('tat_pick_hours', 24) ? `Not picked · ${Math.round(h)} h` : null; }
-  if (['picked', 'preparing', 'vendor'].includes(v.status)) { const d = (Date.now() - Date.parse(v.tat_start || v.details_at || v.created_at)) / 864e5; return d > vrfCfg('tat_quote_days', 3) ? `Quote target missed · day ${Math.floor(d)}` : null; }
+  if (['picked', 'preparing', 'vendor'].includes(v.status)) { const t = vrfTimer(v); return t && t.lvl === 'r' ? `Quote timer red · ${fmtWH(t.h)}` : null; }
   return null;
 }
 function vrfOutDue(v) {
@@ -1899,7 +1919,7 @@ function renderVrf() {
       <div class="ln">${esc(v.location)}${v.city ? ', ' + esc(v.city) : ''}</div>
       <div class="ln">${esc(v.brand)} · ${esc(VRF_SCOPE[v.scope] || '')}</div>
       <div class="ln">Sales: ${esc(v.sales_name || '—')}${v.owner_name ? ' · Design: ' + esc(v.owner_name) : ''}</div>
-      ${vrfDue(v)}${vrfPendChip(v)}${vrfTat(v) ? `<span class="vrf-chip vrf-r">${vrfTat(v)}</span>` : ''}${vrfOutChip(v)}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
+      ${vrfDue(v)}${vrfPendChip(v)}${['new', 'picked', 'preparing', 'vendor'].includes(v.status) ? qTimerChip(vrfTimer(v)) : ''}${v.status === 'new' && vrfTat(v) ? `<span class="vrf-chip vrf-r">${vrfTat(v)}</span>` : ''}${vrfOutChip(v)}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
       ${v.status === 'won_docs' ? `<span class="vrf-chip vrf-a">Docs ${v.docs.length}/3</span>` : ''}${v.quote_value && ['quote_sent', 'client', 'finalised'].includes(v.status) ? `<span class="vrf-chip vrf-n">${rs(v.final_value || v.quote_value)}</span>` : ''}
     </div>`;
   const box = document.getElementById('vrfBoard');
@@ -1932,7 +1952,7 @@ function vrfDashRows(L) {
       : v.status === 'finalised' ? 'Finalised with client' : v.status === 'client' ? 'With client – awaiting decision' : v.status === 'quote_sent' ? 'Quote with sales – not yet sent to client'
       : v.details_pending ? (vrfNeedsDrawings(v) ? 'Waiting for drawings from sales' : 'Waiting for details from sales') : 'With design team';
     return { v, open, age: _vd(v.created_at, endAt), tat, pick, late, waitingOutcome, sinceSent, sinceSales, stale: vrfOutDue(v), outcome, chg,
-      over: vrfTat(v), tatOver: tat != null && tat > qd, pickOver: pick != null && pick * 24 > ph };
+      over: vrfTat(v), timer: vrfTimer(v), tatOver: tat != null && (qTimer('vrf', start, v.first_quote_at || v.quote_sent_at) || {}).lvl === 'r', pickOver: pick != null && pick * 24 > ph };
   });
 }
 function vrfDash(L, box) {
@@ -1942,7 +1962,7 @@ function vrfDash(L, box) {
   const red = (x, on) => on ? `<b style="color:#b91c1c">${x}</b>` : x, chgAvg = _vAvg(R.map(r => r.chg)), fmtChg = x => x == null ? '—' : (x > 0 ? '+' : '') + x.toFixed(1) + '%';
   const withTat = R.filter(r => r.tat != null);
   const tiles = [['Enquiries', R.length], ['Open now', open.length], ['Not picked', n('new')], ['Avg time to pick', _vFmtD(_vAvg(R.map(r => r.pick))) + ` <small class="muted">target ${ph} h</small>`],
-    ['Avg time to quote (TAT)', _vFmtD(_vAvg(R.map(r => r.tat))) + ` <small class="muted">target ${qd} d</small>`], ['Quotes within target', pct(withTat.filter(r => !r.tatOver).length, withTat.length)],
+    ['Avg time to quote (TAT)', _vFmtD(_vAvg(R.map(r => r.tat))) + ` <small class="muted">calendar time</small>`], ['Avg quote timer', (x => x == null ? '—' : fmtWH(x))(_vAvg(R.filter(r => r.timer && r.timer.done).map(r => r.timer.h))) + ` <small class="muted">working h</small>`], ['Timer in red now', red(open.filter(r => r.timer && !r.timer.done && r.timer.lvl === 'r').length, open.some(r => r.timer && !r.timer.done && r.timer.lvl === 'r'))], ['Quotes within target', pct(withTat.filter(r => !r.tatOver).length, withTat.length)],
     ['Past target now', red(open.filter(r => r.over).length, open.some(r => r.over))], ['Quotes on promised date', pct(onTime, timed)], ['Quoted', quoted.length],
     ['Won', `${won.length} (${pct(won.length, won.length + lost.length)})`], ['Lost', lost.length], ['Won value', rs(won.reduce((a, r) => a + Number(r.v.final_value || r.v.quote_value || 0), 0))],
     ['First quote → order value', fmtChg(chgAvg)], ['Awaiting outcome', R.filter(r => r.waitingOutcome).length], ['Sales update due', red(R.filter(r => r.stale).length, R.some(r => r.stale))]];
@@ -1961,7 +1981,7 @@ function vrfDash(L, box) {
   const revWhy = Object.entries(R.reduce((m, r) => { (r.v.rev_types || []).forEach(k => { m[k] = (m[k] || 0) + 1; }); return m; }, {})).sort((a, b) => b[1] - a[1]);
   const vals = R.filter(r => r.chg != null);
   box.innerHTML = `<div class="vrf-stats">${tiles.map(([k, v]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${v}</b></div>`).join('')}</div>
-    <div class="panel"><h2>Design engineers <span class="sub">load and turnaround · targets: pick in ${ph} h, quote in ${qd} days</span></h2><div style="overflow-x:auto">${tbl(['Engineer', 'Total', 'Open', 'Not started', 'Preparing', 'Awaiting vendor', 'Past promised date', 'Past target', 'Quotes sent', 'Avg TAT', 'Within target', 'On promised date', 'Revisions', 'Won', 'Lost'], E)}</div></div>
+    <div class="panel"><h2>Design engineers <span class="sub">load and turnaround · pick in ${ph} h · quote timer green ${vrfCfg0('vrf_green', 12)} working h, red after ${vrfCfg0('vrf_green', 12) + vrfCfg0('vrf_amber', 12)}</span></h2><div style="overflow-x:auto">${tbl(['Engineer', 'Total', 'Open', 'Not started', 'Preparing', 'Awaiting vendor', 'Past promised date', 'Past target', 'Quotes sent', 'Avg TAT', 'Within target', 'On promised date', 'Revisions', 'Won', 'Lost'], E)}</div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
       <div class="panel"><h2>Where the enquiries are</h2><div style="height:250px"><canvas id="vdStage"></canvas></div></div>
       <div class="panel"><h2>Age of open enquiries</h2><div style="height:250px"><canvas id="vdAge"></canvas></div></div>
@@ -1978,7 +1998,7 @@ function vrfDash(L, box) {
     ${vrfDesign() ? '<div class="panel"><h2>Coming up <span class="sub">VRF leads that are not yet a deal – an early look for the design team</span></h2><div id="vdLeads" class="muted">Loading…</div></div>' : ''}
     <div class="panel"><h2>All enquiries <span class="sub">${R.length} in this list</span> <button class="btn sm sec" style="float:right" onclick="vrfDashExport()">Download Excel</button></h2><div style="overflow-x:auto;max-height:520px;overflow-y:auto">${tbl(['VRF', 'Project', 'Brand', 'Salesperson', 'Engineer', 'Stage', 'Age', 'Time to pick', 'TAT to quote', 'Promised', 'Rev', 'Value', 'Outcome / where it stands'],
       R.map(r => { const v = r.v; return [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name) + `<div class="muted" style="font-size:12px">${esc([v.location, v.city].filter(Boolean).join(', '))}</div>`, esc(v.brand), esc(v.sales_name || '—'), esc(v.owner_name || 'Not assigned') + (v.auto_assigned ? ' <span class="muted" style="font-size:12px">(auto)</span>' : ''),
-        esc(VRF_LBL[v.status] || v.status) + (r.over ? ` <span class="vrf-chip vrf-r" style="margin:0">${esc(r.over)}</span>` : ''), Math.round(r.age || 0) + ' d', red(_vFmtD(r.pick), r.pickOver), red(_vFmtD(r.tat), r.tatOver) + (r.late === true ? ' <span class="vrf-chip vrf-r" style="margin:0">after promised date</span>' : ''), v.promised_at ? esc(v.promised_at) : '—', v.revision ? 'R' + v.revision : '—',
+        esc(VRF_LBL[v.status] || v.status) + (r.over ? ` <span class="vrf-chip vrf-r" style="margin:0">${esc(r.over)}</span>` : ''), Math.round(r.age || 0) + ' d', red(_vFmtD(r.pick), r.pickOver), red(_vFmtD(r.tat), r.tatOver) + qTimerChip(r.timer, 'margin:0 0 0 6px') + (r.late === true ? ' <span class="vrf-chip vrf-r" style="margin:0">after promised date</span>' : ''), v.promised_at ? esc(v.promised_at) : '—', v.revision ? 'R' + v.revision : '—',
         v.final_value || v.quote_value ? rs(v.final_value || v.quote_value) : '—', esc(r.outcome) + (v.lost_reason ? `<div class="muted" style="font-size:12px">${esc(v.lost_reason)}</div>` : v.sales_outcome && r.waitingOutcome ? `<div class="muted" style="font-size:12px">${esc(VRF_OUT[v.sales_outcome] || '')}</div>` : '')]; }))}</div></div>`;
   window._vrfDash = R;
   mkChart('vdStage', { type: 'bar', data: { labels: [...VRF_COLS.map(c => c[1]), 'On hold', 'Lost', 'Closed'], datasets: [{ label: 'Enquiries', data: [...VRF_COLS.map(c => n(c[0])), n('on_hold'), n('lost'), n('closed')], backgroundColor: '#22779A' }] }, options: { maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
@@ -1991,7 +2011,7 @@ async function vrfDashExport() {
   const R = window._vrfDash || []; if (!R.length) return; await loadXlsx();
   const d = x => x == null ? '' : Math.round(x * 10) / 10, wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(r => { const v = r.v; return { 'VRF no.': v.vrf_no, Project: v.project_name, Location: [v.location, v.city].filter(Boolean).join(', '), Brand: v.brand, Salesperson: v.sales_name, Engineer: v.owner_name || '', 'Assigned automatically': v.auto_assigned ? 'Yes' : '', Stage: VRF_LBL[v.status] || v.status,
-    'Received on': (v.created_at || '').slice(0, 10), 'Details complete on': (v.details_at || '').slice(0, 10), 'Age (days)': d(r.age), 'Time to pick (days)': d(r.pick), 'TAT to quote (days)': d(r.tat), 'Within TAT target': r.tat == null ? '' : r.tatOver ? 'No' : 'Yes', 'Past target now': r.over || '',
+    'Received on': (v.created_at || '').slice(0, 10), 'Details complete on': (v.details_at || '').slice(0, 10), 'Age (days)': d(r.age), 'Time to pick (days)': d(r.pick), 'TAT to quote (days)': d(r.tat), 'Quote timer (working hours)': r.timer ? d(r.timer.h) : '', 'Quote timer colour': r.timer ? { g: 'Green', a: 'Amber', r: 'Red' }[r.timer.lvl] : '', 'Within TAT target': r.tat == null ? '' : r.tatOver ? 'No' : 'Yes', 'Past target now': r.over || '',
     'Promised date': v.promised_at || '', 'Quote after promised date': r.late == null ? '' : r.late ? 'Yes' : 'No', Revision: v.revision || 0, 'Revision reasons': (v.rev_types || []).map(k => VRF_REV[k] || k).join(', '),
     'First quote': v.first_quote || '', 'Latest quote': v.quote_value || '', 'Final value': v.final_value || '', 'First quote to order %': d(r.chg), 'Sent to client on': (v.client_sent_at || '').slice(0, 10), 'Days waiting for outcome': d(r.sinceSent),
     'Client update': v.sales_outcome ? (VRF_OUT[v.sales_outcome] || v.sales_outcome) : '', 'Client update note': v.sales_outcome_note || v.sales_last?.body || '', 'Client update on': (v.sales_outcome_at || '').slice(0, 10), 'Next follow-up': v.next_follow_at || '', 'Sales update due': r.stale ? 'Yes' : '',
@@ -2117,7 +2137,7 @@ async function vrfOpen(id, keepTab) {
   }).join('') || '<div class="muted">No messages yet.</div>';
   const fileRows = (files || []).map((f, i) => [esc(VRF_FILE[f.kind] || f.kind) + (f.kind === 'quote' ? ' R' + f.revision : ''), urls[i] ? `<a href="${urls[i]}" target="_blank">${esc(f.name)}</a>` : esc(f.name), esc(nm(f.uploaded_by)), fmtDT(f.created_at)]);
   const revRows = (revs || []).map(r => ['R' + r.rev, (r.rev > 0 ? `<span class="vrf-chip vrf-n" style="margin:0 4px 0 0">${esc(VRF_REV[r.reason_type || 'other'])}</span>` : '') + esc(r.reason || (r.rev === 0 ? 'First quote' : '')), esc(r.promised_at || '—'), r.delivered_at ? fmtDT(r.delivered_at) + (r.promised_at && r.delivered_at.slice(0, 10) > r.promised_at ? ' <span class="vrf-chip vrf-r">late</span>' : ' <span class="vrf-chip vrf-g">on time</span>') : '—', r.quote_value ? rs(r.quote_value) : '—']);
-  svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(v.vrf_no)}</div><h3 style="margin:2px 0 4px">${esc(v.project_name)}</h3></div><div>${vrfDue(v)}</div></div>
+  svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(v.vrf_no)}</div><h3 style="margin:2px 0 4px">${esc(v.project_name)}</h3></div><div>${qTimerChip(vrfTimer(VRF.find(x => x.id === v.id) || v))}${vrfDue(v)}</div></div>
     <div class="toolbar" style="flex-wrap:wrap;margin:6px 0 10px">${A.join(' ')}</div>
     <div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.2fr);gap:16px">
       <div><div class="kv" style="display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:13px">${kv.map(([k, x]) => `<div class="muted">${k}</div><div>${x}</div>`).join('')}</div>
@@ -2235,7 +2255,7 @@ function vrfSettings() {
       ${chk('vsWeekly', 'Weekly VRF report by email', vrfOn('weekly_report'), 'Every Monday morning to the admin and the design heads.')}</div>
     <div class="panel" style="margin:0 0 12px"><h2 style="font-size:14px">Targets and reminders</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-        ${num('vsTatPick', 'Target: pick within (hours)', c.tat_pick_hours ?? 24)}${num('vsTatQuote', 'Target: quote within (days)', c.tat_quote_days ?? 3)}
+        ${num('vsTatPick', 'Target: pick within (hours)', c.tat_pick_hours ?? 24)}${num('vsTG', 'Quote timer: green up to (working hours)', vrfCfg0('vrf_green', 12))}${num('vsTA', 'then amber for (working hours)', vrfCfg0('vrf_amber', 12))}
         ${num('vsPick', 'Remind if not picked after (hours)', c.pick_alert_hours ?? 4)}${num('vsVendor', 'Chase vendor after (days)', c.vendor_remind_days ?? 2)}
         ${num('vsOut', 'Sales must update every (days)', c.outcome_days ?? 3)}${num('vsEsc', 'Tell manager and heads after (days)', c.outcome_escalate_days ?? 7)}
       </div><p class="hint">Enquiries past a target show in red on the board and the dashboard, and are listed in the daily email to the design heads.</p></div>
@@ -2255,8 +2275,9 @@ async function vrfSaveSettings() {
   if (loaded && !hu.length && !hi.length) return flash('msgVs', 'Choose at least one design head', false);
   const out = n('vsOut', 3);
   const ok = await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: out,
-    tat_pick_hours: n('vsTatPick', 24), tat_quote_days: n('vsTatQuote', 3), outcome_days: out, outcome_escalate_days: Math.max(out + 1, n('vsEsc', 7)),
+    tat_pick_hours: n('vsTatPick', 24), outcome_days: out, outcome_escalate_days: Math.max(out + 1, n('vsEsc', 7)),
     auto_assign: on('vsAuto'), inputs_required: on('vsInputs'), lead_headsup: on('vsLead'), weekly_report: on('vsWeekly'), heads_set: true }, 'msgVs');
+  if (ok) await saveSetting('quote_desk', { ...S('quote_desk', {}), vrf_green: n('vsTG', 12), vrf_amber: n('vsTA', 12) }, 'msgVs');
   if (!ok || !loaded) return;
   try { await vrfRpc('vrf_heads_set', { p_users: hu, p_invites: hi }); VRF_TEAM = []; await loadVrf(); } catch (e) { flash('msgVs', e.message, false); }
 }
@@ -6467,17 +6488,45 @@ const qrItemsText = r => (r.items || []).map(i => `${i.qty || 1} × ${i.machine 
 function renderQuoteReqs() {
   const L = QR.list, m0 = todayStr().slice(0, 7), n = st => L.filter(r => r.status === st).length;
   document.getElementById('qrKpis').innerHTML = kpi(n('open'), 'Open requests', 'orange', '◎', "qrFilter('open')") + kpi(n('in_progress'), 'Being prepared', 'blue', '✎', "qrFilter('open')") +
+    kpi(L.filter(r => ['open', 'in_progress'].includes(r.status) && (qrTimer(r) || {}).lvl === 'r').length, 'Timer in red', 'red', '⏱', "qrFilter('open')") + kpi((x => x.length ? fmtWH(x.reduce((a, t) => a + t.h, 0) / x.length) : '—')(L.map(qrTimer).filter(t => t && t.done)), 'Average time to quote (working hours)', 'blue', '⌛') +
     kpi(n('ready'), 'Ready, not yet sent to client', 'green', '✓', "qrFilter('ready')") + kpi(L.filter(r => r.status === 'sent' && (r.sent_at || '').slice(0, 7) === m0).length, 'Sent this month', 'purple', '➜', "qrFilter('sent')");
   const f = QR.filter, q = (document.getElementById('qrQ').value || '').toLowerCase();
   document.querySelectorAll('#qrSeg button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
   const rows = L.filter(r => (f === 'open' ? ['open', 'in_progress'].includes(r.status) : f === 'all' ? true : r.status === f) && (!q || `${r.req_no} ${r.customer_name} ${r.customer_mobile || ''} ${r.requested_by_name || ''} ${r.city || ''} ${qrItemsText(r)}`.toLowerCase().includes(q)));
-  document.getElementById('qrTbl').innerHTML = tbl(['Request', 'Customer', 'What is needed', 'Asked by', 'Needed by', 'Status', 'Quote'], rows.map(r => [`<b>${esc(r.req_no)}</b>${r.revision ? ` <span class="chip overdue">change ${r.revision}</span>` : ''}<div class="muted" style="font-size:11.5px">${fmtDT(r.created_at)}</div>`,
+  document.getElementById('qrTbl').innerHTML = tbl(['Request', 'Customer', 'What is needed', 'Asked by', 'Needed by', 'Status', 'Timer', 'Quote'], rows.map(r => [`<b>${esc(r.req_no)}</b>${r.revision ? ` <span class="chip overdue">change ${r.revision}</span>` : ''}<div class="muted" style="font-size:11.5px">${fmtDT(r.created_at)}</div>`,
     `<b>${esc(r.customer_name)}</b><div class="muted" style="font-size:11.5px">${esc([r.customer_mobile, r.city].filter(Boolean).join(' · '))}</div>`,
     `${esc(qrItemsText(r) || r.notes || '—').slice(0, 140)}<div class="muted" style="font-size:11.5px">${esc([r.system, r.brand].filter(Boolean).join(' · '))}</div>`, esc(r.requested_by_name || '—'),
     r.needed_by ? `${fmtD(r.needed_by)}${['open', 'in_progress'].includes(r.status) && r.needed_by < todayStr() ? '<div style="color:var(--red);font-size:11.5px;font-weight:650">overdue</div>' : ''}` : '—',
-    qrChip(r.status) + (r.taken_by_name && r.status === 'in_progress' ? `<div class="muted" style="font-size:11.5px">${esc(r.taken_by_name)}</div>` : ''),
+    (r.waiting_on_sales ? '<span class="vrf-chip vrf-r" style="margin:0 0 4px">Waiting on sales</span><br>' : '') + qrChip(r.status) + (r.taken_by_name && r.status === 'in_progress' ? `<div class="muted" style="font-size:11.5px">${esc(r.taken_by_name)}</div>` : ''),
+    qTimerChip(qrTimer(r), 'margin:0'),
     r.file_path ? `<b>${r.quote_amount != null ? rs(Math.round(r.quote_amount)) : 'Attached'}</b><div class="muted" style="font-size:11.5px">${esc(r.quote_ref || r.file_name || '')}</div>` : '—']),
     i => `style="cursor:pointer" onclick="qrOpen('${rows[i].id}')"`);
+  const sb = document.getElementById('qrSetBtn'); if (sb) sb.style.display = ['admin', 'head'].includes(ME?.role) ? '' : 'none';
+}
+function qrSettings() {
+  const c = S('quote_desk', {}), num = (id, lbl, val) => `<div class="field"><label>${lbl}</label><input class="inp" type="number" min="1" id="${id}" value="${val}" style="width:100%"></div>`;
+  svcModal(`<h3 style="margin-top:0">Quote request settings</h3>
+    <div class="field"><label>Enquiries from the customer / dealer app go to (one email per line)</label><textarea class="inp" id="qsMail" rows="4" style="width:100%">${esc((c.portal_emails || []).join('\n'))}</textarea></div>
+    <p class="hint">The salesperson already linked to that customer, and their manager, are told as well.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${num('qsG', 'Timer: green up to (working hours)', vrfCfg0('other_green', 3))}${num('qsA', 'then amber for (working hours)', vrfCfg0('other_amber', 6))}</div>
+    <p class="hint">After green + amber the timer turns red. Only office hours count (${esc(S('duty_hours', {}).start || '09:30')}–${esc(S('duty_hours', {}).end || '18:30')}, working days). The VRF timer is set under VRF projects → Settings.</p>
+    <div style="text-align:right"><span id="msgQs"></span> <button class="btn sec sm" onclick="closeModal('svcBg')">Close</button> <button class="btn" onclick="qrSaveSettings()">Save</button></div>`);
+}
+async function qrSaveSettings() {
+  const mails = document.getElementById('qsMail').value.split(/[\n,;]+/).map(x => x.trim().toLowerCase()).filter(Boolean), bad = mails.find(m => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m));
+  if (bad) return flash('msgQs', 'Not an email address: ' + bad, false);
+  const n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d);
+  if (await saveSetting('quote_desk', { ...S('quote_desk', {}), portal_emails: mails, other_green: n('qsG', 3), other_amber: n('qsA', 6) }, 'msgQs')) renderQuoteReqs();
+}
+async function qrAsk(id) {
+  const t = await uiPrompt('What do you need from the salesperson? They get an app notification and an email, and a reminder every 2 hours until they reply.'); if (!t) return;
+  const { error } = await db.rpc('qr_ask', { p_id: id, p_text: t }); if (error) return qtToast(error.message, true);
+  qtToast('Sent to the salesperson'); await loadQuoteReqs(); qrOpen(id);
+}
+async function qrAnswer(id) {
+  const t = (document.getElementById('qrAns').value || '').trim(); if (!t) return qtToast('Write your reply', true);
+  const { error } = await db.rpc('qr_answer', { p_id: id, p_text: t }); if (error) return qtToast(error.message, true);
+  qtToast('Reply sent to the quotation team'); await loadQuoteReqs(); qrOpen(id);
 }
 async function qrFileUrl(r) { const { data } = await db.storage.from('quotes').createSignedUrl(r.file_path, 7 * 24 * 3600, { download: r.file_name || true }); return data && data.signedUrl; }
 async function qrOpen(id) {
@@ -6485,7 +6534,7 @@ async function qrOpen(id) {
   const open = ['open', 'in_progress'].includes(r.status), url = r.file_path ? await qrFileUrl(r) : null, digits = String(r.customer_mobile || '').replace(/\D/g, '').slice(-10);
   const msg = `Dear Sir/Madam,\n\nPlease find our quotation${r.quote_ref ? ' ' + r.quote_ref : ''} here:\n${url || ''}\n\nRegards,\n${ME.name || ''}\nB N Enterprises`;
   QR.cur = r;
-  svcModal(`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><h3 style="flex:1">${esc(r.req_no)} · ${esc(r.customer_name)}</h3>${qrChip(r.status)}</div>
+  svcModal(`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><h3 style="flex:1">${esc(r.req_no)} · ${esc(r.customer_name)}</h3>${qTimerChip(qrTimer(r), 'margin:0 6px 0 0')}${qrChip(r.status)}</div>
     <div class="muted" style="margin-bottom:10px">Asked by <b>${esc(r.requested_by_name || '—')}</b> on ${fmtDT(r.created_at)}${r.needed_by ? ' · needed by <b>' + fmtD(r.needed_by) + '</b>' : ''}${r.taken_by_name ? ' · prepared by ' + esc(r.taken_by_name) : ''}</div>
     <div class="qtg2"><div><div class="ch">Customer</div><b>${esc(r.customer_name)}</b><br>${esc([r.customer_mobile, r.customer_email, r.city].filter(Boolean).join(' · ')) || '<span class="muted">no contact given</span>'}</div>
       <div><div class="ch">Type</div>${esc([r.system, r.brand].filter(Boolean).join(' · ')) || '—'}</div></div>
@@ -6493,6 +6542,9 @@ async function qrOpen(id) {
     ${(r.items || []).length ? tbl(['Machine / item', 'Qty', 'Rate asked (₹)'], r.items.map(i => [esc(i.machine || ''), esc(i.qty ?? ''), i.rate ? Number(i.rate).toLocaleString('en-IN') : '—'])) : ''}
     ${r.notes ? `<div style="background:#F8FAFE;border-radius:10px;padding:10px;margin-top:8px;white-space:pre-wrap">${esc(r.notes)}</div>` : ''}
     ${r.revise_note ? `<div style="background:#FFF4E5;border-radius:10px;padding:10px;margin-top:8px"><b>Change asked (${r.revision}):</b> ${esc(r.revise_note)}</div>` : ''}
+    ${(r.ask_log || []).length ? `<div class="ch" style="margin-top:12px">Questions from the quotation team</div>` + r.ask_log.map(x => `<div style="background:${x.kind === 'ask' ? '#FFF4E5' : '#ECFDF5'};border-radius:10px;padding:8px 10px;margin-top:6px"><b>${esc(x.by || '')}</b> <span class="muted" style="font-size:12px">${fmtDT(x.at)} · ${x.kind === 'ask' ? 'asked' : 'replied'}</span><div style="white-space:pre-wrap">${esc(x.text || '')}</div></div>`).join('') : ''}
+    ${r.waiting_on_sales ? `<div style="margin-top:8px"><span class="vrf-chip vrf-r" style="margin:0 0 6px">Waiting for the salesperson’s reply · reminded every 2 hours</span><textarea class="inp" id="qrAns" rows="2" style="width:100%" placeholder="Reply to the quotation team…"></textarea><div style="text-align:right;margin-top:6px"><button class="btn sm" onclick="qrAnswer('${r.id}')">Send reply</button></div></div>` : ''}
+    ${open && qrDesk() && !r.waiting_on_sales ? `<div style="margin-top:10px"><button class="btn sec sm" onclick="qrAsk('${r.id}')">Ask the salesperson for details</button></div>` : ''}
     ${r.file_path ? `<div class="ch" style="margin-top:14px">Quotation</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><a class="btn sec" href="${esc(url || '#')}" target="_blank">⬇ ${esc(r.file_name || 'Download')}</a>
         <span>${r.quote_ref ? 'Ref <b>' + esc(r.quote_ref) + '</b> · ' : ''}${r.quote_amount != null ? 'Value <b>' + rs(Math.round(r.quote_amount)) + '</b> · ' : ''}ready ${fmtDT(r.ready_at)}</span></div>${r.quote_note ? `<div class="muted" style="margin-top:6px">Note from quote team: ${esc(r.quote_note)}</div>` : ''}` : ''}
     ${['ready', 'sent'].includes(r.status) && (qrMine(r) || qrDesk()) ? `<div class="ch" style="margin-top:14px">Send to the client</div><div style="display:flex;gap:8px;flex-wrap:wrap">
