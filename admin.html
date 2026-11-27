@@ -1879,7 +1879,7 @@ function renderVrf() {
       <div class="ln">${esc(v.location)}${v.city ? ', ' + esc(v.city) : ''}</div>
       <div class="ln">${esc(v.brand)} · ${esc(VRF_SCOPE[v.scope] || '')}</div>
       <div class="ln">Sales: ${esc(v.sales_name || '—')}${v.owner_name ? ' · Design: ' + esc(v.owner_name) : ''}</div>
-      ${vrfDue(v)}${v.waiting_on_sales ? '<span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
+      ${vrfDue(v)}${v.details_pending ? '<span class="vrf-chip vrf-r">Details needed from sales</span>' : v.waiting_on_sales ? '<span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
       ${v.status === 'won_docs' ? `<span class="vrf-chip vrf-a">Docs ${v.docs.length}/3</span>` : ''}${v.quote_value && ['quote_sent', 'client', 'finalised'].includes(v.status) ? `<span class="vrf-chip vrf-n">${rs(v.final_value || v.quote_value)}</span>` : ''}
     </div>`;
   const box = document.getElementById('vrfBoard');
@@ -1908,7 +1908,8 @@ function vrfDeepLink() {
 async function vrfForm(prefill) {
   const c = S('vrf', {}), p = prefill || {};
   const { data: deals } = await db.from('orders').select('id, title, stage, customers(name), leads(name)').not('stage', 'in', '(won,lost)').order('created_at', { ascending: false }).limit(200);
-  svcModal(`<h3 style="margin-top:0">New VRF enquiry for the design team</h3>
+  window._vrfEdit = p.id || null;
+  svcModal(`<h3 style="margin-top:0">${p.id ? esc(p.vrf_no) + ' – project details for the design team' : 'New VRF enquiry for the design team'}</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="field" style="grid-column:span 2"><label>Link to deal <span class="muted">(optional)</span></label><select class="inp" id="vfOrder" style="width:100%"><option value="">— none —</option>${(deals || []).map(d => `<option value="${d.id}" ${p.order_id === d.id ? 'selected' : ''}>${esc((d.customers?.name || d.leads?.name || '') + ' — ' + (d.title || 'Deal'))}</option>`).join('')}</select></div>
       <div class="field" style="grid-column:span 2"><label>Project name *</label><input class="inp" id="vfName" style="width:100%" value="${esc(p.project_name || '')}"></div>
@@ -1927,7 +1928,13 @@ async function vrfForm(prefill) {
       <div class="field" style="grid-column:span 2"><label>Drawings / BOQ / tender / photos</label><input type="file" id="vfFiles" multiple></div>
     </div>
     <div id="vfMsg" style="margin-top:8px"></div>
-    <div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="vfGo" onclick="vrfCreate()">Send to design team</button></div>`, true);
+    <div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="vfGo" onclick="vrfCreate()">${p.id ? 'Save details' : 'Send to design team'}</button></div>`, true);
+  if (p.id) {   // filling in / correcting an existing project
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    set('vfLoc', /^to be confirmed$/i.test(p.location || '') ? '' : p.location); set('vfCity', p.city); set('vfScope', p.details_pending ? '' : p.scope); set('vfFrom', p.enquiry_from); set('vfFromName', p.enquiry_from_name);
+    set('vfBrand', p.brand); set('vfType', p.building_type); set('vfNeed', p.needed_by); set('vfArea', p.area_sqft); set('vfFloors', p.floors); set('vfTr', p.approx_tr); set('vfNotes', p.notes);
+    const od = document.getElementById('vfOrder'); if (od) od.closest('.field').style.display = 'none';
+  }
 }
 async function vrfUploadFiles(id, files, kind) {
   let n = 0;
@@ -1945,15 +1952,15 @@ async function vrfCreate(force) {
     building_type: g('vfType'), needed_by: g('vfNeed') || null, area_sqft: g('vfArea'), floors: g('vfFloors'), approx_tr: g('vfTr'), notes: g('vfNotes'), order_id: g('vfOrder') || null, force: !!force };
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
-    const v = await vrfRpc('vrf_create', { p });
+    const v = window._vrfEdit ? await vrfRpc('vrf_details', { p_id: window._vrfEdit, p }) : await vrfRpc('vrf_create', { p });
     const files = [...document.getElementById('vfFiles').files];
     if (files.length) await vrfUploadFiles(v.id, files, 'input');
-    closeModal('svcBg'); qtToast(`${v.vrf_no} sent to the design team`); await loadVrf();
+    const edited = window._vrfEdit; closeModal('svcBg'); qtToast(edited ? `${v.vrf_no} – details saved, design team told` : `${v.vrf_no} sent to the design team`); await loadVrf(); if (edited && typeof vrfOpen === 'function') vrfOpen(v.id);
   } catch (e) {
     const m = e.message;
     if (m.startsWith('DUPLICATE|')) { if (await uiConfirm(m.slice(10) + '\n\nSend it anyway?')) return vrfCreate(true); }
     else document.getElementById('vfMsg').innerHTML = `<div class="err">${esc(m)}</div>`;
-  } finally { btn.disabled = false; btn.textContent = 'Send to design team'; }
+  } finally { btn.disabled = false; btn.textContent = window._vrfEdit ? 'Save details' : 'Send to design team'; }
 }
 
 /* project detail */
@@ -1985,7 +1992,7 @@ async function vrfOpen(id, keepTab) {
   if ((mineSales || vrfHead()) && v.status === 'on_hold') b('Resume', `vrfDo('move','resume')`);
   const docsNeed = (S('vrf', {}).docs_required || ['boq', 'drawings', 'cad']);
   const urls = await signedUrlsFrom('vrf', (files || []).map(f => f.path));
-  const kv = [['Status', `<b>${esc(VRF_LBL[v.status])}</b>${v.revision ? ` · R${v.revision}` : ''}${v.waiting_on_sales ? ' · <span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}`],
+  const kv = [['Status', `<b>${esc(VRF_LBL[v.status])}</b>${v.revision ? ` · R${v.revision}` : ''}${v.details_pending ? ` · <span class="vrf-chip vrf-r">Details needed from sales</span> <button class="btn sm" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Add details</button>` : v.waiting_on_sales ? ' · <span class="vrf-chip vrf-a">Waiting on sales</span>' : ` <button class="btn sm sec" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Edit details</button>`}`],
     ['Location', esc(v.location + (v.city ? ', ' + v.city : ''))], ['Scope', esc(VRF_SCOPE[v.scope])], ['Asked by', esc(VRF_FROM[v.enquiry_from] + (v.enquiry_from_name ? ' – ' + v.enquiry_from_name : ''))],
     ['Brand', esc(v.brand)], ['Building', esc([v.building_type, v.area_sqft ? v.area_sqft + ' sq ft' : '', v.floors ? v.floors + ' floors' : '', v.approx_tr ? '~' + v.approx_tr + ' TR' : ''].filter(Boolean).join(' · ') || '—')],
     ['Client needs it by', esc(v.needed_by || '—')], ['Salesperson', esc(nm(v.sales_id))], ['Design', esc(v.owner_id ? nm(v.owner_id) : 'Not picked')],
