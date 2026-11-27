@@ -58,6 +58,7 @@ jobs:
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.CAMERA"/>' $M
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.RECORD_AUDIO"/>' $M
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>' $M
           sed -i '/<manifest/a\    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>' $M
           # on-duty location tracking: foreground service of type "location" (no background-location permission needed)
