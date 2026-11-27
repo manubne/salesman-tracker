@@ -1837,6 +1837,26 @@ const VRF_SCOPE = { supply: 'Supply only', supply_install: 'Supply + installatio
 const VRF_FILE = { input: 'Enquiry file', quote: 'Quote', boq: 'Final BOQ', drawings: 'Drawings', cad: 'CAD file', other: 'Other' };
 const vrfDesign = () => can('vrf.design') || can('vrf.head') || ['admin', 'head'].includes(ME?.role);
 const vrfHead = () => can('vrf.head') || ['admin', 'head'].includes(ME?.role);
+const VRF_OUT = { reviewing: 'Client is reviewing', negotiating: 'Negotiating price', changes: 'Client wants changes', delayed: 'Decision delayed', likely_win: 'Likely to win', likely_loss: 'Likely to lose' };
+const VRF_REV = { price: 'Price', brand: 'Brand change', layout: 'Layout / drawing change', capacity: 'Capacity / load change', scope: 'Scope change', budget: 'Client budget', other: 'Other' };
+const vrfCfg = (k, d) => { const x = Number(S('vrf', {})[k]); return x > 0 ? x : d; };
+const vrfOn = (k, d = true) => { const x = S('vrf', {})[k]; return x === undefined ? d : !!x; };
+const vrfNeedsDrawings = v => !!(v.details_pending && v.details_ok && !(v.inputs > 0));
+const vrfAwait = v => ['quote_sent', 'client', 'finalised'].includes(v.status);
+function vrfPendChip(v) { return v.details_pending ? `<span class="vrf-chip vrf-r">${vrfNeedsDrawings(v) ? 'Drawings needed from sales' : 'Details needed from sales'}</span>` : v.waiting_on_sales ? '<span class="vrf-chip vrf-a">Waiting on sales</span>' : ''; }
+function vrfTat(v) {   // text when the enquiry is past its target, otherwise null
+  if (v.details_pending || ['closed', 'lost', 'on_hold'].includes(v.status)) return null;
+  if (v.status === 'new') { const h = (Date.now() - Date.parse(v.details_at || v.created_at)) / 36e5; return h > vrfCfg('tat_pick_hours', 24) ? `Not picked · ${Math.round(h)} h` : null; }
+  if (['picked', 'preparing', 'vendor'].includes(v.status)) { const d = (Date.now() - Date.parse(v.tat_start || v.details_at || v.created_at)) / 864e5; return d > vrfCfg('tat_quote_days', 3) ? `Quote target missed · day ${Math.floor(d)}` : null; }
+  return null;
+}
+function vrfOutDue(v) {
+  if (!vrfAwait(v)) return false;
+  if (v.next_follow_at) return v.next_follow_at <= vrfToday();
+  const base = [v.quote_sent_at, v.client_sent_at, v.finalised_at, v.sales_outcome_at].filter(Boolean).map(Date.parse).sort((a, b) => b - a)[0];
+  return !!base && (Date.now() - base) / 864e5 > vrfCfg('outcome_days', 3);
+}
+function vrfOutChip(v) { return !vrfAwait(v) ? '' : vrfOutDue(v) ? '<span class="vrf-chip vrf-r">Sales update due</span>' : v.sales_outcome ? `<span class="vrf-chip vrf-b">${esc(VRF_OUT[v.sales_outcome] || v.sales_outcome)}</span>` : ''; }
 const vrfToday = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
 const vrfDays = d => Math.round((Date.parse(vrfToday()) - Date.parse(d)) / 864e5);
 function vrfDue(v) {
@@ -1860,7 +1880,7 @@ async function loadVrf() {
   vrfBadge(); renderVrf();
 }
 function vrfBadge() {
-  const n = VRF.filter(v => (v.status === 'new' && vrfDesign()) || v.unread > 0 || (v.waiting_on_sales && v.sales_id === ME.id)).length, el = document.getElementById('vrfBadge');
+  const n = VRF.filter(v => (v.status === 'new' && vrfDesign()) || v.unread > 0 || ((v.waiting_on_sales || vrfOutDue(v)) && v.sales_id === ME.id)).length, el = document.getElementById('vrfBadge');
   if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
 }
 function renderVrf() {
@@ -1870,7 +1890,7 @@ function renderVrf() {
   const open = VRF.filter(v => !['closed', 'lost', 'on_hold'].includes(v.status));
   const overdue = open.filter(v => ['picked', 'preparing', 'vendor'].includes(v.status) && v.promised_at && vrfDays(v.promised_at) > 0);
   const picked = VRF.filter(v => v.picked_at), avgPick = picked.length ? (picked.reduce((a, v) => a + (Date.parse(v.picked_at) - Date.parse(v.created_at)), 0) / picked.length / 36e5).toFixed(1) : '—';
-  document.getElementById('vrfStats').innerHTML = [['Open', open.length], ['Not picked', open.filter(v => v.status === 'new').length], ['Overdue', overdue.length],
+  document.getElementById('vrfStats').innerHTML = [['Open', open.length], ['Not picked', open.filter(v => v.status === 'new').length], ['Overdue', overdue.length], ['Past target', open.filter(v => vrfTat(v)).length], ['Sales update due', open.filter(v => vrfOutDue(v)).length],
     ['With client', open.filter(v => v.status === 'client').length], ['Avg time to pick', avgPick + (avgPick === '—' ? '' : ' h')],
     ['Won (open docs)', open.filter(v => v.status === 'won_docs').length]].map(([k, n]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${n}</b></div>`).join('');
   const card = v => `<div class="vrf-card" onclick="vrfOpen('${v.id}')">
@@ -1879,7 +1899,7 @@ function renderVrf() {
       <div class="ln">${esc(v.location)}${v.city ? ', ' + esc(v.city) : ''}</div>
       <div class="ln">${esc(v.brand)} · ${esc(VRF_SCOPE[v.scope] || '')}</div>
       <div class="ln">Sales: ${esc(v.sales_name || '—')}${v.owner_name ? ' · Design: ' + esc(v.owner_name) : ''}</div>
-      ${vrfDue(v)}${v.details_pending ? '<span class="vrf-chip vrf-r">Details needed from sales</span>' : v.waiting_on_sales ? '<span class="vrf-chip vrf-a">Waiting on sales</span>' : ''}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
+      ${vrfDue(v)}${vrfPendChip(v)}${vrfTat(v) ? `<span class="vrf-chip vrf-r">${vrfTat(v)}</span>` : ''}${vrfOutChip(v)}${v.unread ? `<span class="vrf-chip vrf-b">${v.unread} new msg</span>` : ''}
       ${v.status === 'won_docs' ? `<span class="vrf-chip vrf-a">Docs ${v.docs.length}/3</span>` : ''}${v.quote_value && ['quote_sent', 'client', 'finalised'].includes(v.status) ? `<span class="vrf-chip vrf-n">${rs(v.final_value || v.quote_value)}</span>` : ''}
     </div>`;
   const box = document.getElementById('vrfBoard');
@@ -1900,62 +1920,82 @@ const _vd = (a, b) => (a && b) ? Math.max(0, (Date.parse(b) - Date.parse(a)) / 8
 const _vAvg = xs => { const v = xs.filter(x => x != null); return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null; };
 const _vFmtD = x => x == null ? '—' : (x < 1 ? (x * 24).toFixed(1) + ' h' : x.toFixed(1) + ' d');
 function vrfDashRows(L) {
-  const now = new Date().toISOString(), follow = Number(S('vrf', {}).client_follow_days) || 5;
+  const now = new Date().toISOString(), qd = vrfCfg('tat_quote_days', 3), ph = vrfCfg('tat_pick_hours', 24);
   return L.map(v => {
-    const open = !['closed', 'lost', 'on_hold'].includes(v.status), endAt = v.closed_at || v.won_at || (open ? now : v.updated_at);
-    const tat = _vd(v.created_at, v.quote_sent_at), sentRef = v.client_sent_at || v.quote_sent_at;
-    const waitingOutcome = ['quote_sent', 'client'].includes(v.status), sinceSent = waitingOutcome ? _vd(sentRef, now) : null;
-    const lastSales = v.sales_last?.at || null, sinceSales = waitingOutcome ? _vd(lastSales && lastSales > sentRef ? lastSales : sentRef, now) : null;
+    const open = !['closed', 'lost', 'on_hold'].includes(v.status), endAt = v.closed_at || v.won_at || (open ? now : v.updated_at), start = v.details_at || v.created_at;
+    const tat = v.details_pending ? null : _vd(start, v.first_quote_at || v.quote_sent_at), pick = v.details_pending ? null : _vd(start, v.picked_at), sentRef = v.client_sent_at || v.quote_sent_at;
+    const waitingOutcome = vrfAwait(v), sinceSent = waitingOutcome ? _vd(sentRef, now) : null;
+    const lastSales = [v.sales_outcome_at, v.sales_last?.at].filter(Boolean).sort().pop() || null, sinceSales = waitingOutcome ? _vd(lastSales && lastSales > sentRef ? lastSales : sentRef, now) : null;
     const late = v.quote_sent_at && v.promised_at ? v.quote_sent_at.slice(0, 10) > v.promised_at : null;
+    const fq = Number(v.first_quote || 0), fin = Number(v.final_value || 0), chg = fq > 0 && fin > 0 && (v.won_at || v.status === 'finalised') ? (fin - fq) * 100 / fq : null;
     const outcome = v.status === 'lost' ? 'Lost' : ['won_docs', 'closed'].includes(v.status) && v.won_at ? 'Won' : v.status === 'closed' ? 'Closed' : v.status === 'on_hold' ? 'On hold'
-      : v.status === 'finalised' ? 'Finalised with client' : v.status === 'client' ? 'With client – awaiting decision' : v.status === 'quote_sent' ? 'Quote with sales – not yet sent to client' : v.details_pending ? 'Waiting for details from sales' : 'With design team';
-    return { v, open, age: _vd(v.created_at, endAt), tat, pick: _vd(v.created_at, v.picked_at), late, waitingOutcome, sinceSent, sinceSales, stale: sinceSales != null && sinceSales > follow, outcome };
+      : v.status === 'finalised' ? 'Finalised with client' : v.status === 'client' ? 'With client – awaiting decision' : v.status === 'quote_sent' ? 'Quote with sales – not yet sent to client'
+      : v.details_pending ? (vrfNeedsDrawings(v) ? 'Waiting for drawings from sales' : 'Waiting for details from sales') : 'With design team';
+    return { v, open, age: _vd(v.created_at, endAt), tat, pick, late, waitingOutcome, sinceSent, sinceSales, stale: vrfOutDue(v), outcome, chg,
+      over: vrfTat(v), tatOver: tat != null && tat > qd, pickOver: pick != null && pick * 24 > ph };
   });
 }
 function vrfDash(L, box) {
-  const R = vrfDashRows(L), open = R.filter(r => r.open), n = k => R.filter(r => r.v.status === k).length;
+  const R = vrfDashRows(L), open = R.filter(r => r.open), n = k => R.filter(r => r.v.status === k).length, qd = vrfCfg('tat_quote_days', 3), ph = vrfCfg('tat_pick_hours', 24);
   const quoted = R.filter(r => r.v.quote_sent_at), won = R.filter(r => r.outcome === 'Won'), lost = R.filter(r => r.outcome === 'Lost');
   const pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—', onTime = quoted.filter(r => r.late === false).length, timed = quoted.filter(r => r.late != null).length;
-  const tiles = [['Enquiries', R.length], ['Open now', open.length], ['Not picked', n('new')], ['Avg time to pick', _vFmtD(_vAvg(R.map(r => r.pick)))], ['Avg time to quote (TAT)', _vFmtD(_vAvg(R.map(r => r.tat)))],
-    ['Quotes on promised date', pct(onTime, timed)], ['Quoted', quoted.length], ['Won', `${won.length} (${pct(won.length, won.length + lost.length)})`], ['Lost', lost.length],
-    ['Won value', rs(won.reduce((a, r) => a + Number(r.v.final_value || r.v.quote_value || 0), 0))], ['Awaiting outcome', R.filter(r => r.waitingOutcome).length], ['No sales update', R.filter(r => r.stale).length]];
+  const red = (x, on) => on ? `<b style="color:#b91c1c">${x}</b>` : x, chgAvg = _vAvg(R.map(r => r.chg)), fmtChg = x => x == null ? '—' : (x > 0 ? '+' : '') + x.toFixed(1) + '%';
+  const withTat = R.filter(r => r.tat != null);
+  const tiles = [['Enquiries', R.length], ['Open now', open.length], ['Not picked', n('new')], ['Avg time to pick', _vFmtD(_vAvg(R.map(r => r.pick))) + ` <small class="muted">target ${ph} h</small>`],
+    ['Avg time to quote (TAT)', _vFmtD(_vAvg(R.map(r => r.tat))) + ` <small class="muted">target ${qd} d</small>`], ['Quotes within target', pct(withTat.filter(r => !r.tatOver).length, withTat.length)],
+    ['Past target now', red(open.filter(r => r.over).length, open.some(r => r.over))], ['Quotes on promised date', pct(onTime, timed)], ['Quoted', quoted.length],
+    ['Won', `${won.length} (${pct(won.length, won.length + lost.length)})`], ['Lost', lost.length], ['Won value', rs(won.reduce((a, r) => a + Number(r.v.final_value || r.v.quote_value || 0), 0))],
+    ['First quote → order value', fmtChg(chgAvg)], ['Awaiting outcome', R.filter(r => r.waitingOutcome).length], ['Sales update due', red(R.filter(r => r.stale).length, R.some(r => r.stale))]];
   // per engineer
   const eng = new Map(); const row = (id, name) => { if (!eng.has(id)) eng.set(id, { name, all: [] }); return eng.get(id); };
   VRF_TEAM.forEach(t => row(t.id, t.name + (t.head ? ' (head)' : '')));
-  R.forEach(r => row(r.v.owner_id || '-', r.v.owner_id ? (r.v.owner_name || '—') : 'Not picked yet').all.push(r));
-  const E = [...eng.values()].map(e => { const o = e.all.filter(r => r.open), q = e.all.filter(r => r.v.quote_sent_at), t = q.filter(r => r.late != null);
+  R.forEach(r => row(r.v.owner_id || '-', r.v.owner_id ? (r.v.owner_name || '—') : 'Not assigned yet').all.push(r));
+  const E = [...eng.values()].map(e => { const o = e.all.filter(r => r.open), q = e.all.filter(r => r.v.quote_sent_at), t = q.filter(r => r.late != null), od = o.filter(r => r.v.promised_at && vrfDays(r.v.promised_at) > 0 && ['picked', 'preparing', 'vendor'].includes(r.v.status)).length;
+    const wt = e.all.filter(r => r.tat != null), ov = o.filter(r => r.over).length;
     return [`<b>${esc(e.name)}</b>`, e.all.length, o.length, o.filter(r => ['new', 'picked'].includes(r.v.status)).length, o.filter(r => r.v.status === 'preparing').length, o.filter(r => r.v.status === 'vendor').length,
-      `<b style="color:${o.some(r => (vrfDays(r.v.promised_at || '9999-12-31') > 0) && ['picked', 'preparing', 'vendor'].includes(r.v.status)) ? '#b91c1c' : 'inherit'}">${o.filter(r => r.v.promised_at && vrfDays(r.v.promised_at) > 0 && ['picked', 'preparing', 'vendor'].includes(r.v.status)).length}</b>`,
-      q.length, _vFmtD(_vAvg(q.map(r => r.tat))), pct(t.filter(r => r.late === false).length, t.length), e.all.reduce((a, r) => a + (r.v.revision || 0), 0),
+      red(od, od > 0), red(ov, ov > 0), q.length, _vFmtD(_vAvg(q.map(r => r.tat))), pct(wt.filter(r => !r.tatOver).length, wt.length), pct(t.filter(r => r.late === false).length, t.length), e.all.reduce((a, r) => a + (r.v.revision || 0), 0),
       e.all.filter(r => r.outcome === 'Won').length, e.all.filter(r => r.outcome === 'Lost').length]; });
   const buckets = [['0–2 days', 0, 2], ['3–7 days', 2, 7], ['8–15 days', 7, 15], ['16–30 days', 15, 30], ['Over 30 days', 30, 1e9]].map(([l, a, b]) => [l, open.filter(r => r.age > a && r.age <= b || (a === 0 && r.age === 0)).length]);
   const fu = R.filter(r => r.waitingOutcome).sort((a, b) => (b.sinceSales || 0) - (a.sinceSales || 0));
   const lostWhy = Object.entries(lost.reduce((m, r) => { const k = (r.v.lost_reason || 'No reason given').trim(); m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]);
+  const revWhy = Object.entries(R.reduce((m, r) => { (r.v.rev_types || []).forEach(k => { m[k] = (m[k] || 0) + 1; }); return m; }, {})).sort((a, b) => b[1] - a[1]);
+  const vals = R.filter(r => r.chg != null);
   box.innerHTML = `<div class="vrf-stats">${tiles.map(([k, v]) => `<div><span class="muted" style="font-size:12px">${k}</span><b>${v}</b></div>`).join('')}</div>
-    <div class="panel"><h2>Design engineers <span class="sub">load and turnaround</span></h2><div style="overflow-x:auto">${tbl(['Engineer', 'Total', 'Open', 'Not started', 'Preparing', 'Awaiting vendor', 'Overdue', 'Quotes sent', 'Avg TAT', 'On promised date', 'Revisions', 'Won', 'Lost'], E)}</div></div>
+    <div class="panel"><h2>Design engineers <span class="sub">load and turnaround · targets: pick in ${ph} h, quote in ${qd} days</span></h2><div style="overflow-x:auto">${tbl(['Engineer', 'Total', 'Open', 'Not started', 'Preparing', 'Awaiting vendor', 'Past promised date', 'Past target', 'Quotes sent', 'Avg TAT', 'Within target', 'On promised date', 'Revisions', 'Won', 'Lost'], E)}</div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
       <div class="panel"><h2>Where the enquiries are</h2><div style="height:250px"><canvas id="vdStage"></canvas></div></div>
       <div class="panel"><h2>Age of open enquiries</h2><div style="height:250px"><canvas id="vdAge"></canvas></div></div>
-      <div class="panel"><h2>Why enquiries were lost</h2>${lostWhy.length ? tbl(['Reason', 'Count'], lostWhy.map(([k, c]) => [esc(k), c])) : '<div class="empty">Nothing lost in this list.</div>'}</div></div>
-    <div class="panel"><h2>Sales follow-up <span class="sub">quotes given by design, outcome awaited</span></h2>${fu.length ? `<div style="overflow-x:auto">${tbl(['VRF', 'Project', 'Salesperson', 'Engineer', 'Quote value', 'Quote given', 'Sent to client', 'Days waiting', 'Last sales update', ''], fu.map(r => { const v = r.v; return [
+      <div class="panel"><h2>Why enquiries were lost</h2>${lostWhy.length ? tbl(['Reason', 'Count'], lostWhy.map(([k, c]) => [esc(k), c])) : '<div class="empty">Nothing lost in this list.</div>'}</div>
+      <div class="panel"><h2>Why revisions were asked</h2>${revWhy.length ? tbl(['Reason', 'Revisions'], revWhy.map(([k, c]) => [esc(VRF_REV[k] || k), c])) : '<div class="empty">No revisions in this list.</div>'}</div></div>
+    <div class="panel"><h2>Sales follow-up <span class="sub">quotes given by design, outcome awaited · sales must update every ${vrfCfg('outcome_days', 3)} days</span></h2>${fu.length ? `<div style="overflow-x:auto">${tbl(['VRF', 'Project', 'Salesperson', 'Engineer', 'Quote value', 'Quote given', 'Sent to client', 'Days waiting', 'Client update from sales', 'Next follow-up', ''], fu.map(r => { const v = r.v; return [
         `<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name), esc(v.sales_name || '—'), esc(v.owner_name || '—'), v.quote_value ? rs(v.quote_value) : '—', v.quote_sent_at ? fmtDT(v.quote_sent_at) : '—',
         v.client_sent_at ? fmtDT(v.client_sent_at) : '<span class="vrf-chip vrf-a" style="margin:0">Not yet</span>', `<b>${Math.round(r.sinceSent || 0)}</b>`,
-        v.sales_last ? `${esc(v.sales_last.body || '')}<div class="muted" style="font-size:11.5px">${fmtDT(v.sales_last.at)}</div>` : '<span class="muted">No update from sales</span>',
-        r.stale ? '<span class="vrf-chip vrf-r" style="margin:0">Follow up</span>' : '']; }))}</div>` : '<div class="empty">No quotes are waiting for an outcome.</div>'}</div>
+        v.sales_outcome ? `<b>${esc(VRF_OUT[v.sales_outcome] || v.sales_outcome)}</b> – ${esc(v.sales_outcome_note || '')}<div class="muted" style="font-size:12px">${fmtDT(v.sales_outcome_at)}</div>`
+          : v.sales_last ? `${esc(v.sales_last.body || '')}<div class="muted" style="font-size:12px">${fmtDT(v.sales_last.at)}</div>` : '<span class="muted">No update from sales</span>',
+        esc(v.next_follow_at || '—'), r.stale ? '<span class="vrf-chip vrf-r" style="margin:0">Update due</span>' : '']; }))}</div>` : '<div class="empty">No quotes are waiting for an outcome.</div>'}</div>
+    <div class="panel"><h2>Quote value against final order <span class="sub">how much the price moved between the first quote and the order</span></h2>${vals.length ? `<div style="overflow-x:auto">${tbl(['VRF', 'Project', 'Salesperson', 'First quote', 'Latest quote', 'Final order', 'Change', 'Revisions'], vals.map(r => { const v = r.v; return [
+        `<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name), esc(v.sales_name || '—'), rs(v.first_quote), v.quote_value ? rs(v.quote_value) : '—', rs(v.final_value), red(fmtChg(r.chg), r.chg < -10), v.revision || 0]; }))}</div>` : '<div class="empty">No finalised or won projects with a quote value in this list yet.</div>'}</div>
+    ${vrfDesign() ? '<div class="panel"><h2>Coming up <span class="sub">VRF leads that are not yet a deal – an early look for the design team</span></h2><div id="vdLeads" class="muted">Loading…</div></div>' : ''}
     <div class="panel"><h2>All enquiries <span class="sub">${R.length} in this list</span> <button class="btn sm sec" style="float:right" onclick="vrfDashExport()">Download Excel</button></h2><div style="overflow-x:auto;max-height:520px;overflow-y:auto">${tbl(['VRF', 'Project', 'Brand', 'Salesperson', 'Engineer', 'Stage', 'Age', 'Time to pick', 'TAT to quote', 'Promised', 'Rev', 'Value', 'Outcome / where it stands'],
-      R.map(r => { const v = r.v; return [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name) + `<div class="muted" style="font-size:11.5px">${esc([v.location, v.city].filter(Boolean).join(', '))}</div>`, esc(v.brand), esc(v.sales_name || '—'), esc(v.owner_name || 'Not picked'),
-        esc(VRF_LBL[v.status] || v.status), Math.round(r.age || 0) + ' d', _vFmtD(r.pick), _vFmtD(r.tat) + (r.late === true ? ' <span class="vrf-chip vrf-r" style="margin:0">late</span>' : ''), v.promised_at ? esc(v.promised_at) : '—', v.revision ? 'R' + v.revision : '—',
-        v.final_value || v.quote_value ? rs(v.final_value || v.quote_value) : '—', esc(r.outcome) + (v.lost_reason ? `<div class="muted" style="font-size:11.5px">${esc(v.lost_reason)}</div>` : '')]; }))}</div></div>`;
+      R.map(r => { const v = r.v; return [`<a href="#" onclick="vrfOpen('${v.id}');return false"><b>${esc(v.vrf_no)}</b></a>`, esc(v.project_name) + `<div class="muted" style="font-size:12px">${esc([v.location, v.city].filter(Boolean).join(', '))}</div>`, esc(v.brand), esc(v.sales_name || '—'), esc(v.owner_name || 'Not assigned') + (v.auto_assigned ? ' <span class="muted" style="font-size:12px">(auto)</span>' : ''),
+        esc(VRF_LBL[v.status] || v.status) + (r.over ? ` <span class="vrf-chip vrf-r" style="margin:0">${esc(r.over)}</span>` : ''), Math.round(r.age || 0) + ' d', red(_vFmtD(r.pick), r.pickOver), red(_vFmtD(r.tat), r.tatOver) + (r.late === true ? ' <span class="vrf-chip vrf-r" style="margin:0">after promised date</span>' : ''), v.promised_at ? esc(v.promised_at) : '—', v.revision ? 'R' + v.revision : '—',
+        v.final_value || v.quote_value ? rs(v.final_value || v.quote_value) : '—', esc(r.outcome) + (v.lost_reason ? `<div class="muted" style="font-size:12px">${esc(v.lost_reason)}</div>` : v.sales_outcome && r.waitingOutcome ? `<div class="muted" style="font-size:12px">${esc(VRF_OUT[v.sales_outcome] || '')}</div>` : '')]; }))}</div></div>`;
   window._vrfDash = R;
   mkChart('vdStage', { type: 'bar', data: { labels: [...VRF_COLS.map(c => c[1]), 'On hold', 'Lost', 'Closed'], datasets: [{ label: 'Enquiries', data: [...VRF_COLS.map(c => n(c[0])), n('on_hold'), n('lost'), n('closed')], backgroundColor: '#22779A' }] }, options: { maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
   mkChart('vdAge', { type: 'bar', data: { labels: buckets.map(b => b[0]), datasets: [{ label: 'Open enquiries', data: buckets.map(b => b[1]), backgroundColor: ['#16A34A', '#65A30D', '#F59E0B', '#EA580C', '#DC2626'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+  if (vrfDesign()) vrfRpc('vrf_leads', {}).then(Ls => { const el = document.getElementById('vdLeads'); if (!el) return;
+    el.classList.remove('muted'); el.innerHTML = (Ls || []).length ? `<div style="overflow-x:auto;max-height:340px;overflow-y:auto">${tbl(['Lead', 'City', 'Category', 'Salesperson', 'Requirement', 'Est. value', 'Stage', 'Created'], Ls.map(l => [`<b>${esc(l.company || l.name || '')}</b>${l.company && l.name ? `<div class="muted" style="font-size:12px">${esc(l.name)}</div>` : ''}`, esc(l.city || '—'), esc(l.category || ''), esc(l.sales_name || '—'), esc(l.requirement || '—'), l.est_value > 0 ? rs(l.est_value) : '—', esc(l.status || ''), fmtDT(l.created_at)]))}</div>` : '<div class="empty">No VRF leads waiting.</div>';
+  }).catch(e => { const el = document.getElementById('vdLeads'); if (el) el.textContent = e.message; });
 }
 async function vrfDashExport() {
   const R = window._vrfDash || []; if (!R.length) return; await loadXlsx();
   const d = x => x == null ? '' : Math.round(x * 10) / 10, wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(r => { const v = r.v; return { 'VRF no.': v.vrf_no, Project: v.project_name, Location: [v.location, v.city].filter(Boolean).join(', '), Brand: v.brand, Salesperson: v.sales_name, Engineer: v.owner_name || '', Stage: VRF_LBL[v.status] || v.status,
-    'Received on': (v.created_at || '').slice(0, 10), 'Age (days)': d(r.age), 'Time to pick (days)': d(r.pick), 'TAT to quote (days)': d(r.tat), 'Promised date': v.promised_at || '', 'Quote late': r.late == null ? '' : r.late ? 'Yes' : 'No',
-    Revision: v.revision || 0, 'Quote value': v.quote_value || '', 'Final value': v.final_value || '', 'Sent to client on': (v.client_sent_at || '').slice(0, 10), 'Days waiting for outcome': d(r.sinceSent), 'Last sales update': v.sales_last?.body || '', Outcome: r.outcome, 'Lost reason': v.lost_reason || '' }; })), 'VRF enquiries');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(r => { const v = r.v; return { 'VRF no.': v.vrf_no, Project: v.project_name, Location: [v.location, v.city].filter(Boolean).join(', '), Brand: v.brand, Salesperson: v.sales_name, Engineer: v.owner_name || '', 'Assigned automatically': v.auto_assigned ? 'Yes' : '', Stage: VRF_LBL[v.status] || v.status,
+    'Received on': (v.created_at || '').slice(0, 10), 'Details complete on': (v.details_at || '').slice(0, 10), 'Age (days)': d(r.age), 'Time to pick (days)': d(r.pick), 'TAT to quote (days)': d(r.tat), 'Within TAT target': r.tat == null ? '' : r.tatOver ? 'No' : 'Yes', 'Past target now': r.over || '',
+    'Promised date': v.promised_at || '', 'Quote after promised date': r.late == null ? '' : r.late ? 'Yes' : 'No', Revision: v.revision || 0, 'Revision reasons': (v.rev_types || []).map(k => VRF_REV[k] || k).join(', '),
+    'First quote': v.first_quote || '', 'Latest quote': v.quote_value || '', 'Final value': v.final_value || '', 'First quote to order %': d(r.chg), 'Sent to client on': (v.client_sent_at || '').slice(0, 10), 'Days waiting for outcome': d(r.sinceSent),
+    'Client update': v.sales_outcome ? (VRF_OUT[v.sales_outcome] || v.sales_outcome) : '', 'Client update note': v.sales_outcome_note || v.sales_last?.body || '', 'Client update on': (v.sales_outcome_at || '').slice(0, 10), 'Next follow-up': v.next_follow_at || '', 'Sales update due': r.stale ? 'Yes' : '',
+    Outcome: r.outcome, 'Lost reason': v.lost_reason || '' }; })), 'VRF enquiries');
   XLSX.writeFile(wb, `VRF_enquiries_${todayStr()}.xlsx`);
 }
 function vrfSubscribe() {
@@ -1990,7 +2030,7 @@ async function vrfForm(prefill) {
       <div class="field"><label>Floors</label><input class="inp" type="number" id="vfFloors" style="width:100%"></div>
       <div class="field"><label>Approx. TR</label><input class="inp" type="number" id="vfTr" style="width:100%"></div>
       <div class="field" style="grid-column:span 2"><label>Notes for the design team</label><textarea class="inp" id="vfNotes" rows="3" style="width:100%"></textarea></div>
-      <div class="field" style="grid-column:span 2"><label>Drawings / BOQ / tender / photos</label><input type="file" id="vfFiles" multiple></div>
+      <div class="field" style="grid-column:span 2"><label>Drawings / load sheet / BOQ / tender / photos ${vrfOn('inputs_required') ? '* <span class="muted">(needed before the design team starts)</span>' : ''}</label><input type="file" id="vfFiles" multiple></div>
     </div>
     <div id="vfMsg" style="margin-top:8px"></div>
     <div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" id="vfGo" onclick="vrfCreate()">${p.id ? 'Save details' : 'Send to design team'}</button></div>`, true);
@@ -2020,7 +2060,9 @@ async function vrfCreate(force) {
     const v = window._vrfEdit ? await vrfRpc('vrf_details', { p_id: window._vrfEdit, p }) : await vrfRpc('vrf_create', { p });
     const files = [...document.getElementById('vfFiles').files];
     if (files.length) await vrfUploadFiles(v.id, files, 'input');
-    const edited = window._vrfEdit; closeModal('svcBg'); qtToast(edited ? `${v.vrf_no} – details saved, design team told` : `${v.vrf_no} sent to the design team`); await loadVrf(); if (edited && typeof vrfOpen === 'function') vrfOpen(v.id);
+    const edited = window._vrfEdit; closeModal('svcBg'); await loadVrf(); const nv = VRF.find(x => x.id === v.id) || v;
+    qtToast(nv.details_pending ? `${v.vrf_no} saved – attach the drawings or load sheet to send it to the design team` : edited ? `${v.vrf_no} – details saved, design team told` : `${v.vrf_no} sent to the design team`, !!nv.details_pending);
+    if (edited || nv.details_pending) vrfOpen(v.id);
   } catch (e) {
     const m = e.message;
     if (m.startsWith('DUPLICATE|')) { if (await uiConfirm(m.slice(10) + '\n\nSend it anyway?')) return vrfCreate(true); }
@@ -2050,6 +2092,9 @@ async function vrfOpen(id, keepTab) {
   if (mineDesign && v.status === 'vendor') b('Vendor price received', `vrfDo('move','preparing')`);
   if (mineDesign && ['picked', 'preparing', 'vendor'].includes(v.status)) b('Upload quote & send to sales', `vrfSendQuote()`, '');
   if (mineSales && v.status === 'quote_sent') b('Sent to client', `vrfDo('move','client')`, '');
+  if (mineSales && vrfAwait(v)) b(vrfOutDue(v) ? 'Client update (due)' : 'Client update', `vrfOutcome()`, vrfOutDue(v) ? '' : 'sec');
+  const needDraw = v.details_pending && v.details_ok && !(files || []).some(f => f.kind === 'input');
+  if (v.details_pending && mineDesign) b('Accept without drawings', `vrfAccept()`);
   if (mineSales && ['quote_sent', 'client', 'finalised'].includes(v.status)) b(`Ask revision (R${v.revision + 1})`, `vrfRevision()`);
   if (mineSales && ['quote_sent', 'client'].includes(v.status)) b('Finalised', `vrfFinal()`);
   if (mineSales && ['quote_sent', 'client', 'finalised'].includes(v.status)) b('Mark WON', `vrfWon()`, '');
@@ -2057,12 +2102,13 @@ async function vrfOpen(id, keepTab) {
   if ((mineSales || vrfHead()) && v.status === 'on_hold') b('Resume', `vrfDo('move','resume')`);
   const docsNeed = (S('vrf', {}).docs_required || ['boq', 'drawings', 'cad']);
   const urls = await signedUrlsFrom('vrf', (files || []).map(f => f.path));
-  const kv = [['Status', `<b>${esc(VRF_LBL[v.status])}</b>${v.revision ? ` · R${v.revision}` : ''}${v.details_pending ? ` · <span class="vrf-chip vrf-r">Details needed from sales</span> <button class="btn sm" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Add details</button>` : v.waiting_on_sales ? ' · <span class="vrf-chip vrf-a">Waiting on sales</span>' : ` <button class="btn sm sec" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Edit details</button>`}`],
+  const kv = [['Status', `<b>${esc(VRF_LBL[v.status])}</b>${v.revision ? ` · R${v.revision}` : ''}${v.details_pending ? (needDraw ? ` · <span class="vrf-chip vrf-r">Drawings needed from sales</span> <span class="muted">upload them as “Enquiry file” below</span>` : ` · <span class="vrf-chip vrf-r">Details needed from sales</span> <button class="btn sm" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Add details</button>`) : v.waiting_on_sales ? ' · <span class="vrf-chip vrf-a">Waiting on sales</span>' : ` <button class="btn sm sec" onclick="vrfForm(VRF.find(x => x.id === '${v.id}'))">Edit details</button>`}`],
     ['Location', esc(v.location + (v.city ? ', ' + v.city : ''))], ['Scope', esc(VRF_SCOPE[v.scope])], ['Asked by', esc(VRF_FROM[v.enquiry_from] + (v.enquiry_from_name ? ' – ' + v.enquiry_from_name : ''))],
     ['Brand', esc(v.brand)], ['Building', esc([v.building_type, v.area_sqft ? v.area_sqft + ' sq ft' : '', v.floors ? v.floors + ' floors' : '', v.approx_tr ? '~' + v.approx_tr + ' TR' : ''].filter(Boolean).join(' · ') || '—')],
-    ['Client needs it by', esc(v.needed_by || '—')], ['Salesperson', esc(nm(v.sales_id))], ['Design', esc(v.owner_id ? nm(v.owner_id) : 'Not picked')],
+    ['Client needs it by', esc(v.needed_by || '—')], ['Salesperson', esc(nm(v.sales_id))], ['Design', esc(v.owner_id ? nm(v.owner_id) : 'Not assigned') + (v.auto_assigned ? ' <span class="muted">(assigned automatically)</span>' : '')],
     ['Promised to sales', v.promised_at ? esc(v.promised_at) + (v.promise_changes ? ` <span class="muted">(moved ${v.promise_changes}×)</span>` : '') : '—'],
-    ['Quote value', v.quote_value ? rs(v.quote_value) : '—'], ['Final value', v.final_value ? rs(v.final_value) : '—'],
+    ['Quote value', v.quote_value ? rs(v.quote_value) : '—'], ['Final value', v.final_value ? rs(v.final_value) + (() => { const f = (revs || []).find(r => r.quote_value); return f && Number(f.quote_value) > 0 ? ` <span class="muted">(${((v.final_value - f.quote_value) * 100 / f.quote_value).toFixed(1)}% against the first quote)</span>` : ''; })() : '—'],
+    ...(vrfAwait(v) || v.sales_outcome ? [['Client update', v.sales_outcome ? `<b>${esc(VRF_OUT[v.sales_outcome] || v.sales_outcome)}</b> – ${esc(v.sales_outcome_note || '')}<div class="muted" style="font-size:12px">${fmtDT(v.sales_outcome_at)}${v.next_follow_at ? ' · next follow-up ' + esc(v.next_follow_at) : ''}</div>` : '<span class="muted">No update from sales yet</span>']] : []),
     ['Vendor', v.vendor_name ? esc(v.vendor_name) + ' · asked ' + fmtDT(v.vendor_asked_at) : '—'], ['Notes', esc(v.notes || '—')]];
   const tl = (ev || []).map(e => {
     const who = esc(nm(e.user_id)), at = fmtDT(e.created_at);
@@ -2070,7 +2116,7 @@ async function vrfOpen(id, keepTab) {
     return `<div class="vrf-msg sys">• ${esc(e.body || '')} — ${who}, ${at}</div>`;
   }).join('') || '<div class="muted">No messages yet.</div>';
   const fileRows = (files || []).map((f, i) => [esc(VRF_FILE[f.kind] || f.kind) + (f.kind === 'quote' ? ' R' + f.revision : ''), urls[i] ? `<a href="${urls[i]}" target="_blank">${esc(f.name)}</a>` : esc(f.name), esc(nm(f.uploaded_by)), fmtDT(f.created_at)]);
-  const revRows = (revs || []).map(r => ['R' + r.rev, esc(r.reason || (r.rev === 0 ? 'First quote' : '')), esc(r.promised_at || '—'), r.delivered_at ? fmtDT(r.delivered_at) + (r.promised_at && r.delivered_at.slice(0, 10) > r.promised_at ? ' <span class="vrf-chip vrf-r">late</span>' : ' <span class="vrf-chip vrf-g">on time</span>') : '—', r.quote_value ? rs(r.quote_value) : '—']);
+  const revRows = (revs || []).map(r => ['R' + r.rev, (r.rev > 0 ? `<span class="vrf-chip vrf-n" style="margin:0 4px 0 0">${esc(VRF_REV[r.reason_type || 'other'])}</span>` : '') + esc(r.reason || (r.rev === 0 ? 'First quote' : '')), esc(r.promised_at || '—'), r.delivered_at ? fmtDT(r.delivered_at) + (r.promised_at && r.delivered_at.slice(0, 10) > r.promised_at ? ' <span class="vrf-chip vrf-r">late</span>' : ' <span class="vrf-chip vrf-g">on time</span>') : '—', r.quote_value ? rs(r.quote_value) : '—']);
   svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(v.vrf_no)}</div><h3 style="margin:2px 0 4px">${esc(v.project_name)}</h3></div><div>${vrfDue(v)}</div></div>
     <div class="toolbar" style="flex-wrap:wrap;margin:6px 0 10px">${A.join(' ')}</div>
     <div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.2fr);gap:16px">
@@ -2106,14 +2152,50 @@ async function vrfPromise() {
   try { await vrfRpc('vrf_promise', { p_id: VRF_CUR, p_date: d, p_reason: r }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
 }
 async function vrfAssign() {
-  const opts = VRF_TEAM.map((u, i) => `${i + 1}. ${u.name}`).join('\n');
   if (!VRF_TEAM.length) return alert('No one is in the design team yet. Give people the "VRF design team" access under Team.');
-  const n = parseInt(await uiPrompt('Assign to:\n' + opts + '\n\nType the number:'), 10); if (!n || !VRF_TEAM[n - 1]) return;
-  try { await vrfRpc('vrf_assign', { p_id: VRF_CUR, p_user: VRF_TEAM[n - 1].id }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+  const v = VRF.find(x => x.id === VRF_CUR) || {}, load = id => VRF.filter(x => x.owner_id === id && ['picked', 'preparing', 'vendor'].includes(x.status)).length;
+  svcModal(`<h3 style="margin-top:0">${v.owner_id ? 'Reassign' : 'Assign'} ${esc(v.vrf_no || '')}</h3>
+    <div class="field"><label>Design engineer</label><select class="inp" id="vaUser" style="width:100%">${VRF_TEAM.map(u => `<option value="${u.id}" ${u.id === v.owner_id ? 'selected' : ''}>${esc(u.name)}${u.head ? ' (head)' : ''} — ${load(u.id)} open</option>`).join('')}</select></div>
+    <p class="hint">The engineer gets an app notification and an email. The salesperson is told who has it.</p>
+    <div id="vaMsg"></div><div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="vrfOpen(VRF_CUR)">Back</button> <button class="btn" onclick="vrfAssignGo()">Assign</button></div>`);
+}
+async function vrfAssignGo() {
+  try { await vrfRpc('vrf_assign', { p_id: VRF_CUR, p_user: document.getElementById('vaUser').value }); qtToast('Assigned'); await loadVrf(); vrfOpen(VRF_CUR); }
+  catch (e) { document.getElementById('vaMsg').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+async function vrfAccept() {
+  if (!await uiConfirm('Accept this enquiry without drawings or a load sheet? The quote clock starts now.')) return;
+  try { await vrfRpc('vrf_accept', { p_id: VRF_CUR }); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
+function vrfOutcome() {
+  const v = VRF.find(x => x.id === VRF_CUR) || {};
+  svcModal(`<h3 style="margin-top:0">${esc(v.vrf_no || '')} – what did the client say?</h3>
+    <div class="field"><label>Where it stands *</label><select class="inp" id="voSt" style="width:100%"><option value="">Choose</option>${Object.entries(VRF_OUT).map(([k, l]) => `<option value="${k}" ${v.sales_outcome === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="field"><label>What the client said *</label><textarea class="inp" id="voNote" rows="3" style="width:100%"></textarea></div>
+    <div class="field"><label>Next follow-up date <span class="muted">(reminders wait until this date)</span></label><input class="inp" type="date" id="voNext" min="${vrfToday()}" style="width:100%"></div>
+    <p class="hint">Won or lost? Go back and use “Mark WON” or “Lost”. If the client wants a changed quote, go back and use “Ask revision”.</p>
+    <div id="voMsg"></div><div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="vrfOpen(VRF_CUR)">Back</button> <button class="btn" onclick="vrfOutcomeGo()">Save update</button></div>`);
+}
+async function vrfOutcomeGo() {
+  const g = id => document.getElementById(id).value.trim();
+  try { await vrfRpc('vrf_outcome', { p_id: VRF_CUR, p_outcome: g('voSt'), p_note: g('voNote'), p_next: g('voNext') || null }); qtToast('Update saved'); await loadVrf(); vrfOpen(VRF_CUR); }
+  catch (e) { document.getElementById('voMsg').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
 async function vrfVendor() { const x = await uiPrompt('Which vendor / brand did you ask for the price?'); if (x) vrfDo('move', 'vendor', { vendor: x }); }
 async function vrfReason(to, q) { const r = await uiPrompt(q); if (r) vrfDo('move', to, { reason: r }); }
-async function vrfRevision() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const r = await uiPrompt(`What does the client want changed? (R${(v.revision || 0) + 1})`); if (r) vrfDo('move', 'revision', { reason: r }); }
+function vrfRevision() {
+  const v = VRF.find(x => x.id === VRF_CUR) || {};
+  svcModal(`<h3 style="margin-top:0">Ask for revision R${(v.revision || 0) + 1} – ${esc(v.vrf_no || '')}</h3>
+    <div class="field"><label>Why is a revision needed? *</label><select class="inp" id="vrType" style="width:100%"><option value="">Choose</option>${Object.entries(VRF_REV).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
+    <div class="field"><label>What does the client want changed? *</label><textarea class="inp" id="vrWhy" rows="3" style="width:100%"></textarea></div>
+    <div id="vrMsg"></div><div style="text-align:right;margin-top:12px"><button class="btn sec sm" onclick="vrfOpen(VRF_CUR)">Back</button> <button class="btn" onclick="vrfRevisionGo()">Send to design team</button></div>`);
+}
+async function vrfRevisionGo() {
+  const t = document.getElementById('vrType').value, r = document.getElementById('vrWhy').value.trim(), m = document.getElementById('vrMsg');
+  if (!t) return m.innerHTML = '<div class="err">Choose why the revision is needed</div>';
+  try { await vrfRpc('vrf_move', { p_id: VRF_CUR, p_to: 'revision', p: { reason: r, reason_type: t } }); qtToast('Revision sent to the design team'); await loadVrf(); vrfOpen(VRF_CUR); }
+  catch (e) { m.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
 async function vrfFinal() { const v = VRF.find(x => x.id === VRF_CUR) || {}; const x = await uiPrompt('Final value agreed (₹):', v.quote_value || ''); if (x !== null) vrfDo('move', 'finalised', { value: x.replace(/[^\d.]/g, '') || null }); }
 async function vrfWon() { const v = VRF.find(x => x.id === VRF_CUR) || {}; if (!await uiConfirm('Mark this project WON? The design team will be asked for the final BOQ, drawings and CAD files.')) return; vrfDo('move', 'won', { value: v.final_value || v.quote_value || null }); }
 async function vrfSendQuote() {
@@ -2140,23 +2222,44 @@ async function vrfSend(query) {
   try { await vrfRpc('vrf_post', { p_id: VRF_CUR, p_body: t, p_query: !!query }); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
 }
 function vrfSettings() {
-  const c = S('vrf', {});
+  const c = S('vrf', {}), num = (id, lbl, val) => `<div class="field"><label>${lbl}</label><input class="inp" type="number" min="1" id="${id}" value="${val}" style="width:100%"></div>`;
+  const chk = (id, lbl, on, hint) => `<label style="display:block;margin:6px 0"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> <b>${lbl}</b><div class="muted" style="font-size:12.5px;margin-left:22px">${hint}</div></label>`;
   svcModal(`<h3 style="margin-top:0">VRF settings</h3>
-    <div class="field"><label>Brands (one per line)</label><textarea class="inp" id="vsBrands" rows="6" style="width:100%">${esc((c.brands || []).join('\n'))}</textarea></div>
+    <div class="panel" style="margin:0 0 12px"><h2 style="font-size:14px">Design heads <span class="sub">they assign and reassign enquiries, and get the alerts and reports</span></h2>
+      <div id="vsHeads" class="muted">Loading…</div>
+      <p class="hint">Tick the design heads – usually two. You can change them at any time; the change takes effect as soon as you save.</p></div>
+    <div class="panel" style="margin:0 0 12px"><h2 style="font-size:14px">How enquiries move</h2>
+      ${chk('vsAuto', 'Assign new enquiries automatically', vrfOn('auto_assign'), 'Each ready enquiry goes to the design engineer with the fewest open enquiries. Heads can reassign.')}
+      ${chk('vsInputs', 'Drawings or load sheet needed before design starts', vrfOn('inputs_required'), 'An enquiry stays with sales until at least one enquiry file is attached. A design head can accept one without drawings.')}
+      ${chk('vsLead', 'Tell the design heads when a VRF lead is created', vrfOn('lead_headsup'), 'An early notification, before the deal exists.')}
+      ${chk('vsWeekly', 'Weekly VRF report by email', vrfOn('weekly_report'), 'Every Monday morning to the admin and the design heads.')}</div>
+    <div class="panel" style="margin:0 0 12px"><h2 style="font-size:14px">Targets and reminders</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+        ${num('vsTatPick', 'Target: pick within (hours)', c.tat_pick_hours ?? 24)}${num('vsTatQuote', 'Target: quote within (days)', c.tat_quote_days ?? 3)}
+        ${num('vsPick', 'Remind if not picked after (hours)', c.pick_alert_hours ?? 4)}${num('vsVendor', 'Chase vendor after (days)', c.vendor_remind_days ?? 2)}
+        ${num('vsOut', 'Sales must update every (days)', c.outcome_days ?? 3)}${num('vsEsc', 'Tell manager and heads after (days)', c.outcome_escalate_days ?? 7)}
+      </div><p class="hint">Enquiries past a target show in red on the board and the dashboard, and are listed in the daily email to the design heads.</p></div>
+    <div class="field"><label>Brands (one per line)</label><textarea class="inp" id="vsBrands" rows="5" style="width:100%">${esc((c.brands || []).join('\n'))}</textarea></div>
     <div class="field"><label>Building types (one per line)</label><textarea class="inp" id="vsTypes" rows="4" style="width:100%">${esc((c.building_types || []).join('\n'))}</textarea></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-      <div class="field"><label>Remind if not picked after (hours)</label><input class="inp" type="number" id="vsPick" value="${c.pick_alert_hours ?? 4}"></div>
-      <div class="field"><label>Chase vendor after (days)</label><input class="inp" type="number" id="vsVendor" value="${c.vendor_remind_days ?? 2}"></div>
-      <div class="field"><label>Client follow-up after (days)</label><input class="inp" type="number" id="vsClient" value="${c.client_follow_days ?? 5}"></div>
-    </div>
-    <p class="hint">Design team = people with the "VRF design team" access (all Design engineers have it). Design head = Head, or people given "VRF design head" access under Team → Access.</p>
-    <div style="text-align:right"><span id="msgVs"></span> <button class="btn sec sm" onclick="closeModal('svcBg')">Close</button> <button class="btn" onclick="vrfSaveSettings()">Save</button></div>`);
+    <p class="hint">Design team = people with the “VRF design team” access (all Design engineers have it).</p>
+    <div style="text-align:right"><span id="msgVs"></span> <button class="btn sec sm" onclick="closeModal('svcBg')">Close</button> <button class="btn" onclick="vrfSaveSettings()">Save</button></div>`, true);
+  vrfRpc('vrf_heads_get', {}).then(h => {
+    const el = document.getElementById('vsHeads'); if (!el) return; el.classList.remove('muted');
+    const line = (cls, x, extra) => `<label style="display:inline-block;min-width:240px;margin:4px 10px 4px 0"><input type="checkbox" class="${cls}" value="${x.id}" ${x.head ? 'checked' : ''}> ${esc(x.name || '')} <span class="muted" style="font-size:12.5px">${esc(extra)}</span></label>`;
+    el.innerHTML = (h.users || []).map(u => line('vsHeadU', u, u.designation || u.role)).join('') + (h.invites || []).map(i => line('vsHeadI', i, 'invited – not signed in yet')).join('') || 'No one to choose from yet.';
+  }).catch(e => { const el = document.getElementById('vsHeads'); if (el) el.textContent = e.message; });
 }
 async function vrfSaveSettings() {
-  const lines = id => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean), n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d);
-  await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: n('vsClient', 5) }, 'msgVs');
+  const lines = id => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean), n = (id, d) => Math.max(1, parseInt(document.getElementById(id).value, 10) || d), on = id => document.getElementById(id).checked;
+  const hu = [...document.querySelectorAll('.vsHeadU:checked')].map(x => x.value), hi = [...document.querySelectorAll('.vsHeadI:checked')].map(x => x.value), loaded = !!document.querySelector('.vsHeadU, .vsHeadI');
+  if (loaded && !hu.length && !hi.length) return flash('msgVs', 'Choose at least one design head', false);
+  const out = n('vsOut', 3);
+  const ok = await saveSetting('vrf', { ...S('vrf', {}), brands: lines('vsBrands'), building_types: lines('vsTypes'), pick_alert_hours: n('vsPick', 4), vendor_remind_days: n('vsVendor', 2), client_follow_days: out,
+    tat_pick_hours: n('vsTatPick', 24), tat_quote_days: n('vsTatQuote', 3), outcome_days: out, outcome_escalate_days: Math.max(out + 1, n('vsEsc', 7)),
+    auto_assign: on('vsAuto'), inputs_required: on('vsInputs'), lead_headsup: on('vsLead'), weekly_report: on('vsWeekly'), heads_set: true }, 'msgVs');
+  if (!ok || !loaded) return;
+  try { await vrfRpc('vrf_heads_set', { p_users: hu, p_invites: hi }); VRF_TEAM = []; await loadVrf(); } catch (e) { flash('msgVs', e.message, false); }
 }
-
 
 /* ---------- UX pass: in-page dialogs, grouped menu, approvals inbox ---------- */
 function uiDialog({ msg, input, def, okText, cancel }) {
