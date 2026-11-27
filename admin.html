@@ -824,7 +824,7 @@
       <div class="panel"><h2>Quote requests <span class="sub">sales asks, the quote team prepares the quotation and attaches it here</span></h2>
         <div class="toolbar"><div class="seg" id="qrSeg"><button data-f="open" onclick="qrFilter('open')">To prepare</button><button data-f="ready" onclick="qrFilter('ready')">Ready to send</button><button data-f="sent" onclick="qrFilter('sent')">Sent</button><button data-f="all" onclick="qrFilter('all')">All</button></div>
           <input id="qrQ" placeholder="Search customer, request no., salesperson…" oninput="renderQuoteReqs()" style="min-width:240px"><span style="flex:1"></span>
-          <button class="btn" onclick="qrForm()">+ Request a quote</button></div>
+          <span class="muted" style="font-size:13px">To ask for a quote, open the deal in Pipeline and click “Request a quote”.</span></div>
         <div id="qrTbl"></div></div>
     </div>
     <!-- ================= WARRANTY CHECK ================= -->
@@ -3958,6 +3958,7 @@ async function openOpp(id) {
     act += `<h4 style="font-size:13px;margin-bottom:8px">Move deal</h4><div class="toolbar" style="margin-bottom:8px">
       <select id="ovStage">${OPEN_STAGES.map(s => `<option value="${s}" ${s === o.stage ? 'selected' : ''}>${STAGES[s]}</option>`).join('')}</select>
       <button class="btn sm sec" onclick="moveStage(_ov.id, document.getElementById('ovStage').value)">Update stage</button>
+      ${dealIsVrf(o) ? `<button class="btn sm" onclick="closeModal('oppViewBg');show('vrf')">Open VRF projects</button>` : o.stage !== 'need_quote' ? `<button class="btn sm" onclick="closeModal('oppViewBg');qrForm(_ov)">Request a quote</button>` : ''}
       <button class="btn sm" style="background:linear-gradient(135deg,#16A34A,#22C55E)" onclick="openWon(_ov.id)">Mark Won</button>
       <button class="btn sm danger" onclick="openLost(_ov.id)">Lost</button></div>`;
     if (canRunDeals()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
@@ -6523,7 +6524,10 @@ async function qrSubmit(id) {
 async function qrSent(id, via) { const r = QR.list.find(x => x.id === id); if (r && r.status === 'sent' && via !== 'other') return; await qrRpc('qr_sent', { p_id: id, p_via: via }, via === 'other' ? 'Marked as sent' : null); if (via === 'other') closeModal('svcBg'); }
 async function qrReopen(id) { const note = await uiPrompt('What should the quote team change?'); if (!note) return; if (await qrRpc('qr_reopen', { p_id: id, p_note: note }, 'Sent back to the quote team')) closeModal('svcBg'); }
 async function qrCancel(id) { const why = await uiPrompt('Why is this request cancelled? (optional)'); if (why === null) return; if (await qrRpc('qr_cancel', { p_id: id, p_reason: why }, 'Request cancelled')) closeModal('svcBg'); }
+const dealIsVrf = o => /vrf/i.test(o?.order_categories?.name || (typeof catName === 'function' ? catName(o?.category_id) : '') || '');
 async function qrForm(deal) {
+  if (!deal || !deal.id) return qtToast('Open the deal in Pipeline and ask for the quote from there', true);
+  if (dealIsVrf(deal)) return qtToast('VRF deals go to the design team automatically – see VRF projects', true);
   QR.items = [{ machine: '', qty: 1, rate: '' }]; QR.deal = deal && deal.id ? deal : null; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
   svcModal(`<h3 style="margin-bottom:10px">Request a quote</h3>
     <div class="field"><label>Customer <span class="muted">(pick from the list, or type a new name below)</span></label><input id="qfCustQ" list="qfCusts" placeholder="Search customer…" onchange="qrPickCust(this.value)"><datalist id="qfCusts">${custs.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist></div>
