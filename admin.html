@@ -3455,7 +3455,8 @@ async function openLead(id) {
     ['City / territory', [l.city, l.territory].filter(Boolean).map(esc).join(' · ') || '—'], ['Address', esc(l.address) || '—'],
     ['Requirement', esc(l.requirement) || '—'], ['Assigned to', l.assigned_to ? esc(uname(l.assigned_to)) : '<span class="flag">Unassigned</span>'],
     ['Created by', esc(uname(l.created_by)) + ' · ' + fmtDT(l.created_at)], ['Next follow-up', esc(l.next_follow_up) || '—'],
-    ['Site location', l.lat ? `<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}">View on map</a>` : '<span class="muted">Saved at first check-in</span>']];
+    ['Site location', (l.lat ? `<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}">View on map</a> · <a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}&travelmode=driving">Get directions</a>` : '<span class="muted">Not saved yet</span>')
+      + `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sec" style="padding:4px 10px;font-size:12.5px" onclick="leadLocPaste()">Update customer location</button><button class="btn sec" style="padding:4px 10px;font-size:12.5px" onclick="leadLocAsk()">Request location from customer</button></div><div id="lvLoc" class="muted" style="font-size:12.5px;margin-top:5px"></div>`]];
   if (l.drop_reason) kv.push(['Drop reason', esc(l.drop_reason)]);
   document.getElementById('lvKv').innerHTML = kv.map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join('');
   document.getElementById('lvStatus').value = l.status;
@@ -3467,6 +3468,42 @@ async function openLead(id) {
   openModal('leadViewBg');
   loadLeadExtras(l.id);
   loadLeadDeals(l.id);
+  leadLocStatus(l.id);
+}
+// Site location: paste a Google Maps link, or ask the customer through a link
+async function leadLocRefresh(id) {
+  const { data: l } = await db.from('leads').select('*').eq('id', id).maybeSingle();
+  if (l) { const i = cache.leads.findIndex(x => x.id === id); if (i >= 0) cache.leads[i] = { ...cache.leads[i], ...l }; }
+  if (_lv && _lv.id === id) openLead(id);
+}
+async function leadLocStatus(id) {
+  const el = document.getElementById('lvLoc'); if (!el) return;
+  const { data } = await db.from('loc_requests').select('token,created_at,opened_at,shared_at,sms_id,expires_at').eq('lead_id', id).order('created_at', { ascending: false }).limit(1);
+  const r = data && data[0]; if (!r || !_lv || _lv.id !== id) return;
+  const url = 'https://bneone.com/loc.html?t=' + r.token;
+  el.innerHTML = (r.shared_at ? '✅ Customer shared the location ' + ago(r.shared_at) : r.opened_at ? '👀 Customer opened the link ' + ago(r.opened_at) + ', not shared yet' : '⏳ Asked ' + ago(r.created_at) + (r.sms_id ? ' by SMS' : '') + ', not opened yet')
+    + (!r.shared_at && new Date(r.expires_at) > new Date() ? ` · <a href="#" onclick="navigator.clipboard.writeText('${url}');this.textContent='Link copied';return false">Copy link</a>` : '');
+}
+async function leadLocPaste() {
+  const l = _lv; if (!l) return;
+  const u = prompt('Paste the Google Maps link of the customer site (in Google Maps: open the place → Share → Copy link).\nYou can also type coordinates like 25.6123, 85.1432');
+  if (!u || !u.trim()) return;
+  const el = document.getElementById('lvLoc'); el.textContent = 'Reading the link…';
+  const { data, error } = await db.rpc('lead_set_location_url', { p_lead: l.id, p_url: u.trim() });
+  if (error) { el.innerHTML = '<span class="flag">' + esc(error.message) + '</span>'; return; }
+  await leadLocRefresh(l.id);
+}
+async function leadLocAsk() {
+  const l = _lv; if (!l) return;
+  if (!confirm('Send ' + (l.name || 'the customer') + ' a link to share the site location?' + (l.mobile ? '\nSMS goes to ' + l.mobile + '.' : '\nNo mobile number saved, so you will get a link to share yourself.'))) return;
+  const el = document.getElementById('lvLoc'); el.textContent = 'Creating the link…';
+  const { data, error } = await db.rpc('loc_request', { p_lead: l.id, p_sms: true });
+  if (error) { el.innerHTML = '<span class="flag">' + esc(error.message) + '</span>'; return; }
+  const text = 'Dear Customer, to help our team reach your site, please share your site location using this link: ' + data.url + ' - BN Enterprises';
+  const wa = String(l.mobile || '').replace(/\D/g, '').replace(/^(\d{10})$/, '91$1');
+  el.innerHTML = (data.sms ? '✅ SMS sent to ' + esc(data.mobile) + '.' : 'Link ready. SMS is not switched on yet, so please send it yourself:')
+    + ` <a href="https://wa.me/${wa}?text=${encodeURIComponent(text)}" target="_blank">Send on WhatsApp</a> · <a href="#" onclick="navigator.clipboard.writeText('${data.url}');this.textContent='Link copied';return false">Copy link</a>`;
+  loadLeadExtras(l.id);
 }
 function lvStatusChanged() { document.getElementById('lvDrop').style.display = document.getElementById('lvStatus').value === 'dropped' ? '' : 'none'; }
 function editLead() { closeModal('leadViewBg'); openLeadForm(_lv); }

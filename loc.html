@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#22779A">
+<title>Share your site location — B N Enterprises</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #17303B; background: #F4F6FB; }
+  #app { height: 100%; display: flex; flex-direction: column; }
+  header { background: linear-gradient(135deg, #22779A, #3E9BBF); color: #fff; padding: 12px 16px calc(12px); flex: none; }
+  header b { font-size: 16px; display: block; }
+  header span { font-size: 13px; opacity: .92; }
+  #mapwrap { position: relative; flex: 1; min-height: 0; background: #DDE7EC; }
+  #map { position: absolute; inset: 0; }
+  #pin { position: absolute; left: 50%; top: 50%; width: 40px; height: 52px; margin: -52px 0 0 -20px; pointer-events: none; z-index: 5; transition: transform .15s; filter: drop-shadow(0 3px 3px rgba(0,0,0,.3)); }
+  #pin.up { transform: translateY(-10px); }
+  #dot { position: absolute; left: 50%; top: 50%; width: 8px; height: 4px; margin: -2px 0 0 -4px; background: rgba(0,0,0,.35); border-radius: 50%; pointer-events: none; z-index: 4; }
+  #searchbox { position: absolute; left: 10px; right: 10px; top: 10px; z-index: 6; }
+  #searchrow { display: flex; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.18); overflow: hidden; }
+  #q { flex: 1; border: 0; outline: 0; padding: 13px 14px; font-size: 16px; min-width: 0; background: transparent; }
+  #qgo { border: 0; background: #fff; padding: 0 14px; font-size: 18px; color: #22779A; }
+  #sugg { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.18); margin-top: 6px; max-height: 46vh; overflow: auto; display: none; }
+  #sugg div { padding: 12px 14px; font-size: 14.5px; border-bottom: 1px solid #EEF1F6; }
+  #sugg div:last-child { border-bottom: 0; }
+  #sugg div small { display: block; color: #6B7C86; font-size: 12.5px; margin-top: 2px; }
+  #here { position: absolute; right: 12px; bottom: 14px; z-index: 6; border: 0; background: #fff; color: #22779A; font-weight: 600; font-size: 14px; padding: 11px 14px; border-radius: 24px; box-shadow: 0 2px 10px rgba(0,0,0,.22); }
+  #sheet { flex: none; background: #fff; border-radius: 18px 18px 0 0; margin-top: -14px; z-index: 7; position: relative; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+  #addr { font-size: 14.5px; line-height: 1.35; min-height: 40px; }
+  #addr small { color: #6B7C86; display: block; font-size: 12.5px; margin-bottom: 2px; }
+  #ok { width: 100%; border: 0; background: #22779A; color: #fff; font-size: 16.5px; font-weight: 700; padding: 15px; border-radius: 12px; margin-top: 10px; }
+  #ok:disabled { opacity: .55; }
+  #msg { font-size: 13px; color: #B42318; margin-top: 8px; display: none; }
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px; }
+  .center .big { font-size: 58px; }
+  .center h2 { margin: 10px 0 6px; font-size: 21px; }
+  .center p { margin: 4px 0; color: #51646E; font-size: 15px; line-height: 1.45; }
+  .center button, .center a.btn { margin-top: 18px; border: 0; background: #22779A; color: #fff; font-size: 16px; font-weight: 700; padding: 14px 22px; border-radius: 12px; text-decoration: none; display: inline-block; }
+  .center a.link { margin-top: 14px; color: #22779A; font-size: 14.5px; }
+  .spin { width: 34px; height: 34px; border: 4px solid #CFE0E8; border-top-color: #22779A; border-radius: 50%; animation: r 1s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+  footer { text-align: center; font-size: 11.5px; color: #8696A0; padding: 6px 0 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><b>B N Enterprises</b><span id="hello">Share your site location</span></header>
+  <div id="body" class="center"><div class="spin"></div><p style="margin-top:14px">Opening…</p></div>
+</div>
+<script>
+const SUPABASE_URL = 'https://hyrqqjeplichtfpcfxnb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QuSW9d5RNhZ8mNMEmBwBCg_dVRkzZG8';
+const GMAPS_KEY = 'AIzaSyC_OjH0aLXnZBvzKldqZpUwackrI7DVlbc';
+const TOKEN = (new URLSearchParams(location.search).get('t') || '').trim();
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const S = { map: null, geocoder: null, source: 'pin', accuracy: null, address: '', busy: false, moved: false };
+
+async function rpc(fn, args) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }, body: JSON.stringify(args) });
+  if (!r.ok) throw new Error('Could not reach the server. Please check your internet and try again.');
+  return r.json();
+}
+function screen(html) { $('body').outerHTML = '<div id="body" class="center">' + html + '</div>'; }
+function fail(text) { screen('<div class="big">⚠️</div><h2>Sorry</h2><p>' + esc(text) + '</p>'); }
+function done(lat, lng, address) {
+  screen('<div class="big">✅</div><h2>Thank you!</h2><p>Your site location has reached our team.</p>' +
+    (address ? '<p style="font-size:13.5px">' + esc(address) + '</p>' : '') +
+    '<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng + '">See it on the map</a>' +
+    '<a class="link" href="#" onclick="startPicker(' + lat + ',' + lng + ');return false">Wrong place? Change it</a>');
+}
+
+function loadGoogle() {
+  return new Promise((resolve, reject) => {
+    if (window.google && google.maps && google.maps.Map) return resolve();
+    window.__gmReady = () => resolve();
+    window.gm_authFailure = () => reject(new Error('maps auth'));
+    const sc = document.createElement('script');
+    sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + GMAPS_KEY + '&libraries=places&region=IN&language=en&callback=__gmReady&loading=async';
+    sc.async = true; sc.onerror = () => reject(new Error('maps load'));
+    document.head.appendChild(sc);
+    setTimeout(() => reject(new Error('maps timeout')), 12000);
+  });
+}
+function gps(highAccuracy) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('This phone cannot share its location here.'));
+    navigator.geolocation.getCurrentPosition(p => resolve(p.coords), e => reject(new Error(
+      e.code === 1 ? 'Location permission is off. Allow location for this page, or search for your place and move the pin.' :
+      'Could not find your location. Please switch on GPS, or search for your place.')),
+      { enableHighAccuracy: highAccuracy !== false, timeout: 15000, maximumAge: 0 });
+  });
+}
+function say(t) { const m = $('msg'); if (!m) return; m.textContent = t || ''; m.style.display = t ? 'block' : 'none'; }
+
+// ---------- map picker ----------
+function startPicker(lat, lng) { loadGoogle().then(() => picker(lat, lng)).catch(() => gpsOnly()); }
+async function picker(lat, lng) {
+  $('body').outerHTML =
+    '<div id="body" style="flex:1;display:flex;flex-direction:column;min-height:0">' +
+      '<div id="mapwrap"><div id="map"></div>' +
+        '<div id="searchbox"><div id="searchrow"><input id="q" type="search" placeholder="Search area, building or landmark" autocomplete="off" enterkeyhint="search"><button id="qgo" aria-label="Search">🔍</button></div><div id="sugg"></div></div>' +
+        '<svg id="pin" viewBox="0 0 40 52"><path d="M20 0C9 0 0 9 0 20c0 14 20 32 20 32s20-18 20-32C40 9 31 0 20 0z" fill="#E5484D"/><circle cx="20" cy="20" r="7.5" fill="#fff"/></svg><div id="dot"></div>' +
+        '<button id="here">📍 Use my current location</button>' +
+      '</div>' +
+      '<div id="sheet"><div id="addr"><small>Move the map so the pin sits on your site</small><span id="addrtext">Finding address…</span></div>' +
+        '<button id="ok">Confirm this location</button><div id="msg"></div><footer>Only used by B N Enterprises to reach your site.</footer></div>' +
+    '</div>';
+  const has = lat != null && lng != null;
+  S.map = new google.maps.Map($('map'), { center: has ? { lat, lng } : { lat: 25.61, lng: 85.14 }, zoom: has ? 18 : 12,
+    disableDefaultUI: true, zoomControl: false, gestureHandling: 'greedy', clickableIcons: false, mapTypeControl: false });
+  S.geocoder = new google.maps.Geocoder();
+  S.map.addListener('dragstart', () => { $('pin').classList.add('up'); S.source = 'pin'; S.accuracy = null; hideSugg(); document.activeElement && document.activeElement.blur(); });
+  S.map.addListener('idle', () => { $('pin').classList.remove('up'); lookup(); });
+  $('here').onclick = useHere;
+  $('ok').onclick = confirmPin;
+  $('qgo').onclick = () => search($('q').value);
+  $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search($('q').value); } });
+  $('q').addEventListener('input', () => { clearTimeout(S.tq); S.tq = setTimeout(() => suggest($('q').value), 350); });
+  if (!has) useHere(true);
+}
+let lookupT = null, lookupN = 0;
+function lookup() {
+  clearTimeout(lookupT);
+  lookupT = setTimeout(() => {
+    const c = S.map.getCenter(), n = ++lookupN;
+    S.geocoder.geocode({ location: c }).then(r => {
+      if (n !== lookupN) return;
+      S.address = (r.results && r.results[0] && r.results[0].formatted_address) || '';
+      $('addrtext').textContent = S.address || (c.lat().toFixed(5) + ', ' + c.lng().toFixed(5));
+    }).catch(() => { if (n === lookupN) { S.address = ''; $('addrtext').textContent = c.lat().toFixed(5) + ', ' + c.lng().toFixed(5); } });
+  }, 450);
+}
+async function useHere(quiet) {
+  const b = $('here'); b.textContent = '📍 Finding you…'; say('');
+  try {
+    const c = await gps();
+    S.map.setCenter({ lat: c.latitude, lng: c.longitude }); S.map.setZoom(18);
+    S.source = 'gps'; S.accuracy = c.accuracy;
+  } catch (e) { if (quiet !== true) say(e.message); }
+  b.textContent = '📍 Use my current location';
+}
+function hideSugg() { const s = $('sugg'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
+function showSugg(items) {
+  const s = $('sugg');
+  if (!items.length) return hideSugg();
+  s.innerHTML = items.map((x, i) => '<div data-i="' + i + '">' + esc(x.title) + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</div>').join('');
+  s.style.display = 'block';
+  [...s.children].forEach(d => d.onclick = async () => {
+    const x = items[+d.dataset.i]; hideSugg(); $('q').value = x.title; $('q').blur();
+    try { const p = await x.go(); if (p) { S.map.setCenter(p); S.map.setZoom(18); S.source = 'search'; S.accuracy = null; } } catch (_) { search(x.title + (x.sub ? ', ' + x.sub : '')); }
+  });
+}
+let suggN = 0;
+async function suggest(text) {
+  text = (text || '').trim(); const n = ++suggN;
+  if (text.length < 3) return hideSugg();
+  const c = S.map.getCenter();
+  try {   // newer Places
+    const P = google.maps.places;
+    if (P && P.AutocompleteSuggestion) {
+      const r = await P.AutocompleteSuggestion.fetchAutocompleteSuggestions({ input: text, includedRegionCodes: ['in'], locationBias: { center: c, radius: 50000 } });
+      if (n !== suggN) return;
+      return showSugg((r.suggestions || []).filter(s => s.placePrediction).slice(0, 6).map(s => ({
+        title: s.placePrediction.mainText ? s.placePrediction.mainText.text : s.placePrediction.text.text,
+        sub: s.placePrediction.secondaryText ? s.placePrediction.secondaryText.text : '',
+        go: async () => { const pl = s.placePrediction.toPlace(); await pl.fetchFields({ fields: ['location'] }); return pl.location; } })));
+    }
+  } catch (_) {}
+  try {   // older Places
+    if (google.maps.places && google.maps.places.AutocompleteService) {
+      S.acs = S.acs || new google.maps.places.AutocompleteService();
+      const r = await S.acs.getPlacePredictions({ input: text, componentRestrictions: { country: 'in' }, location: c, radius: 50000 });
+      if (n !== suggN) return;
+      return showSugg((r.predictions || []).slice(0, 6).map(p => ({
+        title: p.structured_formatting ? p.structured_formatting.main_text : p.description,
+        sub: p.structured_formatting ? p.structured_formatting.secondary_text : '',
+        go: async () => { const g = await S.geocoder.geocode({ placeId: p.place_id }); return g.results[0].geometry.location; } })));
+    }
+  } catch (_) {}
+}
+async function search(text) {
+  text = (text || '').trim(); if (!text) return;
+  suggN++; say('');
+  const m = text.match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);
+  if (m) { hideSugg(); S.map.setCenter({ lat: +m[1], lng: +m[2] }); S.map.setZoom(18); S.source = 'search'; return; }
+  try {
+    const r = await S.geocoder.geocode({ address: text, region: 'in', componentRestrictions: { country: 'IN' }, bounds: S.map.getBounds() });
+    const items = (r.results || []).slice(0, 6).map(x => ({ title: x.formatted_address.split(',')[0], sub: x.formatted_address.split(',').slice(1).join(',').trim(), go: async () => x.geometry.location }));
+    if (items.length === 1) { hideSugg(); $('q').blur(); S.map.setCenter(r.results[0].geometry.location); S.map.setZoom(17); S.source = 'search'; S.accuracy = null; }
+    else showSugg(items);
+  } catch (_) { hideSugg(); say('Could not find that place. Try the area or a nearby landmark, then move the pin.'); }
+}
+async function confirmPin() {
+  if (S.busy) return;
+  const c = S.map.getCenter();
+  if (S.map.getZoom() < 15) { say('Please zoom in and put the pin exactly on your site.'); S.map.setZoom(16); return; }
+  await send(c.lat(), c.lng(), S.address, S.accuracy, S.source);
+}
+async function send(lat, lng, address, accuracy, source) {
+  S.busy = true; const b = $('ok') || $('gpsonly'); const t = b && b.textContent; if (b) { b.disabled = true; b.textContent = 'Sending…'; } say('');
+  try {
+    const r = await rpc('loc_share', { p_token: TOKEN, p_lat: +lat.toFixed(6), p_lng: +lng.toFixed(6), p_address: address || null, p_accuracy: accuracy == null ? null : Math.round(accuracy), p_source: source });
+    if (r && r.ok) return done(+lat.toFixed(6), +lng.toFixed(6), address);
+    say((r && r.error) || 'Could not save. Please try again.');
+  } catch (e) { say(e.message); }
+  finally { S.busy = false; if (b && document.body.contains(b)) { b.disabled = false; b.textContent = t; } }
+}
+
+// ---------- no-map fallback: share GPS only ----------
+function gpsOnly() {
+  screen('<div class="big">📍</div><h2>Share your site location</h2><p>Stand at your site and tap the button. Your phone will ask for permission — please allow it.</p>' +
+    '<button id="gpsonly">Share my current location</button><div id="msg" style="margin-top:12px"></div>');
+  $('gpsonly').onclick = async () => { say(''); try { const c = await gps(); await send(c.latitude, c.longitude, '', c.accuracy, 'gps'); } catch (e) { say(e.message); } };
+}
+
+(async function init() {
+  if (!TOKEN) return fail('This link is not complete. Please open the link from the SMS again.');
+  let info;
+  try { info = await rpc('loc_info', { p_token: TOKEN }); } catch (e) { return fail(e.message); }
+  if (!info || !info.ok) return fail((info && info.error) || 'This link is not valid.');
+  $('hello').textContent = (info.name ? 'Hello ' + info.name + '. ' : '') + (info.by ? info.by + ' from our team' : 'Our team') + ' needs your site location for the visit.';
+  if (info.done && info.lat != null) return done(info.lat, info.lng, info.address);
+  startPicker();
+})();
+</script>
+</body>
+</html>
