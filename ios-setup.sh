@@ -49,7 +49,7 @@ add NSLocationWhenInUseUsageDescription "BNEOne uses your location to verify cus
 add NSLocationAlwaysAndWhenInUseUsageDescription "While you are on duty, BNEOne records your route so visits and travel claims are verified. Tracking stops when you end your day."
 add NSCameraUsageDescription "BNEOne uses the camera for site photos, bills, visiting cards and machine serial numbers."
 add NSPhotoLibraryUsageDescription "BNEOne lets you attach photos and bills from your gallery."
-add NSMicrophoneUsageDescription "BNEOne does not record audio; the camera screen asks for this permission."
+add NSMicrophoneUsageDescription "BNEOne uses the microphone to record voice notes you send in chat."
 pl "Delete :UIBackgroundModes" 2>/dev/null || true
 pl "Add :UIBackgroundModes array"
 pl "Add :UIBackgroundModes:0 string location"
