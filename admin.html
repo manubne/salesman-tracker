@@ -1631,6 +1631,16 @@ function flash(id, text, ok = true) { const el = document.getElementById(id); if
 function opts(list, sel, blank) { return (blank ? `<option value="">${blank}</option>` : '') + list.map(o => `<option value="${esc(o.v)}" ${o.v===sel?'selected':''}>${esc(o.l)}</option>`).join(''); }
 const salesReps = () => cache.users.filter(u => u.role === 'sales' && u.active && inBranch(u.id));
 const repOpts = (sel, blank) => opts(salesReps().map(u => ({ v: u.id, l: u.name || u.mobile })), sel, blank);
+// People a lead or deal can be given to: salespeople, plus the telecaller themself ("Me") and whoever holds it now.
+const assignOpts = (sel, blank) => {
+  const list = salesReps().map(u => ({ v: u.id, l: u.name || u.mobile }));
+  if (ME && ME.role === 'telecaller') list.unshift({ v: ME.id, l: 'Me — ' + (ME.name || 'myself') });
+  if (sel && !list.some(x => x.v === sel)) { const u = cache.users.find(x => x.id === sel); if (u) list.push({ v: u.id, l: (u.name || u.mobile) + (u.role === 'telecaller' ? ' (telecaller)' : '') }); }
+  return opts(list, sel, blank);
+};
+// Filter lists: salespeople plus telecallers who can hold their own leads and deals.
+const ownerFilterOpts = (sel) => opts(cache.users.filter(u => (u.role === 'sales' || u.role === 'telecaller') && u.active && inBranch(u.id))
+  .sort((a, b) => (a.role === 'sales' ? 0 : 1) - (b.role === 'sales' ? 0 : 1)).map(u => ({ v: u.id, l: (u.name || u.mobile) + (u.role === 'telecaller' ? ' (telecaller)' : '') })), sel, null);
 
 // signed URLs for private photos
 const _urlCache = {};
@@ -1834,7 +1844,7 @@ const S = (k, d) => (SETTINGS[k] !== undefined ? SETTINGS[k] : d);
 const contactTypes = (all) => (S('lead_setup', {}).contact_types || []).filter(t => all || t.enabled !== false);
 const typeLabel = k => (contactTypes(true).find(t => t.key === k) || {}).label || String(k||'').replace(/_/g,' ');
 function fillFilters() {
-  document.getElementById('lRep').innerHTML = '<option value="">All salespeople</option>' + repOpts('', null);
+  document.getElementById('lRep').innerHTML = '<option value="">All salespeople</option>' + ownerFilterOpts('');
   document.getElementById('lType').innerHTML = '<option value="">All contact types</option>' + contactTypes(true).map(t => `<option value="${t.key}">${esc(t.label)}</option>`).join('');
   document.getElementById('lSource').innerHTML = '<option value="">All sources</option>' + (S('lead_setup', {}).sources || []).map(s => `<option>${esc(s)}</option>`).join('');
   for (const id of ['vRep','phRep']) document.getElementById(id).innerHTML = '<option value="">All salespeople</option>' + repOpts('', null);
@@ -3226,7 +3236,7 @@ function fillLeadFormSelects(l) {
   document.getElementById('lfSource').innerHTML = '<option value="">—</option>' + (S('lead_setup', {}).sources || []).map(s => `<option ${l && l.source === s ? 'selected' : ''}>${esc(s)}</option>`).join('');
   document.getElementById('lfCat').innerHTML = '<option value="">—</option>' + _cats.filter(c => c.active || (l && l.category_id === c.id)).map(c => `<option value="${c.id}" ${l && l.category_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
   const mode = S('lead_assignment', {}).mode || 'manual';
-  document.getElementById('lfAssign').innerHTML = repOpts(l ? l.assigned_to : '', mode === 'manual' ? '— choose salesperson —' : '— auto-assign (' + (mode === 'territory' ? 'by territory' : 'round-robin') + ') —');
+  document.getElementById('lfAssign').innerHTML = assignOpts(l ? l.assigned_to : '', mode === 'manual' ? '— choose salesperson —' : '— auto-assign (' + (mode === 'territory' ? 'by territory' : 'round-robin') + ') —');
   document.getElementById('lfAssignHint').textContent = mode === 'manual' && !l ? 'Leave blank to keep it unassigned for now.' : '';
 }
 function openLeadForm(l) {
@@ -3463,7 +3473,7 @@ async function openLead(id) {
   document.getElementById('lvDrop').innerHTML = (S('lead_setup', {}).drop_reasons || []).map(r => `<option ${l.drop_reason === r ? 'selected' : ''}>${esc(r)}</option>`).join('');
   lvStatusChanged();
   const as = document.getElementById('lvAssign');
-  as.innerHTML = repOpts(l.assigned_to, '— unassigned —'); as.disabled = !isStaff();
+  as.innerHTML = assignOpts(l.assigned_to, '— unassigned —'); as.disabled = !isStaff();
   document.getElementById('lvNote').value = ''; document.getElementById('lvMsg').innerHTML = '';
   openModal('leadViewBg');
   loadLeadExtras(l.id);
@@ -3931,7 +3941,7 @@ function periodLabel() { const v = (document.getElementById('pPeriod') || {}).va
 function fillPipeFilters() {
   const r = document.getElementById('pRep'); if (!r) return;
   const cur = r.value, cc = document.getElementById('pCatF').value;
-  r.innerHTML = '<option value="">All salespeople</option>' + repOpts(cur, null);
+  r.innerHTML = '<option value="">All salespeople</option>' + ownerFilterOpts(cur);
   document.getElementById('pCatF').innerHTML = '<option value="">All categories</option>' + _cats.map(c => `<option value="${c.id}" ${c.id === cc ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 }
 function pipeFiltered() {
@@ -4118,7 +4128,7 @@ async function openOpp(id) {
       ${dealIsVrf(o) ? `<button class="btn sm" onclick="closeModal('oppViewBg');show('vrf')">Open VRF projects</button>` : o.stage !== 'need_quote' ? `<button class="btn sm" onclick="closeModal('oppViewBg');qrForm(_ov)">Request a quote</button>` : ''}
       <button class="btn sm" style="background:linear-gradient(135deg,#16A34A,#22C55E)" onclick="openWon(_ov.id)">Mark Won</button>
       <button class="btn sm danger" onclick="openLost(_ov.id)">Lost</button></div>`;
-    if (canRunDeals()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${repOpts(ownerOf(o), null)}</select>
+    if (canRunDeals()) act += `<div class="toolbar"><label class="muted" style="font-size:12px">Owner</label><select id="ovOwner">${assignOpts(ownerOf(o), null)}</select>
       <label class="muted" style="font-size:12px">Chance %</label><input id="ovProb" class="inp" type="number" min="0" max="100" value="${o.probability ?? ''}" style="width:80px">
       <button class="btn sm sec" onclick="saveOppMeta()">Save</button></div>`;
   } else if (isOwner()) {
@@ -4211,7 +4221,7 @@ function openOppForm(o, preset) {
   document.getElementById('ofLinkType').value = preset.customer_id ? 'customer' : 'lead';
   ofLinkChanged(preset.lead_id || preset.customer_id);
   document.getElementById('ofCat').innerHTML = '<option value="">— choose —</option>' + _cats.filter(c => c.active || (o && c.id === o.category_id)).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  document.getElementById('ofOwner').innerHTML = repOpts(o ? ownerOf(o) : '', '— me —');
+  document.getElementById('ofOwner').innerHTML = assignOpts(o ? ownerOf(o) : '', '— me —');
   document.getElementById('ofOwner').disabled = !canRunDeals();
   document.getElementById('ofStage').innerHTML = ['qualified', 'demo', 'quoted', 'negotiation'].map(s => `<option value="${s}">${STAGES[s]}</option>`).join('');
   const v = (id, x) => document.getElementById(id).value = x ?? '';
@@ -4232,7 +4242,7 @@ function ofPartyChanged() {
   const l = cache.leads.find(x => x.id === document.getElementById('ofParty').value); if (!l) return;
   const v = (id, x) => { const el = document.getElementById(id); if (!el.value && x != null) el.value = x; };
   v('ofName', l.requirement); v('ofCat', l.category_id); v('ofValue', l.est_value);
-  if (l.assigned_to && canRunDeals()) document.getElementById('ofOwner').value = l.assigned_to;
+  if (l.assigned_to && canRunDeals()) document.getElementById('ofOwner').innerHTML = assignOpts(l.assigned_to, '— me —');
 }
 async function saveOpp() {
   const g = id => document.getElementById(id).value.trim(), num = id => g(id) === '' ? null : Number(g(id).replace(/,/g, ''));
