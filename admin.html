@@ -3112,7 +3112,7 @@ const leadSc = l => (cache.leadScores || {})[l.id] || null;
 const leadIdle = (l, days) => { const s = leadSc(l); return !!s && !s.p && s.d >= days; };
 const LEAD_T = { hot: ['Hot', 'vrf-r'], warm: ['Warm', 'vrf-a'], cold: ['Cold', 'vrf-n'] };
 function leadScoreCell(l) { const s = leadSc(l); if (!s) return '—';
-  return `<span class="vrf-chip ${LEAD_T[s.t][1]}" style="margin:0" title="${esc(s.w)}">${LEAD_T[s.t][0]} · ${s.s}</span>${!s.p && s.d >= 3 ? `<div style="color:#b91c1c;font-size:12px;font-weight:650">untouched ${s.d} d</div>` : s.p ? '<div class="muted" style="font-size:12px">follow-up planned</div>' : ''}`; }
+  return `<span class="vrf-chip ${LEAD_T[s.t][1]}" style="margin:0">${LEAD_T[s.t][0]}</span>${!s.p && s.d >= 3 ? `<div style="color:#b91c1c;font-size:12px;font-weight:650">untouched ${s.d} d</div>` : s.p ? '<div class="muted" style="font-size:12px">follow-up planned</div>' : ''}`; }
 function renderLeadBadge() {
   const n = cache.leads.filter(isStale).length;
   const b = document.getElementById('leadBadge'); b.style.display = n ? '' : 'none'; b.textContent = n;
@@ -3142,7 +3142,7 @@ function renderLeads() {
     kpi(rs(Math.round(pipe)), 'Open lead value', 'teal', '₹');
   const rows = filteredLeads();
   document.getElementById('leadsTbl').innerHTML = tbl(
-    ['Created','Lead','Score','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
+    ['Created','Lead','Hot / warm / cold','Mobile','Type','Source','Category','Value','Assigned to','Status','Last activity'],
     rows.map(l => [fmtDT(l.created_at),
       `<b>${esc(l.name)}</b>${l.company ? '<br><span class="muted">' + esc(l.company) + '</span>' : ''}`, leadScoreCell(l),
       esc(l.mobile) || '—', esc(typeLabel(l.contact_type)), esc(l.source) || '—', esc(catName(l.category_id)),
@@ -3201,7 +3201,7 @@ function adSettings() {
     <div><h4 style="font-size:13.5px;margin:0 0 8px">Untouched leads – who is told, and when</h4>
       <label style="display:block;margin-bottom:8px"><input type="checkbox" id="asOn" ${sc.enabled === false ? '' : 'checked'}> Send the reminders every working morning</label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">${num('asO', 'Salesperson after (days)', sc.owner_days ?? 3)}${num('asM', 'Their manager after (days)', sc.manager_days ?? 7)}${num('asH', 'Head and admin after (days)', sc.head_days ?? 14)}</div>
-      <p class="hint">A lead counts as untouched when there is no call, visit or note and no future follow-up date. Hot = score 60 or more, warm = 35 or more. The score adds value (up to 40), recent activity (35) and response (30).</p></div>
+      <p class="hint">A lead counts as untouched when there is no call, visit or note and no future follow-up date. Hot, warm or cold is worked out from the lead's value, how recently it was worked on, and the visits, calls and follow-ups on it.</p></div>
     <div><h4 style="font-size:13.5px;margin:0 0 8px">Daily summary email <span class="muted" style="font-weight:400">· 8:30 AM, Monday to Saturday</span></h4>
       <label style="display:block;margin-bottom:8px"><input type="checkbox" id="abOn" ${br.enabled === false ? '' : 'checked'}> Send it every working morning</label>
       <div class="field"><label>Send to (one email per line)</label><textarea class="inp" id="abTo" rows="3" style="width:100%">${esc((br.to || []).join('\n'))}</textarea></div>
