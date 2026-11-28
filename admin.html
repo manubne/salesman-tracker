@@ -3456,7 +3456,10 @@ async function saveLead() {
 // lead view
 let _lv = null;
 async function openLead(id) {
-  const l = cache.leads.find(x => x.id === id); if (!l) return; _lv = l;
+  let l = cache.leads.find(x => x.id === id);
+  try { const { data: fresh } = await db.from('leads').select('*').eq('id', id).maybeSingle();   // latest from the app, not the copy loaded earlier
+    if (fresh) { const i = cache.leads.findIndex(x => x.id === id); l = { ...(l || {}), ...fresh }; if (i >= 0) cache.leads[i] = l; } } catch (_) {}
+  if (!l) return; _lv = l;
   document.getElementById('lvTitle').textContent = l.name + (l.company ? ' · ' + l.company : '');
   document.getElementById('lvChip').innerHTML = chip(l.status);
   const kv = [['Mobile', l.mobile ? `<a href="tel:${esc(l.mobile)}">${esc(l.mobile)}</a> · <a href="https://wa.me/${esc(String(l.mobile).replace(/\D/g,'').replace(/^(\d{10})$/,'91$1'))}" target="_blank">WhatsApp</a>` : '—'],
@@ -3468,6 +3471,7 @@ async function openLead(id) {
     ['Site location', (l.lat ? `<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}">View on map</a> · <a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}&travelmode=driving">Get directions</a>` : '<span class="muted">Not saved yet</span>')
       + `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sec" style="padding:4px 10px;font-size:12.5px" onclick="leadLocPaste()">Update customer location</button><button class="btn sec" style="padding:4px 10px;font-size:12.5px" onclick="leadLocAsk()">Request location from customer</button></div><div id="lvLoc" class="muted" style="font-size:12.5px;margin-top:5px"></div>`]];
   if (l.drop_reason) kv.push(['Drop reason', esc(l.drop_reason)]);
+  kv.push(['Notes', l.notes ? `<div style="white-space:pre-wrap">${esc(l.notes)}</div>` : '—']);
   document.getElementById('lvKv').innerHTML = kv.map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join('');
   document.getElementById('lvStatus').value = l.status;
   document.getElementById('lvDrop').innerHTML = (S('lead_setup', {}).drop_reasons || []).map(r => `<option ${l.drop_reason === r ? 'selected' : ''}>${esc(r)}</option>`).join('');
@@ -3517,11 +3521,14 @@ async function leadLocAsk() {
 }
 function lvStatusChanged() { document.getElementById('lvDrop').style.display = document.getElementById('lvStatus').value === 'dropped' ? '' : 'none'; }
 function editLead() { closeModal('leadViewBg'); openLeadForm(_lv); }
+// Notes the salesperson typed while closing a visit, as timeline rows
+const visitNoteRows = vs => (vs || []).filter(v => (v.notes || '').trim()).map(v => ({ at: v.checkout_at || v.checkin_at,
+  h: `<div class="ev"><b>Visit ${v.visit_no || ''} notes</b> <span style="white-space:pre-wrap">${esc(v.notes)}</span><small>${esc(uname(v.user_id))} · ${fmtDT(v.checkout_at || v.checkin_at)}</small></div>` }));
 async function loadLeadExtras(id) {
   const [{ data: ev }, { data: md }, { data: vs }] = await Promise.all([
     db.from('lead_events').select('*').eq('lead_id', id).order('at', { ascending: false }).limit(100),
     db.from('media').select('*').eq('entity_type', 'lead').eq('entity_id', id).order('created_at'),
-    db.from('visits').select('id').eq('lead_id', id)]);
+    db.from('visits').select('id,visit_no,user_id,notes,outcome,checkin_at,checkout_at').eq('lead_id', id)]);
   let photos = md || [];
   const vids = (vs || []).map(v => v.id);
   if (vids.length) { const { data: vm } = await db.from('media').select('*').eq('entity_type', 'visit').in('entity_id', vids); photos = photos.concat(vm || []); }
@@ -3530,9 +3537,10 @@ async function loadLeadExtras(id) {
     `<div style="text-align:center"><img src="${urls[i]}" onclick='openPhoto(${JSON.stringify({ u: urls[i], k: p.kind, at: p.created_at, by: p.uploaded_by, lat: p.lat, lng: p.lng })})'><div class="muted" style="font-size:11px">${esc(KIND_LABEL[p.kind] || p.kind)}</div></div>`).join('')
     : '<span class="muted">No photos yet. Visiting cards and site photos from the app appear here.</span>';
   const icon = { created:'Created', assigned:'Assigned to', status:'Status', note:'Note', call:'Call', visit:'Visit' };
-  document.getElementById('lvTimeline').innerHTML = (ev || []).length ? ev.map(e =>
-    `<div class="ev"><b>${esc(icon[e.kind] || e.kind)}</b> ${esc((e.note || '').replace(/_/g,' '))}<small>${esc(uname(e.user_id))} · ${fmtDT(e.at)}</small></div>`).join('')
-    : '<span class="muted">No activity yet.</span>';
+  const tl = (ev || []).map(e => ({ at: e.at, h: `<div class="ev"><b>${esc(icon[e.kind] || e.kind)}</b> ${esc((e.note || '').replace(/_/g,' '))}<small>${esc(e.user_id ? uname(e.user_id) : 'Customer')} · ${fmtDT(e.at)}</small></div>` }))
+    .concat(visitNoteRows(vs));
+  tl.sort((a, b) => new Date(b.at) - new Date(a.at));
+  document.getElementById('lvTimeline').innerHTML = tl.length ? tl.map(x => x.h).join('') : '<span class="muted">No activity yet.</span>';
 }
 async function saveLeadUpdate() {
   const st = document.getElementById('lvStatus').value, upd = { status: st };
@@ -4101,6 +4109,8 @@ async function moveStage(id, stage) {
 async function openOpp(id) {
   let o = cache.orders.find(x => x.id === id);
   if (!o) { await loadOrders(); o = cache.orders.find(x => x.id === id); if (!o) return; }
+  else { try { const { data: fresh } = await db.from('orders').select('*, customers(name,company,mobile), leads(name,company,mobile,source,contact_type), order_categories(name)').eq('id', id).maybeSingle();
+    if (fresh) { const i = cache.orders.findIndex(x => x.id === id); o = fresh; if (i >= 0) cache.orders[i] = fresh; } } catch (_) {} }
   _ov = o;
   const p = party(o), open = OPEN_STAGES.includes(o.stage);
   document.getElementById('ovTitle').textContent = (p.name || 'Deal') + (o.title ? ' — ' + o.title : '');
@@ -4186,8 +4196,18 @@ async function loadOppExtras(id) {
     : '<span class="muted">No documents yet.</span>';
   const lbl = { created: 'Created', stage: 'Stage', won: 'Won', owner: 'Owner →', note: 'Note' };
   const nice = t => String(t || '').replace(/\b(qualified|demo|need_quote|quoted|negotiation|won|lost)\b/g, m => STAGES[m]);
-  document.getElementById('ovTimeline').innerHTML = (ev || []).length ? ev.map(e =>
-    `<div class="ev"><b>${esc(lbl[e.kind] || e.kind)}</b> ${esc(nice(e.note))}<small>${esc(uname(e.user_id))} · ${fmtDT(e.at)}</small></div>`).join('') : '<span class="muted">No history yet.</span>';
+  let tl = (ev || []).map(e => ({ at: e.at, h: `<div class="ev"><b>${esc(lbl[e.kind] || e.kind)}</b> ${esc(nice(e.note))}<small>${esc(uname(e.user_id))} · ${fmtDT(e.at)}</small></div>` }));
+  const o = cache.orders.find(x => x.id === id);
+  if (o && (o.lead_id || o.customer_id)) { try {   // what sales wrote on the lead and at visits also belongs in the deal's history
+    const vq = db.from('visits').select('id,visit_no,user_id,notes,outcome,checkin_at,checkout_at').not('checkin_at', 'is', null).limit(200);
+    const [ln, vs] = await Promise.all([
+      o.lead_id ? db.from('lead_events').select('*').eq('lead_id', o.lead_id).in('kind', ['note', 'call']).order('at', { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+      o.lead_id ? vq.eq('lead_id', o.lead_id) : vq.eq('customer_id', o.customer_id)]);
+    tl = tl.concat((ln.data || []).map(e => ({ at: e.at, h: `<div class="ev"><b>${e.kind === 'call' ? 'Call' : 'Lead note'}</b> ${esc(e.note || '')}<small>${esc(e.user_id ? uname(e.user_id) : 'Customer')} · ${fmtDT(e.at)}</small></div>` })), visitNoteRows(vs.data));
+  } catch (_) {} }
+  tl.sort((a, b) => new Date(b.at) - new Date(a.at));
+  if (_ov && _ov.id !== id) return;
+  document.getElementById('ovTimeline').innerHTML = tl.length ? tl.map(x => x.h).join('') : '<span class="muted">No history yet.</span>';
 }
 async function saveOppMeta() {
   const upd = {}, ow = document.getElementById('ovOwner').value, pr = document.getElementById('ovProb').value;
