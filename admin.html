@@ -1308,7 +1308,7 @@
         <div>
           <h4 style="font-size:13px;margin-bottom:8px">Documents</h4>
           <div class="thumbs" id="ovDocs"></div>
-          <div style="margin-top:8px"><input type="file" id="ovUpload" accept="image/*,application/pdf"> <select id="ovUpKind"><option value="drawing">Drawing</option><option value="document">Document</option><option value="po">PO copy</option><option value="payment">Payment proof</option><option value="site">Site photo</option></select> <button class="btn sec sm" onclick="uploadOppDoc()">Upload</button></div>
+          <div style="margin-top:8px"><input type="file" id="ovUpload" accept="image/*,application/pdf" multiple> <select id="ovUpKind"><option value="drawing">Drawing</option><option value="document">Document</option><option value="po">PO copy</option><option value="payment">Payment proof</option><option value="site">Site photo</option></select> <button class="btn sec sm" onclick="uploadOppDoc()">Upload</button></div>
           <h4 style="font-size:13px;margin:18px 0 8px">History</h4>
           <div class="timeline" id="ovTimeline"></div>
         </div>
@@ -1331,8 +1331,8 @@
         <div class="field"><label>UTR / cheque no. / receipt no. (cash)</label><input id="wnRef"></div>
         <div class="field"><label>Payment terms</label><input id="wnTerms" placeholder="e.g. 30% advance, balance before dispatch"></div>
         <div class="field"><label>Committed delivery date</label><input id="wnDelivery" type="date"></div>
-        <div class="field"><label id="wnPoFileLbl">PO copy</label><input type="file" id="wnPoFile" accept="image/*,application/pdf"><p class="hint" id="wnPoHave"></p></div>
-        <div class="field"><label id="wnPayFileLbl">Payment proof</label><input type="file" id="wnPayFile" accept="image/*,application/pdf"><p class="hint" id="wnPayHave"></p></div>
+        <div class="field"><label id="wnPoFileLbl">PO copy</label><input type="file" id="wnPoFile" accept="image/*,application/pdf" multiple onchange="wnFilesPicked()"><p class="hint" id="wnPoPick"></p><p class="hint" id="wnPoHave"></p></div>
+        <div class="field"><label id="wnPayFileLbl">Payment proof</label><input type="file" id="wnPayFile" accept="image/*,application/pdf" multiple onchange="wnFilesPicked()"><p class="hint" id="wnPayPick"></p><p class="hint" id="wnPayHave"></p></div>
         <div class="field full"><label>Notes</label><input id="wnNotes"></div>
       </div>
       <div class="err" id="wnErr"></div>
@@ -4205,8 +4205,9 @@ async function addOppNote() {
   document.getElementById('ovNote').value = ''; loadOppExtras(_ov.id);
 }
 async function uploadOppDoc() {
-  const f = document.getElementById('ovUpload').files[0]; if (!f) { flash('ovMsg', 'Choose a file first', false); return; }
-  try { await uploadMedia(f, 'order', _ov.id, document.getElementById('ovUpKind').value); document.getElementById('ovUpload').value = ''; loadOppExtras(_ov.id); flash('ovMsg', 'Uploaded ✓'); }
+  const fs = [...document.getElementById('ovUpload').files]; if (!fs.length) { flash('ovMsg', 'Choose a file first', false); return; }
+  if (fs.length > 10) { flash('ovMsg', 'Upload up to 10 files at a time', false); return; }
+  try { const kind = document.getElementById('ovUpKind').value; for (const f of fs) await uploadMedia(f, 'order', _ov.id, kind); document.getElementById('ovUpload').value = ''; loadOppExtras(_ov.id); flash('ovMsg', 'Uploaded ✓'); }
   catch (e) { flash('ovMsg', e.message || String(e), false); }
 }
 
@@ -4284,7 +4285,7 @@ async function openWon(id) {
   document.getElementById('wnPoFileLbl').textContent = 'PO copy' + (poReq ? ' *' : ' (optional)');
   document.getElementById('wnPayFileLbl').textContent = 'Payment proof' + (payReq ? ' *' : ' (optional)');
   document.getElementById('wnAdvLbl').textContent = 'Advance received (₹)' + (advReq ? ' *' : '');
-  ['wnPoFile', 'wnPayFile'].forEach(i => document.getElementById(i).value = '');
+  ['wnPoFile', 'wnPayFile'].forEach(i => document.getElementById(i).value = ''); wnFilesPicked();
   const { data: md } = await db.from('media').select('kind').eq('entity_type', 'order').eq('entity_id', id);
   const have = k => (md || []).filter(m => m.kind === k).length;
   document.getElementById('wnPoHave').textContent = have('po') ? `${have('po')} already uploaded` : '';
@@ -4293,10 +4294,14 @@ async function openWon(id) {
   document.getElementById('wnErr').textContent = '';
   closeModal('oppViewBg'); openModal('wonBg');
 }
+function wnFilesPicked() {
+  for (const [i, o] of [['wnPoFile', 'wnPoPick'], ['wnPayFile', 'wnPayPick']]) { const n = document.getElementById(i).files.length; document.getElementById(o).textContent = n > 1 ? n + ' files selected' : 'You can select more than one file.'; }
+}
 async function saveWon() {
   const o = _wonFor, r = S('won_rules', {}), g = id => document.getElementById(id).value.trim();
   const err = m => { document.getElementById('wnErr').textContent = m; };
-  const poF = document.getElementById('wnPoFile').files[0], payF = document.getElementById('wnPayFile').files[0];
+  const poFs = [...document.getElementById('wnPoFile').files], payFs = [...document.getElementById('wnPayFile').files], poF = poFs[0], payF = payFs[0];
+  if (poFs.length > 10 || payFs.length > 10) return err('Attach up to 10 files each');
   if (!g('wnPo')) return err('PO number is required');
   if (!g('wnPoDate')) return err('PO date is required');
   const val = Number(g('wnValue').replace(/,/g, '')); if (!(val > 0)) return err('Order value is required');
@@ -4304,8 +4309,8 @@ async function saveWon() {
   if (r.payment_proof_required && !payF && !o._have.payment) return err('Attach the payment proof');
   const btn = document.getElementById('wnSave'); btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    if (poF) await uploadMedia(poF, 'order', o.id, 'po');
-    if (payF) await uploadMedia(payF, 'order', o.id, 'payment');
+    for (const f of poFs) await uploadMedia(f, 'order', o.id, 'po');
+    for (const f of payFs) await uploadMedia(f, 'order', o.id, 'payment');
     const { error } = await db.rpc('opportunity_mark_won', { p_order_id: o.id, p_po_number: g('wnPo'), p_po_date: g('wnPoDate'), p_order_value: val,
       p_advance: Number(g('wnAdv').replace(/,/g, '')) || 0, p_payment_mode: g('wnMode') || null, p_payment_ref: g('wnRef') || null,
       p_payment_terms: g('wnTerms') || null, p_delivery_date: g('wnDelivery') || null, p_notes: g('wnNotes') || null });
