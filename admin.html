@@ -391,6 +391,7 @@
       <div class="navlabel">Team</div>
       <button data-v="team" data-roles="admin,head,manager" onclick="show('team')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>Team</span></button>
       <button data-v="adoption" data-roles="admin,head,manager" onclick="show('adoption')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg><span>Adoption board</span></button>
+      <button data-v="actlog" data-roles="admin,head" onclick="show('actlog')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg><span>Activity log</span></button>
       <button data-v="smslog" data-roles="admin,head" onclick="show('smslog')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Customer SMS</span></button>
       <button data-v="salesreports" data-roles="admin,head" onclick="show('salesreports')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Sales email reports</span></button>
       <button data-v="oem" data-roles="admin,head,head" onclick="show('oem')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6 4V8l6 4V4h6v17z"/></svg><span>OEM access</span></button>
@@ -923,6 +924,17 @@
       <div id="expBody"></div>
     </div>
 
+    <div id="actlog" class="view">
+      <div class="panel"><h2>Activity log <span class="sub">who created, changed or deleted what, and when</span></h2>
+        <div class="toolbar" style="flex-wrap:wrap"><select class="inp" id="alUser" onchange="loadActLog()"><option value="">Everyone</option></select>
+          <select class="inp" id="alEnt" onchange="loadActLog()"><option value="">All areas</option></select>
+          <select class="inp" id="alAct" onchange="loadActLog()"><option value="">Created, changed and deleted</option><option value="insert">Created</option><option value="update">Changed</option><option value="delete">Deleted</option></select>
+          <input class="inp" type="date" id="alFrom" onchange="loadActLog()"> <span class="muted">to</span> <input class="inp" type="date" id="alTo" onchange="loadActLog()">
+          <input class="inp" id="alQ" placeholder="Search name, number…" onkeydown="if(event.key==='Enter')loadActLog()"><span style="flex:1"></span>
+          <button class="btn sec" onclick="alExport()">Download Excel</button><button class="btn sec" onclick="loadActLog()">Refresh</button></div>
+        <div id="alTbl" style="overflow-x:auto"></div>
+        <div style="text-align:center;margin-top:10px"><button class="btn sec" id="alMore" style="display:none" onclick="loadActLog(true)">Show older</button></div></div>
+    </div>
     <div id="adoption" class="view">
       <div class="kpis" id="adKpis"></div>
       <div class="panel"><h2>Who is using BNEOne <span class="sub">sign-in, notifications, field work and untouched leads, per person</span></h2>
@@ -1209,11 +1221,11 @@
       <div class="formgrid">
         <div class="field"><label>Contact name *</label><input id="lfName"></div>
         <div class="field"><label>Company / firm</label><input id="lfCompany"></div>
-        <div class="field"><label>Mobile</label><input id="lfMobile" inputmode="tel" onblur="checkDup()"><div id="lfDup"></div></div>
+        <div class="field"><label>Mobile *</label><input id="lfMobile" inputmode="tel" onblur="checkDup()"><div id="lfDup"></div></div>
         <div class="field"><label>Email</label><input id="lfEmail" type="email"></div>
         <div class="field"><label>Designation</label><input id="lfDesig"></div>
         <div class="field"><label>Contact type</label><select id="lfType"></select></div>
-        <div class="field"><label>Lead source</label><select id="lfSource"></select></div>
+        <div class="field"><label>Lead source *</label><select id="lfSource"></select></div>
         <div class="field"><label>Machine category</label><select id="lfCat"></select></div>
         <div class="field"><label>Approx. value (₹)</label><input id="lfValue" inputmode="decimal"></div>
         <div class="field"><label>City</label><input id="lfCity"></div>
@@ -1816,6 +1828,7 @@ function show(v) {
   if (v === 'salesreports') loadSalesReports();
   if (v === 'smslog') { renderSmsSettings(); loadSmsLog(); }
   if (v === 'adoption') loadAdoption();
+  if (v === 'actlog') loadActLog();
   if (v === 'vrf') loadVrf();
   if (v === 'expenses') expLoad();
   if (v === 'team' && isOwner()) rtRender();
@@ -2158,13 +2171,14 @@ async function vrfOpen(id, keepTab) {
     if (e.kind === 'message' || e.kind === 'query') return `<div class="vrf-msg ${e.kind === 'query' ? 'q' : ''}"><b>${who}</b> <span class="muted" style="font-size:11px">${at}${e.kind === 'query' ? ' · QUERY to sales' : ''}</span><div style="white-space:pre-wrap;margin-top:3px">${esc(e.body)}</div></div>`;
     return `<div class="vrf-msg sys">• ${esc(e.body || '')} — ${who}, ${at}</div>`;
   }).join('') || '<div class="muted">No messages yet.</div>';
-  const fileRows = (files || []).map((f, i) => [esc(VRF_FILE[f.kind] || f.kind) + (f.kind === 'quote' ? ' R' + f.revision : ''), urls[i] ? `<a href="${urls[i]}" target="_blank">${esc(f.name)}</a>` : esc(f.name), esc(nm(f.uploaded_by)), fmtDT(f.created_at)]);
+  const fileRows = (files || []).map((f, i) => [esc(VRF_FILE[f.kind] || f.kind) + (f.kind === 'quote' ? ' R' + f.revision : ''), urls[i] ? `<a href="${urls[i]}" target="_blank">${esc(f.name)}</a>` : esc(f.name), esc(nm(f.uploaded_by)), fmtDT(f.created_at),
+    (f.uploaded_by === ME.id || isOwner()) && !['closed', 'lost'].includes(v.status) ? `<a href="#" style="color:#b91c1c" onclick="vrfDelFile(${f.id}, ${JSON.stringify(f.name).replace(/"/g, '&quot;')});return false">Delete</a>` : '']);
   const revRows = (revs || []).map(r => ['R' + r.rev, (r.rev > 0 ? `<span class="vrf-chip vrf-n" style="margin:0 4px 0 0">${esc(VRF_REV[r.reason_type || 'other'])}</span>` : '') + esc(r.reason || (r.rev === 0 ? 'First quote' : '')), esc(r.promised_at || '—'), r.delivered_at ? fmtDT(r.delivered_at) + (r.promised_at && r.delivered_at.slice(0, 10) > r.promised_at ? ' <span class="vrf-chip vrf-r">late</span>' : ' <span class="vrf-chip vrf-g">on time</span>') : '—', r.quote_value ? rs(r.quote_value) : '—']);
   svcModal(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted" style="font-size:12px">${esc(v.vrf_no)}</div><h3 style="margin:2px 0 4px">${esc(v.project_name)}</h3></div><div>${qTimerChip(vrfTimer(VRF.find(x => x.id === v.id) || v))}${vrfDue(v)}</div></div>
     <div class="toolbar" style="flex-wrap:wrap;margin:6px 0 10px">${A.join(' ')}</div>
     <div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.2fr);gap:16px">
       <div><div class="kv" style="display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:13px">${kv.map(([k, x]) => `<div class="muted">${k}</div><div>${x}</div>`).join('')}</div>
-        <h4 style="font-size:13px;margin:14px 0 6px">Files</h4>${fileRows.length ? tbl(['Type', 'File', 'By', 'When'], fileRows) : '<div class="muted" style="font-size:12.5px">No files yet.</div>'}
+        <h4 style="font-size:13px;margin:14px 0 6px">Files</h4>${fileRows.length ? tbl(['Type', 'File', 'By', 'When', ''], fileRows) : '<div class="muted" style="font-size:12.5px">No files yet.</div>'}
         <div class="toolbar" style="margin-top:6px;flex-wrap:wrap"><select class="inp" id="vfKind">${Object.entries(VRF_FILE).filter(([k]) => vrfDesign() || ['input', 'other'].includes(k)).map(([k, l]) => `<option value="${k}" ${v.status === 'won_docs' && k === 'boq' ? 'selected' : ''}>${l}</option>`).join('')}</select><input type="file" id="vfAdd" multiple><button class="btn sm sec" onclick="vrfAddFiles()">Upload</button></div>
         ${v.status === 'won_docs' ? `<div class="hint">Final documents: ${docsNeed.map(k => (files || []).some(f => f.kind === k) ? `<span class="vrf-chip vrf-g">✓ ${VRF_FILE[k]}</span>` : `<span class="vrf-chip vrf-r">${VRF_FILE[k]} missing</span>`).join('')}<br>The project closes on its own when all are uploaded.</div>` : ''}
         ${revRows.length ? `<h4 style="font-size:13px;margin:14px 0 6px">Quotes & revisions</h4>${tbl(['Rev', 'What changed', 'Promised', 'Delivered', 'Value'], revRows)}` : ''}
@@ -2256,6 +2270,72 @@ async function vrfSendQuoteGo() {
   try { if (files.length) await vrfUploadFiles(VRF_CUR, files, 'quote'); await vrfRpc('vrf_move', { p_id: VRF_CUR, p_to: 'quote_sent', p: { value: val } }); qtToast('Quote sent to sales'); await loadVrf(); vrfOpen(VRF_CUR); }
   catch (e) { document.getElementById('vqMsg').innerHTML = `<div class="err">${esc(e.message)}</div>`; btn.disabled = false; btn.textContent = 'Send to sales'; }
 }
+// ---------- activity log: every create / change / delete, with who and when ----------
+const AL = { rows: [], page: 0, size: 200 };
+const AL_ENT = { leads: 'Lead', orders: 'Deal', customers: 'Customer', visits: 'Visit', follow_ups: 'Follow-up', requirements: 'Requirement', quote_requests: 'Quote request', quotations: 'Quotation',
+  billing_requests: 'Invoice request', payment_receipts: 'Payment', vrf_projects: 'VRF project', vrf_files: 'VRF file', vrf_revisions: 'VRF revision', service_tickets: 'Service ticket', service_jobs: 'Service job',
+  service_machines: 'Machine', amc_contracts: 'AMC contract', amc_visits: 'AMC visit', commissioning_reports: 'Commissioning report', expense_claims: 'Expense claim', expense_items: 'Expense item',
+  fuel_claims: 'Fuel claim', daily_travel: 'Travel day', attendance: 'Attendance', users: 'Team member', branches: 'Branch', manager_branches: 'Manager branch', media: 'Photo / document', order_files: 'Deal file',
+  order_categories: 'Category', products: 'Product', sales_targets: 'Sales target', incentive_payouts: 'Incentive payout', incentive_plans: 'Incentive plan', location_change_requests: 'Location change request',
+  loc_requests: 'Customer location request', salesperson_invites: 'Invite', customer_access_requests: 'Customer access request', customer_shares: 'Customer share', oem_users: 'Partner login',
+  expense_categories: 'Expense category', quote_brands: 'Quote brand' };
+const alEnt = e => String(e || '').startsWith('app_settings') ? 'Setting' + (String(e).includes(':') ? ' (' + String(e).split(':')[1].replace(/_/g, ' ') + ')' : '') : (AL_ENT[e] || String(e || '').replace(/_/g, ' '));
+const AL_ACT = { insert: ['Created', 'vrf-g'], update: ['Changed', 'vrf-a'], delete: ['Deleted', 'vrf-r'] };
+function alVal(k, x) {
+  if (x === null || x === undefined || x === '') return '—';
+  if (typeof x === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(x)) { const u = cache.users.find(z => z.id === x); if (u) return u.name || u.mobile; const l = (cache.leads || []).find(z => z.id === x); if (l) return l.name; return x.slice(0, 8) + '…'; }
+  if (typeof x === 'string' && /^\d{4}-\d\d-\d\dT/.test(x)) return fmtDT(x);
+  if (typeof x === 'object') x = JSON.stringify(x);
+  x = String(x); return x.length > 90 ? x.slice(0, 90) + '…' : x;
+}
+const alKey = k => k.replace(/_id$/, '').replace(/_/g, ' ');
+function alDetail(r) {
+  const p = r.payload || {};
+  if (p.changes) return Object.entries(p.changes).map(([k, v]) => `<div><span class="muted">${esc(alKey(k))}:</span> ${esc(alVal(k, v[0]))} → <b>${esc(alVal(k, v[1]))}</b></div>`).join('');
+  if (p.old && p.new && !p.changes) { const ks = [...new Set([...Object.keys(p.old || {}), ...Object.keys(p.new || {})])].filter(k => JSON.stringify((p.old || {})[k]) !== JSON.stringify((p.new || {})[k]));
+    return ks.map(k => `<div><span class="muted">${esc(alKey(k))}:</span> ${esc(alVal(k, (p.old || {})[k]))} → <b>${esc(alVal(k, (p.new || {})[k]))}</b></div>`).join('') || '<span class="muted">saved, no change</span>'; }
+  const o = p.new || p.old; if (!o) return p.note ? esc(p.note) : '';
+  const hide = ['id', 'created_at', 'updated_at', 'created_by', 'storage_path', 'path', 'token', 'mobile_norm', 'last_activity_at'];
+  const ks = Object.keys(o).filter(k => !hide.includes(k) && o[k] !== '' && o[k] !== false && !(Array.isArray(o[k]) && !o[k].length)).slice(0, 8);
+  return `<div class="muted" style="font-size:12px">${ks.map(k => esc(alKey(k)) + ': ' + esc(alVal(k, o[k]))).join(' · ')}</div>`;
+}
+async function loadActLog(more) {
+  const g = id => document.getElementById(id), box = g('alTbl');
+  if (!g('alUser').options || g('alUser').options.length < 2) {
+    g('alUser').innerHTML = '<option value="">Everyone</option>' + cache.users.filter(u => u.active).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(u => `<option value="${u.id}">${esc(u.name || u.mobile)}</option>`).join('') + '<option value="system">System (automatic)</option>';
+    g('alEnt').innerHTML = '<option value="">All areas</option>' + Object.entries(AL_ENT).sort((a, b) => a[1].localeCompare(b[1])).map(([k, l]) => `<option value="${k}">${l}</option>`).join('') + '<option value="app_settings">Settings</option>';
+  }
+  if (!more) { AL.rows = []; AL.page = 0; box.innerHTML = '<div class="empty">Loading…</div>'; }
+  let q = db.from('audit_log').select('*').order('at', { ascending: false }).order('id', { ascending: false }).range(AL.page * AL.size, AL.page * AL.size + AL.size - 1);
+  const u = g('alUser').value, e = g('alEnt').value, a = g('alAct').value, f = g('alFrom').value, t = g('alTo').value, s = g('alQ').value.trim();
+  if (u === 'system') q = q.is('user_id', null); else if (u) q = q.eq('user_id', u);
+  if (e === 'app_settings') q = q.like('entity', 'app_settings%'); else if (e) q = q.eq('entity', e);
+  if (a) q = a === 'update' ? q.in('action', ['update', 'settings_update']) : q.eq('action', a);
+  if (f) q = q.gte('at', new Date(f + 'T00:00:00').toISOString());
+  if (t) q = q.lte('at', new Date(t + 'T23:59:59').toISOString());
+  if (s) q = q.ilike('label', '%' + s.replace(/[%_]/g, '') + '%');
+  const { data, error } = await q;
+  if (error) { box.innerHTML = '<div class="empty">' + esc(error.message) + '</div>'; return; }
+  AL.rows = AL.rows.concat(data || []); AL.page++;
+  g('alMore').style.display = (data || []).length === AL.size ? '' : 'none';
+  box.innerHTML = AL.rows.length ? tbl(['When', 'Who', 'What', 'Record', 'Details'], AL.rows.map(r => { const act = AL_ACT[r.action] || [r.action === 'settings_update' ? 'Changed' : r.action, 'vrf-a'];
+    return [`<span style="white-space:nowrap">${new Date(r.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>`,
+      r.user_id ? `<b>${esc(r.user_name || uname(r.user_id))}</b>` : '<span class="muted">System</span>',
+      `<span class="vrf-chip ${act[1]}" style="margin:0">${esc(act[0])}</span> ${esc(alEnt(r.entity))}`, esc(r.label || '—'), `<div style="font-size:12.5px;max-width:520px">${alDetail(r)}</div>`]; }))
+    : '<div class="empty">Nothing recorded for this selection yet. The detailed log starts from 28 Nov 2026.</div>';
+}
+function alExport() {
+  if (!AL.rows.length) return;
+  const strip = h => String(h).replace(/<\/div>/g, '; ').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+  const rows = AL.rows.map(r => ({ When: new Date(r.at).toLocaleString('en-IN'), Who: r.user_id ? (r.user_name || uname(r.user_id)) : 'System', Action: (AL_ACT[r.action] || [r.action])[0], Area: alEnt(r.entity), Record: r.label || '', Details: strip(alDetail(r)) }));
+  const ws = XLSX.utils.json_to_sheet(rows), wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Activity log'); XLSX.writeFile(wb, 'BNEOne_activity_log_' + todayStr() + '.xlsx');
+}
+async function vrfDelFile(id, name) {
+  if (!confirm('Delete "' + name + '"?\nThe file is removed, and the history will show that you deleted it.')) return;
+  try { const r = await vrfRpc('vrf_delete_file', { p_file: id });
+    if (r && r.path) { try { await db.storage.from('vrf').remove([r.path]); } catch (_) {} }
+    qtToast('File deleted'); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
+}
 async function vrfAddFiles() {
   const files = [...document.getElementById('vfAdd').files]; if (!files.length) return alert('Choose a file');
   try { await vrfUploadFiles(VRF_CUR, files, document.getElementById('vfKind').value); qtToast('Uploaded'); await loadVrf(); vrfOpen(VRF_CUR); } catch (e) { alert(e.message); }
@@ -2333,7 +2413,7 @@ const NAV_GROUPS = [
   ['sales', 'Sales', ['leads', 'pipeline', 'quoteReqs', 'vrf', 'customers', 'followups', 'reqs', 'stock', 'billing', 'payments']],
   ['field', 'Field team', ['visits', 'photos', 'mapv', 'travel', 'attendance']],
   ['service', 'Service', ['svcTickets', 'svcOdoo', 'svcBoard', 'svcTechs', '#svcMapNav', 'svcWarranty', 'svcComm', 'svcBilling', 'svcAmc', 'svcReports']],
-  ['reports', 'Reports', ['analytics', 'reports', 'incentives', 'adoption']],
+  ['reports', 'Reports', ['analytics', 'reports', 'incentives', 'adoption', 'actlog']],
   ['people', 'Expenses & people', ['expenses', 'team']],
   ['admin', 'Admin', ['smslog', 'salesreports', 'oem', 'settings']],
 ];
@@ -3429,6 +3509,8 @@ async function saveLead() {
   const err = document.getElementById('lfErr'); err.textContent = '';
   const v = id => document.getElementById(id).value.trim();
   if (!v('lfName')) { err.textContent = 'Contact name is required.'; return; }
+  if (v('lfMobile').replace(/\D/g, '').length < 10) { err.textContent = 'Mobile number is required (10 digits).'; return; }
+  if (!v('lfSource')) { err.textContent = 'Lead source is required.'; return; }
   const row = { name: v('lfName'), company: v('lfCompany') || null, mobile: v('lfMobile') || null, email: v('lfEmail') || null,
     contact_type: v('lfType') || 'customer', source: v('lfSource') || null, category_id: v('lfCat') || null,
     est_value: parseFloat(v('lfValue')) || null, city: v('lfCity') || null, territory: v('lfTerritory') || null,
@@ -3892,7 +3974,7 @@ async function addProduct() {
 }
 async function toggleProduct(id, active) { await db.from('products').update({ active }).eq('id', id); loadProducts(); }
 async function loadOrders() {
-  const { data } = await db.from('orders').select('*, customers(name,company,mobile), leads(name,company,mobile,source,contact_type), order_categories(name)').order('created_at', { ascending: false }).limit(2000);
+  const { data } = await db.from('orders').select('*, customers(name,company,mobile,email,address,city), leads(name,company,mobile,email,address,city,source,contact_type), order_categories(name)').order('created_at', { ascending: false }).limit(2000);
   cache.orders = data || [];
   const stg = s => cache.orders.filter(o => o.stage === s).length;
   document.getElementById('orderStats').innerHTML =
@@ -3929,7 +4011,9 @@ const STAGES = { qualified:'Qualified', demo:'Demo / site visit', need_quote:'Qu
 const OPEN_STAGES = ['qualified','demo','need_quote','quoted','negotiation'];
 const STAGE_COLOR = { qualified:'#22779A', demo:'#7C3AED', need_quote:'#D97706', quoted:'#0E7490', negotiation:'#C2410C', won:'#16A34A', lost:'#64748B' };
 const oppVal = o => Number((o.stage === 'won' ? (o.order_value ?? o.quote_total ?? o.est_value) : (o.quote_total ?? o.est_value)) || 0);
-const party = o => o.customers || o.leads || {};
+// the customer on the deal; anything the customer record is missing (email, address…) is taken from the lead so nobody types it twice
+const party = o => { const c = o.customers, l = o.leads; if (!c) return l || {}; if (!l) return c;
+  const m = { ...l }; for (const k in c) if (c[k] != null && c[k] !== '') m[k] = c[k]; return m; };
 const partyName = o => { const p = party(o); return (p.name || '—') + (p.company ? ' · ' + p.company : ''); };
 const daysIn = o => Math.max(0, Math.floor((Date.now() - new Date(o.stage_changed_at || o.updated_at || o.created_at)) / 864e5));
 const stuckDays = () => Number(S('pipeline', {}).stuck_days || 15);
@@ -4109,7 +4193,7 @@ async function moveStage(id, stage) {
 async function openOpp(id) {
   let o = cache.orders.find(x => x.id === id);
   if (!o) { await loadOrders(); o = cache.orders.find(x => x.id === id); if (!o) return; }
-  else { try { const { data: fresh } = await db.from('orders').select('*, customers(name,company,mobile), leads(name,company,mobile,source,contact_type), order_categories(name)').eq('id', id).maybeSingle();
+  else { try { const { data: fresh } = await db.from('orders').select('*, customers(name,company,mobile,email,address,city), leads(name,company,mobile,email,address,city,source,contact_type), order_categories(name)').eq('id', id).maybeSingle();
     if (fresh) { const i = cache.orders.findIndex(x => x.id === id); o = fresh; if (i >= 0) cache.orders[i] = fresh; } } catch (_) {} }
   _ov = o;
   const p = party(o), open = OPEN_STAGES.includes(o.stage);
@@ -4892,14 +4976,15 @@ function openBillForm(orderId) {
   const guess = srcs.find(s => src && (s.toLowerCase().includes(src) || src.includes(s.toLowerCase().split(' ')[0])));
   document.getElementById('bfTitle').textContent = 'Invoice request — ' + (p.name || 'Deal') + (o.po_number ? ' · PO ' + o.po_number : '');
   document.getElementById('bfReq').innerHTML = opts(BR.req, '');
-  document.getElementById('bfSrc').innerHTML = '<option value="">Choose…</option>' + srcs.map(s => `<option ${s === guess ? 'selected' : ''}>${esc(s)}</option>`).join('');
+  const srcRaw = String(o.source || o.leads?.source || '').trim();
+  document.getElementById('bfSrc').innerHTML = '<option value="">Choose…</option>' + srcs.map(s => `<option ${s === guess ? 'selected' : ''}>${esc(s)}</option>`).join('') + (!guess && srcRaw ? `<option selected>${esc(srcRaw)}</option>` : '');
   document.getElementById('bfCat').innerHTML = opts(BR.cat, '');
   document.getElementById('bfInv').innerHTML = opts(BR.inv, '');
   document.getElementById('bfPay').innerHTML = opts(BR.pay, (o.advance_amount || 0) > 0 ? 'yes' : '');
   document.getElementById('bfInst').innerHTML = Object.entries(BR.inst).map(([k, v]) => `<option value="${k}" ${k === 'no' ? 'selected' : ''}>${esc(v)}</option>`).join('');
   const set = (id, v) => document.getElementById(id).value = v || '';
   set('bfPayD', [o.payment_mode, o.payment_ref].filter(Boolean).join(' · ')); set('bfContact', p.name); set('bfPhone', p.mobile); set('bfEmail', p.email || o.leads?.email);
-  set('bfFirm', p.company); set('bfGst', ''); set('bfAddr', p.address); set('bfDel', o.delivery_date);
+  set('bfFirm', p.company); set('bfGst', ''); set('bfAddr', [p.address, p.city && !String(p.address || '').toLowerCase().includes(String(p.city).toLowerCase()) ? p.city : ''].filter(Boolean).join(', ')); set('bfDel', o.delivery_date);
   set('bfMachine', [o.order_categories?.name, o.title, o.qty ? 'Qty ' + o.qty : ''].filter(Boolean).join(' · '));
   set('bfInstDate', ''); set('bfLoc', ''); set('bfLocC', ''); set('bfCom', ''); document.getElementById('bfFiles').value = '';
   bfInstChanged(); document.getElementById('bfMsg').innerHTML = '';
@@ -6753,7 +6838,7 @@ async function qrForm(deal) {
   if (dealIsVrf(deal)) return qtToast('VRF deals go to the design team automatically – see VRF projects', true);
   QR.items = [{ machine: '', qty: 1, rate: '' }]; QR.deal = deal && deal.id ? deal : null; svcModal('<div class="empty">Loading…</div>', true); const custs = await svcCustomers();
   svcModal(`<h3 style="margin-bottom:10px">Request a quote</h3>
-    <div class="field"><label>Customer <span class="muted">(pick from the list, or type a new name below)</span></label><input id="qfCustQ" list="qfCusts" placeholder="Search customer…" onchange="qrPickCust(this.value)"><datalist id="qfCusts">${custs.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist></div>
+    <div class="field" id="qfCustWrap"><label>Customer <span class="muted">(pick from the list, or type a new name below)</span></label><input id="qfCustQ" list="qfCusts" placeholder="Search customer…" onchange="qrPickCust(this.value)"><datalist id="qfCusts">${custs.map(c => `<option value="${esc(svcCustLabel(c))}">`).join('')}</datalist></div>
     <div class="qtg2"><div class="field"><label>Customer name *</label><input id="qfName"></div><div class="field"><label>Mobile</label><input id="qfMob" maxlength="14" inputmode="numeric"></div>
       <div class="field"><label>Email</label><input id="qfEmail" type="email"></div><div class="field"><label>City / site</label><input id="qfCity"></div></div>
     <div class="qtg3"><div class="field"><label>Type</label><select id="qfSys"><option value="">—</option><option>VRF</option><option>DX / Split</option><option>Ductable</option><option>Service / AMC</option><option>Other</option></select></div>
@@ -6764,7 +6849,7 @@ async function qrForm(deal) {
     <div class="field" style="margin-top:10px"><label>Anything else the quote team should know</label><textarea id="qfNotes" rows="3" placeholder="Site details, installation scope, payment terms asked…"></textarea></div>
     <div style="text-align:right;margin-top:14px"><button class="btn sec" onclick="closeModal('svcBg')">Cancel</button> <button class="btn" onclick="qrCreate()">Send request to quote team</button></div>`, true);
   QR.cust = null; qrItemsRender();
-  if (QR.deal) { const d = QR.deal, c = party(d); QR.cust = d.customer_id || null; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10);
+  if (QR.deal) { const d = QR.deal, c = party(d); QR.cust = d.customer_id || null; document.getElementById('qfCustWrap').style.display = 'none'; document.getElementById('qfName').value = c.company || c.name || ''; document.getElementById('qfMob').value = String(c.mobile || '').replace(/\D/g, '').slice(-10);
     document.getElementById('qfEmail').value = c.email || ''; document.getElementById('qfCity').value = c.city || ''; if (d.title) document.getElementById('qfNotes').value = 'Deal: ' + d.title; }
   qrDealOpts();
 }
